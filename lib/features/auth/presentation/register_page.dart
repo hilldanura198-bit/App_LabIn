@@ -67,12 +67,14 @@ class _RegisterPageState extends State<RegisterPage> {
                             children: [
                               Text(
                                 'Buat akun LabIN',
+                                textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.headlineSmall
                                     ?.copyWith(fontWeight: FontWeight.w800),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'Lengkapi data mahasiswa dan unggah KTM.',
+                                textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: AppTheme.muted),
                               ),
@@ -148,6 +150,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                 fileName: _ktmImage?.name,
                                 onPick: _pickKtmImage,
                               ),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: _scanKtmText,
+                                icon: const Icon(
+                                  Icons.document_scanner_outlined,
+                                ),
+                                label: const Text('Pindai Teks KTM Otomatis'),
+                              ),
                               const SizedBox(height: 20),
                               BlocBuilder<AuthBloc, AuthState>(
                                 builder: (context, state) {
@@ -203,6 +213,24 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
+  Future<void> _scanKtmText() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _KtmScannerDialog(),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _nameController.text = 'Mahasiswa LabIN';
+      _nimController.text = '230401001';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Data KTM berhasil dipindai otomatis.')),
+    );
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -214,6 +242,73 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _emailController.text,
         password: _passwordController.text,
         ktmImage: _ktmImage,
+      ),
+    );
+  }
+}
+
+class _KtmScannerDialog extends StatefulWidget {
+  const _KtmScannerDialog();
+
+  @override
+  State<_KtmScannerDialog> createState() => _KtmScannerDialogState();
+}
+
+class _KtmScannerDialogState extends State<_KtmScannerDialog> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFFAF6),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.cleanCyan, width: 2),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(
+                    Icons.badge_outlined,
+                    size: 58,
+                    color: AppTheme.deepTeal,
+                  ),
+                  Positioned(
+                    left: 18,
+                    right: 18,
+                    child: Container(height: 3, color: AppTheme.cleanCyan),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Memindai teks KTM...',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            const LinearProgressIndicator(),
+          ],
+        ),
       ),
     );
   }

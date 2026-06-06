@@ -6,10 +6,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'booking_form_page.dart';
+import 'check_reservation_page.dart';
+import 'download_docs_page.dart';
+import 'room_schedule_page.dart';
+import 'sapras_facility_page.dart';
+import 'settings_page.dart';
 import 'widgets/busy_meter.dart';
 import 'widgets/status_timeline.dart';
 
@@ -60,6 +68,12 @@ class _MahasiswaDashboardView extends StatelessWidget {
                 );
               },
             ),
+            IconButton(
+              tooltip: 'Pengaturan',
+              onPressed: () => _openSettings(context),
+              icon: const Icon(Icons.settings_outlined),
+            ),
+            const SizedBox(width: 8),
           ],
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(
@@ -90,6 +104,8 @@ class _MahasiswaDashboardView extends StatelessWidget {
                             children: [
                               _StockCalendar(state: state),
                               const SizedBox(height: 16),
+                              _SimlabMenu(repository: _repository(context)),
+                              const SizedBox(height: 16),
                               _InventoryGrid(
                                 inventories: state.inventories,
                                 columns: gridColumns,
@@ -110,6 +126,8 @@ class _MahasiswaDashboardView extends StatelessWidget {
                               _MaintenanceReport(
                                 inventories: state.inventories,
                               ),
+                              const SizedBox(height: 16),
+                              const _FaqAccordion(),
                             ],
                           ),
                         ),
@@ -124,6 +142,210 @@ class _MahasiswaDashboardView extends StatelessWidget {
       ),
     );
   }
+
+  DashboardRepository _repository(BuildContext context) {
+    return DashboardRepository(context.read<AuthRepository>().client);
+  }
+
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RepositoryProvider.value(
+          value: context.read<AuthRepository>(),
+          child: BlocProvider.value(
+            value: context.read<AuthBloc>(),
+            child: SettingsPage(repository: _repository(context)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SimlabMenu extends StatelessWidget {
+  const _SimlabMenu({required this.repository});
+
+  final DashboardRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      _MenuItem(
+        icon: Icons.manage_search_outlined,
+        title: 'Cek Status Reservasi',
+        color: const Color(0xFFE9F8EF),
+        page: CheckReservationPage(repository: repository),
+      ),
+      _MenuItem(
+        icon: Icons.playlist_add_check_rounded,
+        title: 'Form Peminjaman',
+        color: const Color(0xFFEFF6FF),
+        page: BookingFormPage(repository: repository),
+      ),
+      _MenuItem(
+        icon: Icons.file_download_outlined,
+        title: 'Unduh Berkas',
+        color: const Color(0xFFFFF7E6),
+        page: DownloadDocsPage(repository: repository),
+      ),
+      _MenuItem(
+        icon: Icons.view_timeline_outlined,
+        title: 'Jadwal Ruangan',
+        color: const Color(0xFFEAFBFF),
+        page: RoomSchedulePage(repository: repository),
+      ),
+      _MenuItem(
+        icon: Icons.location_city_outlined,
+        title: 'SAPRAS Kampus',
+        color: const Color(0xFFF0F1FF),
+        page: SaprasFacilityPage(repository: repository),
+      ),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Modul SIMLAB & SAPRAS',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1.48,
+              ),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return InkWell(
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => item.page)),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: item.color,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Icon(item.icon, color: AppTheme.deepTeal),
+                        Text(
+                          item.title,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FaqAccordion extends StatelessWidget {
+  const _FaqAccordion();
+
+  static const _items = [
+    (
+      'Siapa saja yang bisa menggunakan LabIN?',
+      'LabIN dapat digunakan oleh mahasiswa, asisten laboratorium, dan kepala laboratorium sesuai hak akses masing-masing.',
+    ),
+    (
+      'Apakah bisa meminjam lebih dari satu barang?',
+      'Bisa. Sistem mendukung peminjaman banyak alat sekaligus melalui keranjang atau formulir multi-step.',
+    ),
+    (
+      'Batas waktu pengajuan H-2',
+      'Pengajuan idealnya dilakukan minimal H-2 sebelum jadwal penggunaan agar proses approval berjalan tertib.',
+    ),
+    (
+      'Apa yang dilakukan jika barang rusak?',
+      'Gunakan form laporan kerusakan dan sertakan foto bukti agar laboratorium dapat memproses maintenance.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Frequently Asked Questions',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppTheme.deepTeal,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ..._items.map(
+              (item) => Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+                  iconColor: AppTheme.deepTeal,
+                  collapsedIconColor: AppTheme.deepTeal,
+                  title: Text(
+                    item.$1,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+                      child: Text(
+                        item.$2,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.muted,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuItem {
+  const _MenuItem({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.page,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color color;
+  final Widget page;
 }
 
 class _StockCalendar extends StatelessWidget {

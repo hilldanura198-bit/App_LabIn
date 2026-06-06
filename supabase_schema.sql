@@ -11,6 +11,9 @@ create table if not exists public.profiles (
   nim_nip text not null unique,
   role text not null default 'mahasiswa',
   ktm_url text,
+  no_whatsapp text,
+  biometric_enabled boolean not null default false,
+  realtime_notifications_enabled boolean not null default true,
   compliance_score integer not null default 100,
   denda_terakumulasi integer not null default 0,
   created_at timestamptz not null default now(),
@@ -53,6 +56,7 @@ create table if not exists public.bookings (
   status text not null default 'pending',
   tanggal_pinjam timestamptz not null,
   tanggal_kembali timestamptz not null,
+  reservation_no text not null unique default ('PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))),
   qr_token text not null unique default encode(gen_random_bytes(32), 'hex'),
   signature_url text,
   created_at timestamptz not null default now(),
@@ -96,16 +100,44 @@ create table if not exists public.maintenance_reports (
   )
 );
 
+create table if not exists public.satisfaction_surveys (
+  id uuid primary key default gen_random_uuid(),
+  periode text not null,
+  kategori text not null,
+  skor integer not null,
+  created_at timestamptz not null default now(),
+  constraint satisfaction_surveys_skor_check check (skor between 0 and 100)
+);
+
 create index if not exists inventories_lab_id_idx on public.inventories(lab_id);
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
 create index if not exists bookings_lab_id_idx on public.bookings(lab_id);
 create index if not exists bookings_status_idx on public.bookings(status);
+create index if not exists bookings_reservation_no_idx on public.bookings(reservation_no);
 create index if not exists bookings_tanggal_pinjam_idx on public.bookings(tanggal_pinjam);
 create index if not exists booking_items_booking_id_idx on public.booking_items(booking_id);
 create index if not exists booking_items_inventory_id_idx on public.booking_items(inventory_id);
 create index if not exists maintenance_reports_user_id_idx on public.maintenance_reports(user_id);
 create index if not exists maintenance_reports_inventory_id_idx on public.maintenance_reports(inventory_id);
 create index if not exists maintenance_reports_status_perbaikan_idx on public.maintenance_reports(status_perbaikan);
+create index if not exists satisfaction_surveys_periode_idx on public.satisfaction_surveys(periode);
+
+alter table public.profiles
+add column if not exists no_whatsapp text,
+add column if not exists biometric_enabled boolean not null default false,
+add column if not exists realtime_notifications_enabled boolean not null default true;
+
+alter table public.bookings
+add column if not exists reservation_no text;
+
+update public.bookings
+set reservation_no = 'PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))
+where reservation_no is null;
+
+alter table public.bookings
+alter column reservation_no set not null;
+
+create unique index if not exists bookings_reservation_no_unique_idx on public.bookings(reservation_no);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -187,4 +219,3 @@ end;
 $$;
 
 commit;
-

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'settings_page.dart';
 import 'widgets/scan_page.dart';
 import 'widgets/signature_pad_dialog.dart';
 
@@ -51,6 +53,11 @@ class _KalabDashboardView extends StatelessWidget {
               tooltip: 'Audit barcode',
               onPressed: () => _scanBarcode(context),
               icon: const Icon(Icons.barcode_reader),
+            ),
+            IconButton(
+              tooltip: 'Pengaturan',
+              onPressed: () => _openSettings(context),
+              icon: const Icon(Icons.settings_outlined),
             ),
             const SizedBox(width: 8),
           ],
@@ -121,6 +128,23 @@ class _KalabDashboardView extends StatelessWidget {
       return;
     }
     context.read<DashboardBloc>().add(DashboardAuditScanRequested(result));
+  }
+
+  void _openSettings(BuildContext context) {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RepositoryProvider.value(
+          value: context.read<AuthRepository>(),
+          child: BlocProvider.value(
+            value: context.read<AuthBloc>(),
+            child: SettingsPage(repository: repository),
+          ),
+        ),
+      ),
+    );
   }
 }
 

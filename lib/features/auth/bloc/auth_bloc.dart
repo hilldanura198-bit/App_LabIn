@@ -40,6 +40,10 @@ class AuthBiometricLoginRequested extends AuthEvent {
   const AuthBiometricLoginRequested();
 }
 
+class AuthCampusSsoRequested extends AuthEvent {
+  const AuthCampusSsoRequested();
+}
+
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
 }
@@ -79,6 +83,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthRegisterMahasiswaRequested>(_onRegisterMahasiswaRequested);
     on<AuthBiometricLoginRequested>(_onBiometricLoginRequested);
+    on<AuthCampusSsoRequested>(_onCampusSsoRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
   }
 
@@ -159,6 +164,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     await _repository.signOut();
     emit(const Unauthenticated());
+  }
+
+  Future<void> _onCampusSsoRequested(
+    AuthCampusSsoRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      await _repository.signInWithCampusSso();
+      emit(const Unauthenticated());
+    } on Object catch (error) {
+      emit(AuthFailure(_friendlyMessage(error)));
+    }
   }
 
   String _friendlyMessage(Object error) {

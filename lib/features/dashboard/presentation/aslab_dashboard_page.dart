@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'settings_page.dart';
 import 'widgets/scan_page.dart';
 
 class AslabDashboardPage extends StatelessWidget {
@@ -47,6 +49,11 @@ class _AslabDashboardView extends StatelessWidget {
               tooltip: 'Scan QR',
               onPressed: () => _scanQr(context),
               icon: const Icon(Icons.qr_code_scanner_rounded),
+            ),
+            IconButton(
+              tooltip: 'Pengaturan',
+              onPressed: () => _openSettings(context),
+              icon: const Icon(Icons.settings_outlined),
             ),
             const SizedBox(width: 8),
           ],
@@ -120,6 +127,23 @@ class _AslabDashboardView extends StatelessWidget {
       return;
     }
     context.read<DashboardBloc>().add(DashboardQrValidationRequested(result));
+  }
+
+  void _openSettings(BuildContext context) {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RepositoryProvider.value(
+          value: context.read<AuthRepository>(),
+          child: BlocProvider.value(
+            value: context.read<AuthBloc>(),
+            child: SettingsPage(repository: repository),
+          ),
+        ),
+      ),
+    );
   }
 }
 

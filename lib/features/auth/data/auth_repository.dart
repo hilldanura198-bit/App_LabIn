@@ -32,6 +32,13 @@ class AuthRepository {
     );
   }
 
+  Future<void> signInWithCampusSso() async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: 'io.supabase.labin://login-callback',
+    );
+  }
+
   Future<String> registerMahasiswa({
     required String nama,
     required String nim,

@@ -142,3 +142,23 @@ set
   manual_url = excluded.manual_url;
 
 commit;
+
+begin;
+
+insert into public.satisfaction_surveys (id, periode, kategori, skor)
+values
+  ('dddddddd-0001-4001-8001-dddddddd0001', 'Semester Ganjil 2025', 'Kebersihan', 88),
+  ('dddddddd-0002-4002-8002-dddddddd0002', 'Semester Ganjil 2025', 'Ketersediaan Alat', 82),
+  ('dddddddd-0003-4003-8003-dddddddd0003', 'Semester Ganjil 2025', 'Kecepatan Layanan', 78),
+  ('dddddddd-0004-4004-8004-dddddddd0004', 'Semester Ganjil 2025', 'Kenyamanan Ruang', 91),
+  ('eeeeeeee-0001-4001-8001-eeeeeeee0001', 'Semester Genap 2026', 'Kebersihan', 90),
+  ('eeeeeeee-0002-4002-8002-eeeeeeee0002', 'Semester Genap 2026', 'Ketersediaan Alat', 86),
+  ('eeeeeeee-0003-4003-8003-eeeeeeee0003', 'Semester Genap 2026', 'Kecepatan Layanan', 84),
+  ('eeeeeeee-0004-4004-8004-eeeeeeee0004', 'Semester Genap 2026', 'Kenyamanan Ruang', 93)
+on conflict (id) do update
+set
+  periode = excluded.periode,
+  kategori = excluded.kategori,
+  skor = excluded.skor;
+
+commit;

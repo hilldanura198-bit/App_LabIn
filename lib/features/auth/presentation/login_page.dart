@@ -75,6 +75,7 @@ class _LoginPageState extends State<LoginPage> {
                               children: [
                                 Text(
                                   'Masuk ke LabIN',
+                                  textAlign: TextAlign.center,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineSmall
@@ -83,6 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                                 const SizedBox(height: 6),
                                 Text(
                                   'Kelola aktivitas lab dengan alur yang lebih rapi.',
+                                  textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(color: AppTheme.muted),
                                 ),
@@ -137,29 +139,51 @@ class _LoginPageState extends State<LoginPage> {
                                 BlocBuilder<AuthBloc, AuthState>(
                                   builder: (context, state) {
                                     final isLoading = state is AuthLoading;
-                                    return ElevatedButton.icon(
-                                      onPressed: isLoading ? null : _submit,
-                                      icon: isLoading
-                                          ? const SizedBox.square(
-                                              dimension: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Icon(Icons.login_rounded),
-                                      label: const Text('Masuk'),
+                                    return Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: [
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: isLoading
+                                                ? null
+                                                : _submit,
+                                            icon: isLoading
+                                                ? const SizedBox.square(
+                                                    dimension: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.login_rounded,
+                                                  ),
+                                            label: const Text('Email Login'),
+                                          ),
+                                        ),
+                                        _AuthOptionButton(
+                                          icon: Icons.account_balance_rounded,
+                                          label: 'Masuk dengan SSO Kampus',
+                                          onPressed: isLoading
+                                              ? null
+                                              : () => context.read<AuthBloc>().add(
+                                                  const AuthCampusSsoRequested(),
+                                                ),
+                                        ),
+                                        _AuthOptionButton(
+                                          icon: Icons.fingerprint_rounded,
+                                          label: 'Biometric Button',
+                                          onPressed: isLoading
+                                              ? null
+                                              : () => context.read<AuthBloc>().add(
+                                                  const AuthBiometricLoginRequested(),
+                                                ),
+                                        ),
+                                      ],
                                     );
                                   },
-                                ),
-                                const SizedBox(height: 12),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    context.read<AuthBloc>().add(
-                                      const AuthBiometricLoginRequested(),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.fingerprint_rounded),
-                                  label: const Text('Biometric Login'),
                                 ),
                               ],
                             ),
@@ -219,7 +243,8 @@ class _LoginHero extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 58,
@@ -234,28 +259,47 @@ class _LoginHero extends StatelessWidget {
               size: 32,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'LabIN',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  'Laboratory Intelligence System',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.84),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 16),
+          Text(
+            'LabIN',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            'Laboratory Intelligence System',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.84),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AuthOptionButton extends StatelessWidget {
+  const _AuthOptionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label, textAlign: TextAlign.center),
       ),
     );
   }

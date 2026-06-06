@@ -6,6 +6,7 @@ import 'core/constants/supabase_credentials.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
+import 'features/auth/presentation/onboarding_page.dart';
 import 'features/auth/presentation/login_page.dart';
 import 'features/dashboard/presentation/aslab_dashboard_page.dart';
 import 'features/dashboard/presentation/kalab_dashboard_page.dart';
@@ -42,10 +43,29 @@ class LabInApp extends StatelessWidget {
           title: 'LabIN',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
-          home: const AuthGate(),
+          home: const OnboardingGate(),
         ),
       ),
     );
+  }
+}
+
+class OnboardingGate extends StatefulWidget {
+  const OnboardingGate({super.key});
+
+  @override
+  State<OnboardingGate> createState() => _OnboardingGateState();
+}
+
+class _OnboardingGateState extends State<OnboardingGate> {
+  bool _finished = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_finished) {
+      return const AuthGate();
+    }
+    return OnboardingPage(onFinished: () => setState(() => _finished = true));
   }
 }
 

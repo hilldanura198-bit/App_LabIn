@@ -41,6 +41,42 @@ class DashboardRepository {
         .map((rows) => rows.map(LabBooking.fromMap).toList());
   }
 
+  Stream<List<LabBooking>> watchReservation(String reservationNo) {
+    final normalized = reservationNo.trim().toUpperCase();
+    if (normalized.isEmpty) {
+      return Stream.value(const []);
+    }
+    return _supabase
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .eq('reservation_no', normalized)
+        .map((rows) => rows.map(LabBooking.fromMap).toList());
+  }
+
+  Future<List<LabRoom>> fetchLaboratories() async {
+    final rows = await _supabase
+        .from('laboratories')
+        .select('id,nama_lab,lokasi,status_operasional')
+        .order('nama_lab');
+    return rows.map(LabRoom.fromMap).toList();
+  }
+
+  Stream<List<LabRoom>> watchLaboratories() {
+    return _supabase
+        .from('laboratories')
+        .stream(primaryKey: ['id'])
+        .order('nama_lab')
+        .map((rows) => rows.map(LabRoom.fromMap).toList());
+  }
+
+  Stream<List<SatisfactionScore>> watchSatisfactionScores() {
+    return _supabase
+        .from('satisfaction_surveys')
+        .stream(primaryKey: ['id'])
+        .order('kategori')
+        .map((rows) => rows.map(SatisfactionScore.fromMap).toList());
+  }
+
   Stream<List<LabBooking>> watchBookingsByStatus(List<String> statuses) {
     return _supabase
         .from('bookings')
@@ -118,6 +154,112 @@ class DashboardRepository {
               )
               .toList(),
         );
+  }
+
+  Future<void> createMultiStepBooking({
+    required String labId,
+    required String noWhatsapp,
+    required DateTime tanggalPinjam,
+    required List<BookingItemDraft> items,
+  }) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw Exception('User belum login.');
+    }
+    await _supabase
+        .from('profiles')
+        .update({'no_whatsapp': noWhatsapp.trim()})
+        .eq('id', userId);
+
+    final booking = await _supabase
+        .from('bookings')
+        .insert({
+          'user_id': userId,
+          'lab_id': labId,
+          'status': 'pending',
+          'tanggal_pinjam': tanggalPinjam.toIso8601String(),
+          'tanggal_kembali': tanggalPinjam
+              .add(const Duration(hours: 3))
+              .toIso8601String(),
+        })
+        .select('id')
+        .single();
+
+    if (items.isNotEmpty) {
+      final bookingId = booking['id'] as String;
+      await _supabase
+          .from('booking_items')
+          .insert(
+            items
+                .map(
+                  (item) => {
+                    'booking_id': bookingId,
+                    'inventory_id': item.inventory.id,
+                    'jumlah': item.quantity,
+                  },
+                )
+                .toList(),
+          );
+    }
+  }
+
+  Stream<List<LabBooking>> watchApprovedDocuments() {
+    final userId = currentUserId;
+    if (userId == null) {
+      return Stream.value(const []);
+    }
+    return _supabase
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .order('tanggal_pinjam', ascending: false)
+        .map(
+          (rows) => rows
+              .map(LabBooking.fromMap)
+              .where((booking) => booking.status == 'approved_kalab')
+              .toList(),
+        );
+  }
+
+  Stream<List<LabBooking>> watchRoomSchedule() {
+    return _supabase
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .order('tanggal_pinjam')
+        .map((rows) => rows.map(LabBooking.fromMap).toList());
+  }
+
+  Future<ProfileSettings> fetchProfileSettings() async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw Exception('User belum login.');
+    }
+    final row = await _supabase
+        .from('profiles')
+        .select(
+          'nama,nim_nip,role,no_whatsapp,biometric_enabled,realtime_notifications_enabled',
+        )
+        .eq('id', userId)
+        .single();
+    return ProfileSettings.fromMap(row);
+  }
+
+  Future<void> updateProfileSettings(ProfileSettings settings) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw Exception('User belum login.');
+    }
+    await _supabase
+        .from('profiles')
+        .update({
+          'nama': settings.name.trim(),
+          'nim_nip': settings.nimNip.trim(),
+          'no_whatsapp': settings.noWhatsapp.trim(),
+          'biometric_enabled': settings.biometricEnabled,
+          'realtime_notifications_enabled':
+              settings.realtimeNotificationsEnabled,
+        })
+        .eq('id', userId);
   }
 
   Future<void> reportMaintenance({

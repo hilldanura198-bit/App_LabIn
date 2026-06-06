@@ -48,6 +48,7 @@ class LabBooking {
     required this.status,
     required this.tanggalPinjam,
     required this.tanggalKembali,
+    required this.reservationNo,
     required this.qrToken,
     this.signatureUrl,
   });
@@ -58,6 +59,7 @@ class LabBooking {
   final String status;
   final DateTime tanggalPinjam;
   final DateTime tanggalKembali;
+  final String reservationNo;
   final String qrToken;
   final String? signatureUrl;
 
@@ -71,8 +73,64 @@ class LabBooking {
       tanggalKembali: DateTime.parse(
         map['tanggal_kembali'] as String,
       ).toLocal(),
+      reservationNo:
+          map['reservation_no'] as String? ??
+          'PMJ-${map['id'].toString().substring(0, 5).toUpperCase()}',
       qrToken: map['qr_token'] as String? ?? '',
       signatureUrl: map['signature_url'] as String?,
+    );
+  }
+}
+
+class LabRoom {
+  const LabRoom({
+    required this.id,
+    required this.name,
+    required this.location,
+    required this.status,
+  });
+
+  final String id;
+  final String name;
+  final String location;
+  final String status;
+
+  factory LabRoom.fromMap(Map<String, dynamic> map) {
+    return LabRoom(
+      id: map['id'] as String,
+      name: map['nama_lab'] as String? ?? 'Ruang Lab',
+      location: map['lokasi'] as String? ?? '-',
+      status: map['status_operasional'] as String? ?? 'aktif',
+    );
+  }
+}
+
+class ProfileSettings {
+  const ProfileSettings({
+    required this.name,
+    required this.nimNip,
+    required this.role,
+    required this.noWhatsapp,
+    required this.biometricEnabled,
+    required this.realtimeNotificationsEnabled,
+  });
+
+  final String name;
+  final String nimNip;
+  final String role;
+  final String noWhatsapp;
+  final bool biometricEnabled;
+  final bool realtimeNotificationsEnabled;
+
+  factory ProfileSettings.fromMap(Map<String, dynamic> map) {
+    return ProfileSettings(
+      name: map['nama'] as String? ?? '',
+      nimNip: map['nim_nip'] as String? ?? '',
+      role: map['role'] as String? ?? 'mahasiswa',
+      noWhatsapp: map['no_whatsapp'] as String? ?? '',
+      biometricEnabled: map['biometric_enabled'] as bool? ?? false,
+      realtimeNotificationsEnabled:
+          map['realtime_notifications_enabled'] as bool? ?? true,
     );
   }
 }
@@ -82,4 +140,27 @@ class BusyHour {
 
   final int hour;
   final int count;
+}
+
+class SatisfactionScore {
+  const SatisfactionScore({
+    required this.id,
+    required this.period,
+    required this.category,
+    required this.score,
+  });
+
+  final String id;
+  final String period;
+  final String category;
+  final int score;
+
+  factory SatisfactionScore.fromMap(Map<String, dynamic> map) {
+    return SatisfactionScore(
+      id: map['id'] as String,
+      period: map['periode'] as String? ?? 'Periode',
+      category: map['kategori'] as String? ?? 'Layanan',
+      score: map['skor'] as int? ?? 0,
+    );
+  }
 }
