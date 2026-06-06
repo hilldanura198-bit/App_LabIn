@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
+import 'core/constants/supabase_credentials.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
@@ -10,17 +11,14 @@ import 'features/dashboard/presentation/aslab_dashboard_page.dart';
 import 'features/dashboard/presentation/kalab_dashboard_page.dart';
 import 'features/dashboard/presentation/mahasiswa_dashboard_page.dart';
 
-const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   SupabaseClient? supabaseClient;
-  if (_supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty) {
+  if (SupabaseCredentials.isConfigured) {
     await Supabase.initialize(
-      url: _supabaseUrl,
-      publishableKey: _supabaseAnonKey,
+      url: SupabaseCredentials.url,
+      publishableKey: SupabaseCredentials.anonKey,
     );
     supabaseClient = Supabase.instance.client;
   }

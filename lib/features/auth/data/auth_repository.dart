@@ -10,6 +10,8 @@ class AuthRepository {
   final SupabaseClient? _client;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
+  SupabaseClient? get client => _client;
+
   SupabaseClient get _supabase {
     final client = _client;
     if (client == null) {
@@ -87,10 +89,8 @@ class AuthRepository {
 
     final authenticated = await _localAuth.authenticate(
       localizedReason: 'Gunakan biometrik untuk membuka sesi LabIN',
-      options: const AuthenticationOptions(
-        biometricOnly: false,
-        stickyAuth: true,
-      ),
+      biometricOnly: false,
+      persistAcrossBackgrounding: true,
     );
     if (!authenticated) {
       throw Exception('Autentikasi biometrik dibatalkan.');
