@@ -20,6 +20,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
   List<LabRoom> _labs = const [];
   List<LabInventory> _inventories = const [];
   String? _selectedLabId;
+  String? _selectedDeskNo;
   final _selectedItems = <String, BookingItemDraft>{};
   bool _loading = true;
 
@@ -120,21 +121,32 @@ class _BookingFormPageState extends State<BookingFormPage> {
                   Step(
                     title: const Text('Pilih Ruangan/Laboratorium'),
                     isActive: _step >= 1,
-                    content: DropdownButtonFormField<String>(
-                      initialValue: _selectedLabId,
-                      items: _labs
-                          .map(
-                            (lab) => DropdownMenuItem(
-                              value: lab.id,
-                              child: Text('${lab.name} - ${lab.location}'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) =>
-                          setState(() => _selectedLabId = value),
-                      decoration: const InputDecoration(
-                        labelText: 'Laboratorium',
-                      ),
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedLabId,
+                          items: _labs
+                              .map(
+                                (lab) => DropdownMenuItem(
+                                  value: lab.id,
+                                  child: Text('${lab.name} - ${lab.location}'),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) =>
+                              setState(() => _selectedLabId = value),
+                          decoration: const InputDecoration(
+                            labelText: 'Laboratorium',
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _VirtualTourDeskGrid(
+                          selectedDeskNo: _selectedDeskNo,
+                          onSelected: (deskNo) =>
+                              setState(() => _selectedDeskNo = deskNo),
+                        ),
+                      ],
                     ),
                   ),
                   Step(
@@ -194,6 +206,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
         labId: _selectedLabId!,
         noWhatsapp: _waController.text,
         tanggalPinjam: DateTime.now().add(const Duration(days: 1)),
+        deskNo: _selectedDeskNo,
         items: _selectedItems.values.toList(),
       );
       if (!mounted) {
@@ -210,6 +223,108 @@ class _BookingFormPageState extends State<BookingFormPage> {
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
+  }
+}
+
+class _VirtualTourDeskGrid extends StatelessWidget {
+  const _VirtualTourDeskGrid({
+    required this.selectedDeskNo,
+    required this.onSelected,
+  });
+
+  final String? selectedDeskNo;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final desks = List.generate(18, (index) => 'M-${index + 1}');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Interactive Lab Virtual Tour',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Pilih nomor meja komputer spesifik untuk sesi praktikum.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 430 ? 6 : 3;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: desks.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 1.1,
+                  ),
+                  itemBuilder: (context, index) {
+                    final deskNo = desks[index];
+                    final selected = selectedDeskNo == deskNo;
+                    final occupied = index == 2 || index == 9 || index == 14;
+                    return InkWell(
+                      onTap: occupied ? null : () => onSelected(deskNo),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: occupied
+                              ? const Color(0xFFFFF4CE)
+                              : selected
+                              ? AppTheme.cleanCyan
+                              : const Color(0xFFEFFAF6),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: selected
+                                ? AppTheme.deepTeal
+                                : const Color(0xFFCDE9DF),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.desktop_windows_outlined,
+                              color: selected
+                                  ? AppTheme.midnightNavy
+                                  : AppTheme.deepTeal,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              deskNo,
+                              style: TextStyle(
+                                color: selected
+                                    ? AppTheme.midnightNavy
+                                    : AppTheme.deepTeal,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

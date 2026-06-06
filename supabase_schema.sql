@@ -11,9 +11,11 @@ create table if not exists public.profiles (
   nim_nip text not null unique,
   role text not null default 'mahasiswa',
   ktm_url text,
+  avatar_url text,
   no_whatsapp text,
   biometric_enabled boolean not null default false,
   realtime_notifications_enabled boolean not null default true,
+  notification_sound_enabled boolean not null default true,
   compliance_score integer not null default 100,
   denda_terakumulasi integer not null default 0,
   created_at timestamptz not null default now(),
@@ -56,6 +58,7 @@ create table if not exists public.bookings (
   status text not null default 'pending',
   tanggal_pinjam timestamptz not null,
   tanggal_kembali timestamptz not null,
+  desk_no text,
   reservation_no text not null unique default ('PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))),
   qr_token text not null unique default encode(gen_random_bytes(32), 'hex'),
   signature_url text,
@@ -124,11 +127,16 @@ create index if not exists satisfaction_surveys_periode_idx on public.satisfacti
 
 alter table public.profiles
 add column if not exists no_whatsapp text,
+add column if not exists avatar_url text,
 add column if not exists biometric_enabled boolean not null default false,
-add column if not exists realtime_notifications_enabled boolean not null default true;
+add column if not exists realtime_notifications_enabled boolean not null default true,
+add column if not exists notification_sound_enabled boolean not null default true;
 
 alter table public.bookings
 add column if not exists reservation_no text;
+
+alter table public.bookings
+add column if not exists desk_no text;
 
 update public.bookings
 set reservation_no = 'PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))

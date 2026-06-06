@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import 'core/constants/supabase_credentials.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_cubit.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/onboarding_page.dart';
@@ -36,14 +37,26 @@ class LabInApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepositoryProvider(
       create: (_) => AuthRepository(supabaseClient),
-      child: BlocProvider(
-        create: (context) =>
-            AuthBloc(context.read<AuthRepository>())..add(const AuthStarted()),
-        child: MaterialApp(
-          title: 'LabIN',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          home: const OnboardingGate(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) =>
+                AuthBloc(context.read<AuthRepository>())
+                  ..add(const AuthStarted()),
+          ),
+          BlocProvider(create: (_) => ThemeCubit()),
+        ],
+        child: BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, themeMode) {
+            return MaterialApp(
+              title: 'LabIN',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: themeMode,
+              home: const OnboardingGate(),
+            );
+          },
         ),
       ),
     );

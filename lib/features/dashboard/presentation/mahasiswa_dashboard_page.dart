@@ -15,6 +15,7 @@ import '../data/dashboard_repository.dart';
 import 'booking_form_page.dart';
 import 'check_reservation_page.dart';
 import 'download_docs_page.dart';
+import 'notification_center_page.dart';
 import 'room_schedule_page.dart';
 import 'sapras_facility_page.dart';
 import 'settings_page.dart';
@@ -67,6 +68,16 @@ class _MahasiswaDashboardView extends StatelessWidget {
                   ),
                 );
               },
+            ),
+            IconButton(
+              tooltip: 'Notifikasi',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      NotificationCenterPage(repository: _repository(context)),
+                ),
+              ),
+              icon: const Icon(Icons.notifications_outlined),
             ),
             IconButton(
               tooltip: 'Pengaturan',
@@ -193,6 +204,12 @@ class _SimlabMenu extends StatelessWidget {
         title: 'Jadwal Ruangan',
         color: const Color(0xFFEAFBFF),
         page: RoomSchedulePage(repository: repository),
+      ),
+      _MenuItem(
+        icon: Icons.notifications_active_outlined,
+        title: 'Notifikasi',
+        color: const Color(0xFFFFF0F6),
+        page: NotificationCenterPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.location_city_outlined,

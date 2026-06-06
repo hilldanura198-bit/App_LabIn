@@ -160,6 +160,7 @@ class DashboardRepository {
     required String labId,
     required String noWhatsapp,
     required DateTime tanggalPinjam,
+    required String? deskNo,
     required List<BookingItemDraft> items,
   }) async {
     final userId = currentUserId;
@@ -181,6 +182,7 @@ class DashboardRepository {
           'tanggal_kembali': tanggalPinjam
               .add(const Duration(hours: 3))
               .toIso8601String(),
+          'desk_no': deskNo,
         })
         .select('id')
         .single();
@@ -237,7 +239,7 @@ class DashboardRepository {
     final row = await _supabase
         .from('profiles')
         .select(
-          'nama,nim_nip,role,no_whatsapp,biometric_enabled,realtime_notifications_enabled',
+          'nama,nim_nip,role,no_whatsapp,avatar_url,biometric_enabled,realtime_notifications_enabled,notification_sound_enabled',
         )
         .eq('id', userId)
         .single();
@@ -255,11 +257,48 @@ class DashboardRepository {
           'nama': settings.name.trim(),
           'nim_nip': settings.nimNip.trim(),
           'no_whatsapp': settings.noWhatsapp.trim(),
+          'avatar_url': settings.avatarUrl,
           'biometric_enabled': settings.biometricEnabled,
           'realtime_notifications_enabled':
               settings.realtimeNotificationsEnabled,
+          'notification_sound_enabled': settings.notificationSoundEnabled,
         })
         .eq('id', userId);
+  }
+
+  Future<String> uploadAvatar(XFile image) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw Exception('User belum login.');
+    }
+    final bytes = await image.readAsBytes();
+    final extension = image.name.split('.').last.toLowerCase();
+    final safeExtension = extension.isEmpty ? 'jpg' : extension;
+    final path =
+        '$userId/avatar-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
+    await _supabase.storage
+        .from('avatars')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: image.mimeType ?? 'image/$safeExtension',
+          ),
+        );
+    final avatarUrl = _supabase.storage.from('avatars').getPublicUrl(path);
+    await _supabase
+        .from('profiles')
+        .update({'avatar_url': avatarUrl})
+        .eq('id', userId);
+    return avatarUrl;
+  }
+
+  Future<void> updatePassword(String password) async {
+    if (password.trim().length < 6) {
+      throw Exception('Password minimal 6 karakter.');
+    }
+    await _supabase.auth.updateUser(UserAttributes(password: password.trim()));
   }
 
   Future<void> reportMaintenance({

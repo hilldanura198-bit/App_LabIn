@@ -111,16 +111,20 @@ class ProfileSettings {
     required this.nimNip,
     required this.role,
     required this.noWhatsapp,
+    required this.avatarUrl,
     required this.biometricEnabled,
     required this.realtimeNotificationsEnabled,
+    required this.notificationSoundEnabled,
   });
 
   final String name;
   final String nimNip;
   final String role;
   final String noWhatsapp;
+  final String? avatarUrl;
   final bool biometricEnabled;
   final bool realtimeNotificationsEnabled;
+  final bool notificationSoundEnabled;
 
   factory ProfileSettings.fromMap(Map<String, dynamic> map) {
     return ProfileSettings(
@@ -128,9 +132,12 @@ class ProfileSettings {
       nimNip: map['nim_nip'] as String? ?? '',
       role: map['role'] as String? ?? 'mahasiswa',
       noWhatsapp: map['no_whatsapp'] as String? ?? '',
+      avatarUrl: map['avatar_url'] as String?,
       biometricEnabled: map['biometric_enabled'] as bool? ?? false,
       realtimeNotificationsEnabled:
           map['realtime_notifications_enabled'] as bool? ?? true,
+      notificationSoundEnabled:
+          map['notification_sound_enabled'] as bool? ?? true,
     );
   }
 }
