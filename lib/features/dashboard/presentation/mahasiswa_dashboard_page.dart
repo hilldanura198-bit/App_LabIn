@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -39,8 +40,16 @@ class MahasiswaDashboardPage extends StatelessWidget {
   }
 }
 
-class _MahasiswaDashboardView extends StatelessWidget {
+class _MahasiswaDashboardView extends StatefulWidget {
   const _MahasiswaDashboardView();
+
+  @override
+  State<_MahasiswaDashboardView> createState() =>
+      _MahasiswaDashboardViewState();
+}
+
+class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +65,14 @@ class _MahasiswaDashboardView extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('LabIN Mahasiswa'),
+          title: Text(
+            [
+              'Beranda',
+              'Cek Reservasi',
+              'Notifikasi',
+              'Pengaturan',
+            ][_selectedIndex],
+          ),
           actions: [
             BlocBuilder<DashboardBloc, DashboardState>(
               builder: (context, state) {
@@ -89,69 +105,75 @@ class _MahasiswaDashboardView extends StatelessWidget {
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(
           builder: (context, state) {
-            return SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth >= 1000
-                      ? 940.0
-                      : constraints.maxWidth;
-                  final gridColumns = constraints.maxWidth >= 720 ? 3 : 2;
-                  return Center(
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        context.read<DashboardBloc>().add(
-                          const DashboardStarted(
-                            inventoryStream: true,
-                            bookingStream: false,
-                          ),
-                        );
-                      },
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: maxWidth),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _StockCalendar(state: state),
-                              const SizedBox(height: 16),
-                              _SimlabMenu(repository: _repository(context)),
-                              const SizedBox(height: 16),
-                              _InventoryGrid(
-                                inventories: state.inventories,
-                                columns: gridColumns,
-                              ),
-                              const SizedBox(height: 16),
-                              _CartCheckout(state: state),
-                              const SizedBox(height: 16),
-                              if (state.latestBooking != null) ...[
-                                _DynamicQrPass(booking: state.latestBooking!),
-                                const SizedBox(height: 16),
-                                StatusTimeline(
-                                  status: state.latestBooking!.status,
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-                              BusyMeter(hours: state.busyHours),
-                              const SizedBox(height: 16),
-                              _MaintenanceReport(
-                                inventories: state.inventories,
-                              ),
-                              const SizedBox(height: 16),
-                              const _FaqAccordion(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 320),
+              transitionBuilder: (child, animation) {
+                final slide = Tween<Offset>(
+                  begin: const Offset(0.06, 0),
+                  end: Offset.zero,
+                ).animate(animation);
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(position: slide, child: child),
+                );
+              },
+              child: _buildTab(context, state),
             );
           },
         ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: GNav(
+                  selectedIndex: _selectedIndex,
+                  onTabChange: (index) =>
+                      setState(() => _selectedIndex = index),
+                  gap: 8,
+                  tabBorderRadius: 16,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  activeColor: AppTheme.espresso,
+                  color: AppTheme.sepia,
+                  tabBackgroundColor: AppTheme.richBronze.withValues(
+                    alpha: 0.22,
+                  ),
+                  tabs: const [
+                    GButton(icon: Icons.home_outlined, text: 'Beranda'),
+                    GButton(icon: Icons.search_rounded, text: 'Reservasi'),
+                    GButton(
+                      icon: Icons.notifications_outlined,
+                      text: 'Notifikasi',
+                    ),
+                    GButton(icon: Icons.settings_outlined, text: 'Pengaturan'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildTab(BuildContext context, DashboardState state) {
+    final repository = _repository(context);
+    return switch (_selectedIndex) {
+      1 => CheckReservationPage(repository: repository),
+      2 => NotificationCenterPage(repository: repository),
+      3 => RepositoryProvider.value(
+        value: context.read<AuthRepository>(),
+        child: BlocProvider.value(
+          value: context.read<AuthBloc>(),
+          child: SettingsPage(repository: repository),
+        ),
+      ),
+      _ => _HomeScrollContent(state: state, repository: repository),
+    };
   }
 
   DashboardRepository _repository(BuildContext context) {
@@ -173,6 +195,83 @@ class _MahasiswaDashboardView extends StatelessWidget {
   }
 }
 
+class _HomeScrollContent extends StatelessWidget {
+  const _HomeScrollContent({required this.state, required this.repository});
+
+  final DashboardState state;
+  final DashboardRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth >= 1000
+              ? 940.0
+              : constraints.maxWidth;
+          final gridColumns = constraints.maxWidth >= 720 ? 3 : 2;
+          return Center(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                context.read<DashboardBloc>().add(
+                  const DashboardStarted(
+                    inventoryStream: true,
+                    bookingStream: false,
+                  ),
+                );
+              },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Campus Sarpras Portal',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 16),
+                      _StockCalendar(state: state),
+                      const SizedBox(height: 16),
+                      _SimlabMenu(repository: repository),
+                      const SizedBox(height: 16),
+                      const _CampusInsights(),
+                      const SizedBox(height: 16),
+                      _InventoryGrid(
+                        inventories: state.inventories,
+                        columns: gridColumns,
+                      ),
+                      const SizedBox(height: 16),
+                      _CartCheckout(state: state),
+                      const SizedBox(height: 16),
+                      if (state.latestBooking != null) ...[
+                        _DynamicQrPass(booking: state.latestBooking!),
+                        const SizedBox(height: 16),
+                        StatusTimeline(status: state.latestBooking!.status),
+                        const SizedBox(height: 16),
+                      ],
+                      BusyMeter(hours: state.busyHours),
+                      const SizedBox(height: 16),
+                      const _LiveUtilizationFeed(),
+                      const SizedBox(height: 16),
+                      _MaintenanceReport(inventories: state.inventories),
+                      const SizedBox(height: 16),
+                      const _FaqAccordion(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _SimlabMenu extends StatelessWidget {
   const _SimlabMenu({required this.repository});
 
@@ -184,37 +283,37 @@ class _SimlabMenu extends StatelessWidget {
       _MenuItem(
         icon: Icons.manage_search_outlined,
         title: 'Cek Status Reservasi',
-        color: const Color(0xFFE9F8EF),
+        color: AppTheme.richBronze.withValues(alpha: 0.12),
         page: CheckReservationPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.playlist_add_check_rounded,
         title: 'Form Peminjaman',
-        color: const Color(0xFFEFF6FF),
+        color: AppTheme.richBronze.withValues(alpha: 0.16),
         page: BookingFormPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.file_download_outlined,
         title: 'Unduh Berkas',
-        color: const Color(0xFFFFF7E6),
+        color: AppTheme.richBronze.withValues(alpha: 0.20),
         page: DownloadDocsPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.view_timeline_outlined,
         title: 'Jadwal Ruangan',
-        color: const Color(0xFFEAFBFF),
+        color: AppTheme.richBronze.withValues(alpha: 0.14),
         page: RoomSchedulePage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.notifications_active_outlined,
         title: 'Notifikasi',
-        color: const Color(0xFFFFF0F6),
+        color: AppTheme.richBronze.withValues(alpha: 0.18),
         page: NotificationCenterPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.location_city_outlined,
         title: 'SAPRAS Kampus',
-        color: const Color(0xFFF0F1FF),
+        color: AppTheme.richBronze.withValues(alpha: 0.22),
         page: SaprasFacilityPage(repository: repository),
       ),
     ];
@@ -272,6 +371,133 @@ class _SimlabMenu extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CampusInsights extends StatelessWidget {
+  const _CampusInsights();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Fasilitas Kampus Insights',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            _InsightTile(
+              icon: Icons.auto_awesome_outlined,
+              title: 'Standarisasi Ruang Praktikum',
+              subtitle:
+                  'Setiap ruang lab dikelompokkan berdasarkan fungsi, kapasitas, dan kesiapan alat agar proses belajar lebih presisi.',
+            ),
+            const SizedBox(height: 10),
+            _InsightTile(
+              icon: Icons.workspace_premium_outlined,
+              title: 'Modernisasi Sarana Prasarana',
+              subtitle:
+                  'Inventaris digital membantu kampus memantau kebutuhan perawatan, audit aset, dan pemanfaatan ruang secara berkala.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveUtilizationFeed extends StatelessWidget {
+  const _LiveUtilizationFeed();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Live Lab Utilization Feed',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            const _InsightTile(
+              icon: Icons.handyman_outlined,
+              title: 'Rawat alat setelah digunakan',
+              subtitle:
+                  'Matikan perangkat, rapikan kabel, dan laporkan anomali sekecil apa pun melalui form maintenance.',
+            ),
+            const SizedBox(height: 10),
+            const _InsightTile(
+              icon: Icons.trending_up_rounded,
+              title: 'Ruang paling aktif minggu ini',
+              subtitle:
+                  'Lab RPL dan Lab Jaringan menjadi ruang paling sering dipakai untuk praktikum dan penelitian mahasiswa.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InsightTile extends StatelessWidget {
+  const _InsightTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.richBronze.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.richBronze),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.muted,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -376,7 +602,9 @@ class _StockCalendar extends StatelessWidget {
       0,
       (sum, item) => sum + item.stokTersedia,
     );
-    final stockColor = totalAvailable > 0 ? Colors.green : Colors.red;
+    final stockColor = totalAvailable > 0
+        ? AppTheme.richBronze
+        : AppTheme.sepia;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -476,7 +704,9 @@ class _InventoryGrid extends StatelessWidget {
                   inventory.isAvailable
                       ? Icons.precision_manufacturing_outlined
                       : Icons.warning_amber_rounded,
-                  color: inventory.isAvailable ? Colors.green : Colors.red,
+                  color: inventory.isAvailable
+                      ? AppTheme.richBronze
+                      : AppTheme.sepia,
                 ),
                 const SizedBox(height: 10),
                 Text(

@@ -143,13 +143,13 @@ class _FacilityDetail extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: good ? const Color(0xFFE9F8EF) : const Color(0xFFFFEBEE),
+            color: AppTheme.richBronze.withValues(alpha: good ? 0.14 : 0.08),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
             good ? 'Baik' : 'Rusak',
             style: TextStyle(
-              color: good ? AppTheme.deepTeal : Colors.red,
+              color: good ? AppTheme.richBronze : AppTheme.sepia,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -350,9 +350,11 @@ class _CampusMap extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0xFFEFFAF6),
+            color: AppTheme.richBronze.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFCDE9DF)),
+            border: Border.all(
+              color: AppTheme.richBronze.withValues(alpha: 0.35),
+            ),
           ),
           child: GridView.builder(
             shrinkWrap: true,
@@ -507,7 +509,7 @@ class _ScoreBar extends StatelessWidget {
               value: score.score / 100,
               minHeight: 16,
               color: AppTheme.emerald,
-              backgroundColor: const Color(0xFFDDE8E4),
+              backgroundColor: AppTheme.richBronze.withValues(alpha: 0.16),
             ),
           ),
         ],

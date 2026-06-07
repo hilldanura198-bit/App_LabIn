@@ -108,7 +108,7 @@ class NotificationCenterPage extends StatelessWidget {
       logs.add(
         _NotificationLog(
           icon: Icons.warning_amber_rounded,
-          color: Colors.red,
+          color: AppTheme.sepia,
           title: 'Peringatan Stok Kritis',
           message:
               'Stok ${item.namaAlat} tersisa ${item.stokTersedia}. Segera koordinasikan dengan laboran.',

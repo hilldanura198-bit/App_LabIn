@@ -45,6 +45,7 @@ class AuthRepository {
     required String email,
     required String password,
     required XFile? ktmImage,
+    required String programStudi,
   }) async {
     final response = await _supabase.auth.signUp(
       email: email.trim(),
@@ -63,6 +64,7 @@ class AuthRepository {
       'id': userId,
       'nama': nama.trim(),
       'nim_nip': nim.trim(),
+      'program_studi': programStudi.trim(),
       'role': 'mahasiswa',
       'ktm_url': ktmUrl,
     });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -198,7 +199,7 @@ class _SwipeApprovalCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 22),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
-          color: Colors.green,
+          color: AppTheme.richBronze,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.verified_rounded, color: Colors.white),

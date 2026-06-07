@@ -44,7 +44,7 @@ class StatusTimeline extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: done
                               ? AppTheme.emerald
-                              : const Color(0xFFDDE8E4),
+                              : AppTheme.richBronze.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                         ),
                         child: done
@@ -61,7 +61,7 @@ class StatusTimeline extends StatelessWidget {
                           height: 30,
                           color: done
                               ? AppTheme.emerald
-                              : const Color(0xFFDDE8E4),
+                              : AppTheme.richBronze.withValues(alpha: 0.18),
                         ),
                     ],
                   ),

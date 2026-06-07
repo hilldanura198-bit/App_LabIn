@@ -46,7 +46,9 @@ class BusyMeter extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: hour.count / maxCount,
                             minHeight: 14,
-                            backgroundColor: const Color(0xFFDDE8E4),
+                            backgroundColor: AppTheme.richBronze.withValues(
+                              alpha: 0.16,
+                            ),
                             color: AppTheme.cleanCyan,
                           ),
                         ),

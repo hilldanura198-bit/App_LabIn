@@ -156,7 +156,7 @@ class DashboardRepository {
         );
   }
 
-  Future<void> createMultiStepBooking({
+  Future<LabBooking> createMultiStepBooking({
     required String labId,
     required String noWhatsapp,
     required DateTime tanggalPinjam,
@@ -184,7 +184,9 @@ class DashboardRepository {
               .toIso8601String(),
           'desk_no': deskNo,
         })
-        .select('id')
+        .select(
+          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url',
+        )
         .single();
 
     if (items.isNotEmpty) {
@@ -203,6 +205,7 @@ class DashboardRepository {
                 .toList(),
           );
     }
+    return LabBooking.fromMap(booking);
   }
 
   Stream<List<LabBooking>> watchApprovedDocuments() {

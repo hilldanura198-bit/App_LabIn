@@ -9,6 +9,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   nama text not null,
   nim_nip text not null unique,
+  program_studi text,
   role text not null default 'mahasiswa',
   ktm_url text,
   avatar_url text,
@@ -127,6 +128,7 @@ create index if not exists satisfaction_surveys_periode_idx on public.satisfacti
 
 alter table public.profiles
 add column if not exists no_whatsapp text,
+add column if not exists program_studi text,
 add column if not exists avatar_url text,
 add column if not exists biometric_enabled boolean not null default false,
 add column if not exists realtime_notifications_enabled boolean not null default true,

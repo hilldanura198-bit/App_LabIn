@@ -27,6 +27,7 @@ class AuthRegisterMahasiswaRequested extends AuthEvent {
     required this.email,
     required this.password,
     required this.ktmImage,
+    required this.programStudi,
   });
 
   final String nama;
@@ -34,6 +35,7 @@ class AuthRegisterMahasiswaRequested extends AuthEvent {
   final String email;
   final String password;
   final XFile? ktmImage;
+  final String programStudi;
 }
 
 class AuthBiometricLoginRequested extends AuthEvent {
@@ -137,6 +139,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
         ktmImage: event.ktmImage,
+        programStudi: event.programStudi,
       );
       emit(Authenticated(userId: userId, role: UserRole.mahasiswa));
     } on Object catch (error) {

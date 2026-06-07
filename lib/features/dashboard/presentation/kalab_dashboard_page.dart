@@ -265,7 +265,10 @@ class _InventoryAlert extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppTheme.richBronze,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -286,9 +289,9 @@ class _InventoryAlert extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFEBEE),
+                    color: AppTheme.richBronze.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFFFCDD2)),
+                    border: Border.all(color: AppTheme.richBronze),
                   ),
                   child: Row(
                     children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -16,6 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _nimController = TextEditingController();
+  final _programStudiController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
@@ -26,6 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _nameController.dispose();
     _nimController.dispose();
+    _programStudiController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -98,6 +101,18 @@ class _RegisterPageState extends State<RegisterPage> {
                                   prefixIcon: Icon(Icons.numbers_rounded),
                                 ),
                                 validator: _required('NIM wajib diisi'),
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _programStudiController,
+                                textInputAction: TextInputAction.next,
+                                decoration: const InputDecoration(
+                                  labelText: 'Program Studi',
+                                  prefixIcon: Icon(Icons.school_outlined),
+                                ),
+                                validator: _required(
+                                  'Program studi wajib diisi',
+                                ),
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
@@ -211,9 +226,14 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _ktmImage = image;
     });
+    await _recognizeKtmText(image);
   }
 
   Future<void> _scanKtmText() async {
+    if (_ktmImage != null) {
+      await _recognizeKtmText(_ktmImage!);
+      return;
+    }
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -225,6 +245,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _nameController.text = 'Mahasiswa LabIN';
       _nimController.text = '230401001';
+      _programStudiController.text = 'Teknik Informatika';
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Data KTM berhasil dipindai otomatis.')),
@@ -242,8 +263,68 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _emailController.text,
         password: _passwordController.text,
         ktmImage: _ktmImage,
+        programStudi: _programStudiController.text,
       ),
     );
+  }
+
+  Future<void> _recognizeKtmText(XFile image) async {
+    if (image.path.isEmpty) {
+      return;
+    }
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final result = await recognizer.processImage(
+        InputImage.fromFilePath(image.path),
+      );
+      final text = result.text;
+      final nimMatch = RegExp(r'\b\d{8,12}\b').firstMatch(text);
+      final lines = text
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.length >= 3)
+          .toList();
+      final nameLine = lines.firstWhere(
+        (line) =>
+            !RegExp(r'\d').hasMatch(line) &&
+            !line.toLowerCase().contains('kartu') &&
+            !line.toLowerCase().contains('mahasiswa'),
+        orElse: () => '',
+      );
+      final programLine = lines.firstWhere(
+        (line) =>
+            line.toLowerCase().contains('informatika') ||
+            line.toLowerCase().contains('sistem') ||
+            line.toLowerCase().contains('teknik'),
+        orElse: () => '',
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        if (nameLine.isNotEmpty) _nameController.text = nameLine;
+        if (nimMatch != null) _nimController.text = nimMatch.group(0)!;
+        if (programLine.isNotEmpty) {
+          _programStudiController.text = programLine;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('OCR KTM/KTP selesai dan form terisi otomatis.'),
+        ),
+      );
+    } on Object catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'OCR belum menemukan teks jelas. Isi manual bila perlu.',
+          ),
+        ),
+      );
+    } finally {
+      await recognizer.close();
+    }
   }
 }
 
@@ -277,7 +358,7 @@ class _KtmScannerDialogState extends State<_KtmScannerDialog> {
             Container(
               height: 150,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFFAF6),
+                color: AppTheme.richBronze.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppTheme.cleanCyan, width: 2),
               ),
@@ -328,9 +409,11 @@ class _KtmPickerCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEFFAF6),
+          color: AppTheme.richBronze.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFCDE9DF)),
+          border: Border.all(
+            color: AppTheme.richBronze.withValues(alpha: 0.45),
+          ),
         ),
         child: Row(
           children: [

@@ -108,17 +108,21 @@ class _ScheduleCell extends StatelessWidget {
       margin: const EdgeInsets.all(4),
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        color: borrowed ? const Color(0xFFFFF4CE) : const Color(0xFFE9F8EF),
+        color: borrowed
+            ? AppTheme.richBronze.withValues(alpha: 0.24)
+            : AppTheme.richBronze.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: borrowed ? const Color(0xFFE6B800) : AppTheme.emerald,
+          color: borrowed
+              ? AppTheme.richBronze
+              : AppTheme.richBronze.withValues(alpha: 0.55),
         ),
       ),
       child: Text(
         borrowed ? 'Dipinjam' : 'Tersedia',
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: borrowed ? const Color(0xFF8A6D00) : AppTheme.deepTeal,
+          color: borrowed ? AppTheme.espresso : AppTheme.sepia,
           fontWeight: FontWeight.w800,
         ),
       ),

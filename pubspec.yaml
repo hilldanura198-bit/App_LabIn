@@ -45,6 +45,8 @@ dependencies:
   signature: ^6.3.0
   intl: ^0.20.2
   url_launcher: ^6.3.2
+  google_nav_bar: ^5.0.7
+  google_mlkit_text_recognition: ^0.15.1
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'booking_success_page.dart';
 
 class BookingFormPage extends StatefulWidget {
   const BookingFormPage({super.key, required this.repository});
@@ -202,7 +203,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
       return;
     }
     try {
-      await widget.repository.createMultiStepBooking(
+      final booking = await widget.repository.createMultiStepBooking(
         labId: _selectedLabId!,
         noWhatsapp: _waController.text,
         tanggalPinjam: DateTime.now().add(const Duration(days: 1)),
@@ -215,7 +216,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pengajuan multi-step berhasil dikirim.')),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => BookingSuccessPage(booking: booking)),
+      );
     } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -283,15 +286,15 @@ class _VirtualTourDeskGrid extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           color: occupied
-                              ? const Color(0xFFFFF4CE)
+                              ? AppTheme.richBronze.withValues(alpha: 0.22)
                               : selected
                               ? AppTheme.cleanCyan
-                              : const Color(0xFFEFFAF6),
+                              : AppTheme.richBronze.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: selected
                                 ? AppTheme.deepTeal
-                                : const Color(0xFFCDE9DF),
+                                : AppTheme.richBronze.withValues(alpha: 0.40),
                           ),
                         ),
                         child: Column(

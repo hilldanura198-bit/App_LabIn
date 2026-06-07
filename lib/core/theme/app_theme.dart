@@ -4,12 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   const AppTheme._();
 
-  static const deepTeal = Color(0xFF00695C);
-  static const emerald = Color(0xFF00A86B);
-  static const cleanCyan = Color(0xFF00E5FF);
-  static const offWhite = Color(0xFFF7FAF8);
-  static const ink = Color(0xFF17201E);
-  static const muted = Color(0xFF6B7D78);
+  static const richBronze = Color(0xFFC5A059);
+  static const warmSand = Color(0xFFF9F6F0);
+  static const espresso = Color(0xFF2C2520);
+  static const sepia = Color(0xFF7A726A);
+  static const deepTeal = richBronze;
+  static const emerald = richBronze;
+  static const cleanCyan = richBronze;
+  static const offWhite = warmSand;
+  static const ink = espresso;
+  static const muted = sepia;
   static const midnightNavy = Color(0xFF121212);
   static const darkCharcoal = Color(0xFF1E1E1E);
 
@@ -20,7 +24,7 @@ class AppTheme {
       secondary: emerald,
       tertiary: cleanCyan,
       surface: Colors.white,
-      error: const Color(0xFFD94444),
+      error: const Color(0xFF8D6E63),
     );
 
     final textTheme = GoogleFonts.poppinsTextTheme().apply(
@@ -49,13 +53,14 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFE4ECE9)),
+          side: const BorderSide(color: Color(0xFFE8DFD2)),
         ),
+        shadowColor: const Color(0x332C2520),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: deepTeal,
-          foregroundColor: Colors.white,
+          foregroundColor: espresso,
           minimumSize: const Size.fromHeight(54),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -68,7 +73,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: emerald,
-          foregroundColor: Colors.white,
+          foregroundColor: espresso,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -82,7 +87,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: deepTeal,
           minimumSize: const Size.fromHeight(52),
-          side: const BorderSide(color: Color(0xFFB9D6CF)),
+          side: const BorderSide(color: richBronze),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -100,11 +105,11 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFD8E6E2)),
+          borderSide: const BorderSide(color: Color(0xFFE5D9C7)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFD8E6E2)),
+          borderSide: const BorderSide(color: Color(0xFFE5D9C7)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -112,7 +117,7 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFD94444)),
+          borderSide: const BorderSide(color: Color(0xFF8D6E63)),
         ),
         labelStyle: textTheme.bodyMedium?.copyWith(color: muted),
         hintStyle: textTheme.bodyMedium?.copyWith(color: muted),
@@ -137,7 +142,7 @@ class AppTheme {
       secondary: emerald,
       tertiary: cleanCyan,
       surface: darkCharcoal,
-      error: const Color(0xFFFF6B6B),
+      error: richBronze,
     );
 
     return ThemeData(

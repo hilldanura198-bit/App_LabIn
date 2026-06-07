@@ -89,7 +89,7 @@ class _CheckReservationPageState extends State<CheckReservationPage> {
                           return _StatusCard(
                             title: 'Gagal membaca reservasi',
                             subtitle: snapshot.error.toString(),
-                            color: Colors.red,
+                            color: AppTheme.sepia,
                           );
                         }
                         if (!snapshot.hasData) {
@@ -103,14 +103,14 @@ class _CheckReservationPageState extends State<CheckReservationPage> {
                             title: 'Reservasi tidak ditemukan',
                             subtitle:
                                 'Periksa kembali nomor PMJ yang dimasukkan.',
-                            color: Colors.orange,
+                            color: AppTheme.richBronze,
                           );
                         }
                         final booking = bookings.first;
                         return _StatusCard(
                           title: booking.reservationNo,
                           subtitle: 'Status saat ini: ${booking.status}',
-                          color: Colors.green,
+                          color: AppTheme.richBronze,
                         );
                       },
                     ),
