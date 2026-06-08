@@ -10,7 +10,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('LabIN'), findsWidgets);
-    expect(find.text('Manajemen Inventaris Terpadu'), findsOneWidget);
+    expect(find.text('SIMLAB Terpadu'), findsOneWidget);
 
     await tester.tap(find.text('Lanjut'));
     await tester.pumpAndSettle();

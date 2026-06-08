@@ -4,33 +4,92 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   const AppTheme._();
 
-  static const richBronze = Color(0xFFC5A059);
-  static const warmSand = Color(0xFFF9F6F0);
-  static const espresso = Color(0xFF2C2520);
-  static const sepia = Color(0xFF7A726A);
-  static const deepTeal = richBronze;
-  static const emerald = richBronze;
-  static const cleanCyan = richBronze;
-  static const offWhite = warmSand;
-  static const ink = espresso;
-  static const muted = sepia;
-  static const midnightNavy = Color(0xFF121212);
-  static const darkCharcoal = Color(0xFF1E1E1E);
+  static const electricBlue = Color(0xFF007AFF);
+  static const vibrantPurple = Color(0xFFAF52DE);
+  static const cyberInk = Color(0xFF101828);
+  static const coolMist = Color(0xFFF4F7FF);
+  static const slateMuted = Color(0xFF64748B);
+  static const deepSpace = Color(0xFF080B1A);
+  static const nightPanel = Color(0xFF111827);
+  static const richBronze = vibrantPurple;
+  static const warmSand = coolMist;
+  static const espresso = cyberInk;
+  static const sepia = slateMuted;
+  static const deepTeal = electricBlue;
+  static const emerald = vibrantPurple;
+  static const cleanCyan = electricBlue;
+  static const offWhite = coolMist;
+  static const ink = cyberInk;
+  static const muted = slateMuted;
+  static const midnightNavy = deepSpace;
+  static const darkCharcoal = nightPanel;
+
+  static const LinearGradient cyberGradient = LinearGradient(
+    colors: [electricBlue, vibrantPurple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static BoxDecoration cyberGradientButtonDecoration({
+    double borderRadius = 16,
+    bool enabled = true,
+  }) {
+    return BoxDecoration(
+      gradient: enabled
+          ? cyberGradient
+          : LinearGradient(
+              colors: [
+                slateMuted.withValues(alpha: 0.45),
+                slateMuted.withValues(alpha: 0.30),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+      borderRadius: BorderRadius.circular(borderRadius),
+      boxShadow: enabled
+          ? [
+              BoxShadow(
+                color: electricBlue.withValues(alpha: 0.28),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ]
+          : null,
+    );
+  }
+
+  static TextTheme _buildTextTheme({
+    required Color bodyColor,
+    required Color displayColor,
+  }) {
+    final base = GoogleFonts.poppinsTextTheme().apply(
+      bodyColor: bodyColor,
+      displayColor: displayColor,
+    );
+    return base.copyWith(
+      displayLarge: base.displayLarge?.copyWith(fontWeight: FontWeight.w700),
+      displayMedium: base.displayMedium?.copyWith(fontWeight: FontWeight.w700),
+      displaySmall: base.displaySmall?.copyWith(fontWeight: FontWeight.w700),
+      headlineLarge: base.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
+      headlineMedium: base.headlineMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      headlineSmall: base.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+      titleLarge: base.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+    );
+  }
 
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: deepTeal,
-      primary: deepTeal,
-      secondary: emerald,
-      tertiary: cleanCyan,
+      seedColor: electricBlue,
+      primary: electricBlue,
+      secondary: vibrantPurple,
+      tertiary: electricBlue,
       surface: Colors.white,
-      error: const Color(0xFF8D6E63),
+      error: const Color(0xFFEF4444),
     );
 
-    final textTheme = GoogleFonts.poppinsTextTheme().apply(
-      bodyColor: ink,
-      displayColor: ink,
-    );
+    final textTheme = _buildTextTheme(bodyColor: ink, displayColor: ink);
 
     return ThemeData(
       useMaterial3: true,
@@ -41,7 +100,7 @@ class AppTheme {
         backgroundColor: offWhite,
         foregroundColor: ink,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: ink,
           fontWeight: FontWeight.w700,
@@ -53,15 +112,18 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFE8DFD2)),
+          side: const BorderSide(color: Color(0xFFE0E7FF)),
         ),
-        shadowColor: const Color(0x332C2520),
+        shadowColor: const Color(0x33007AFF),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: deepTeal,
-          foregroundColor: espresso,
+          backgroundColor: electricBlue,
+          disabledBackgroundColor: slateMuted.withValues(alpha: 0.24),
+          foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.white70,
           minimumSize: const Size.fromHeight(54),
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -72,8 +134,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: emerald,
-          foregroundColor: espresso,
+          backgroundColor: vibrantPurple,
+          foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -85,9 +147,9 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: deepTeal,
+          foregroundColor: electricBlue,
           minimumSize: const Size.fromHeight(52),
-          side: const BorderSide(color: richBronze),
+          side: const BorderSide(color: electricBlue),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -105,19 +167,19 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE5D9C7)),
+          borderSide: const BorderSide(color: Color(0xFFE0E7FF)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE5D9C7)),
+          borderSide: const BorderSide(color: Color(0xFFE0E7FF)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: cleanCyan, width: 1.5),
+          borderSide: const BorderSide(color: electricBlue, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF8D6E63)),
+          borderSide: const BorderSide(color: Color(0xFFEF4444)),
         ),
         labelStyle: textTheme.bodyMedium?.copyWith(color: muted),
         hintStyle: textTheme.bodyMedium?.copyWith(color: muted),
@@ -130,19 +192,19 @@ class AppTheme {
   }
 
   static ThemeData get dark {
-    final textTheme = GoogleFonts.poppinsTextTheme().apply(
+    final textTheme = _buildTextTheme(
       bodyColor: Colors.white,
       displayColor: Colors.white,
     );
 
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: cleanCyan,
+      seedColor: electricBlue,
       brightness: Brightness.dark,
-      primary: cleanCyan,
-      secondary: emerald,
-      tertiary: cleanCyan,
+      primary: electricBlue,
+      secondary: vibrantPurple,
+      tertiary: electricBlue,
       surface: darkCharcoal,
-      error: richBronze,
+      error: const Color(0xFFF87171),
     );
 
     return ThemeData(
@@ -155,7 +217,7 @@ class AppTheme {
         backgroundColor: midnightNavy,
         foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: Colors.white,
           fontWeight: FontWeight.w700,
@@ -172,9 +234,12 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: cleanCyan,
-          foregroundColor: midnightNavy,
+          backgroundColor: electricBlue,
+          disabledBackgroundColor: slateMuted.withValues(alpha: 0.24),
+          foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.white70,
           minimumSize: const Size.fromHeight(54),
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -185,8 +250,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: cleanCyan,
-          foregroundColor: midnightNavy,
+          backgroundColor: vibrantPurple,
+          foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -198,9 +263,9 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: cleanCyan,
+          foregroundColor: electricBlue,
           minimumSize: const Size.fromHeight(52),
-          side: const BorderSide(color: cleanCyan),
+          side: const BorderSide(color: electricBlue),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -223,7 +288,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: cleanCyan, width: 1.5),
+          borderSide: const BorderSide(color: electricBlue, width: 1.5),
         ),
         labelStyle: textTheme.bodyMedium?.copyWith(
           color: const Color(0xFFB7C7C7),
@@ -235,6 +300,45 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+}
+
+class CyberGradientButton extends StatelessWidget {
+  const CyberGradientButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.height = 54,
+    this.borderRadius = 16,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final double height;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    return DecoratedBox(
+      decoration: AppTheme.cyberGradientButtonDecoration(
+        borderRadius: borderRadius,
+        enabled: enabled,
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          disabledBackgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          minimumSize: Size.fromHeight(height),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        ),
+        child: child,
       ),
     );
   }
