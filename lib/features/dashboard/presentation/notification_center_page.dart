@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/glass_app_bar.dart';
 
 class NotificationCenterPage extends StatelessWidget {
   const NotificationCenterPage({super.key, required this.repository});
@@ -12,7 +13,7 @@ class NotificationCenterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Smart Notification Center')),
+      appBar: const GlassAppBar(title: 'Smart Notification Center'),
       body: SafeArea(
         child: StreamBuilder<List<LabBooking>>(
           stream: repository.watchCurrentUserBookings(),

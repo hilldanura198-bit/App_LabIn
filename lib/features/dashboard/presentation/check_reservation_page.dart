@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/glass_app_bar.dart';
 
 class CheckReservationPage extends StatefulWidget {
   const CheckReservationPage({super.key, required this.repository});
@@ -25,7 +26,7 @@ class _CheckReservationPageState extends State<CheckReservationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cek Status Reservasi')),
+      appBar: const GlassAppBar(title: 'Cek Status Reservasi'),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

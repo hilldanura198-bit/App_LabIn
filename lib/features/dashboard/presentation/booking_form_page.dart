@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'booking_success_page.dart';
+import 'widgets/glass_app_bar.dart';
 
 class BookingFormPage extends StatefulWidget {
   const BookingFormPage({super.key, required this.repository});
@@ -61,7 +62,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Formulir Peminjaman')),
+      appBar: const GlassAppBar(title: 'Formulir Peminjaman'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(

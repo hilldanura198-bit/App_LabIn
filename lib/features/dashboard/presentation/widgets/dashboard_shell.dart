@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/bloc/auth_bloc.dart';
+import 'glass_app_bar.dart';
 
 class DashboardShell extends StatelessWidget {
   const DashboardShell({
@@ -21,8 +22,10 @@ class DashboardShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('LabIN'),
+      appBar: GlassAppBar(
+        title: 'LabIN',
+        showProfileAvatar: true,
+        onProfilePressed: () {},
         actions: [
           IconButton(
             tooltip: 'Keluar',

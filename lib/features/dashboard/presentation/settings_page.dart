@@ -7,6 +7,7 @@ import '../../../core/theme/theme_cubit.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/glass_app_bar.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, required this.repository});
@@ -72,7 +73,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan Aplikasi')),
+      appBar: const GlassAppBar(title: 'Pengaturan Aplikasi'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(

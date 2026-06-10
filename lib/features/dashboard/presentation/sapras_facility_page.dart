@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/glass_app_bar.dart';
 
 class SaprasFacilityPage extends StatelessWidget {
   const SaprasFacilityPage({super.key, required this.repository});
@@ -14,9 +15,9 @@ class SaprasFacilityPage extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('SAPRAS Kampus'),
-          bottom: const TabBar(
+        appBar: const GlassAppBar(
+          title: 'SAPRAS Kampus',
+          bottom: TabBar(
             isScrollable: true,
             tabs: [
               Tab(text: 'Sarana'),

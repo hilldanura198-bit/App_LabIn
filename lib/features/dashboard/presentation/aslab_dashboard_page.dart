@@ -8,6 +8,7 @@ import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'settings_page.dart';
+import 'widgets/glass_app_bar.dart';
 import 'widgets/scan_page.dart';
 
 class AslabDashboardPage extends StatelessWidget {
@@ -43,8 +44,10 @@ class _AslabDashboardView extends StatelessWidget {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('LabIN Aslab'),
+        appBar: GlassAppBar(
+          title: 'LabIN Aslab',
+          showProfileAvatar: true,
+          onProfilePressed: () => _openSettings(context),
           actions: [
             IconButton(
               tooltip: 'Scan QR',

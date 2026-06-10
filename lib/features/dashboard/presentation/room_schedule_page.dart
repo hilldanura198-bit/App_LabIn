@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/glass_app_bar.dart';
 
 class RoomSchedulePage extends StatelessWidget {
   const RoomSchedulePage({super.key, required this.repository});
@@ -14,7 +15,7 @@ class RoomSchedulePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Jadwal Pemakaian Ruangan')),
+      appBar: const GlassAppBar(title: 'Jadwal Pemakaian Ruangan'),
       body: SafeArea(
         child: StreamBuilder(
           stream: repository.watchRoomSchedule(),

@@ -21,6 +21,7 @@ import 'room_schedule_page.dart';
 import 'sapras_facility_page.dart';
 import 'settings_page.dart';
 import 'widgets/busy_meter.dart';
+import 'widgets/glass_app_bar.dart';
 import 'widgets/status_timeline.dart';
 
 class MahasiswaDashboardPage extends StatelessWidget {
@@ -64,15 +65,15 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            [
-              'Beranda',
-              'Cek Reservasi',
-              'Notifikasi',
-              'Pengaturan',
-            ][_selectedIndex],
-          ),
+        appBar: GlassAppBar(
+          title: [
+            'Beranda',
+            'Cek Reservasi',
+            'Notifikasi',
+            'Pengaturan',
+          ][_selectedIndex],
+          showProfileAvatar: true,
+          onProfilePressed: () => _openSettings(context),
           actions: [
             BlocBuilder<DashboardBloc, DashboardState>(
               builder: (context, state) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/dashboard_repository.dart';
+import 'widgets/glass_app_bar.dart';
 
 class DownloadDocsPage extends StatelessWidget {
   const DownloadDocsPage({super.key, required this.repository});
@@ -11,7 +12,7 @@ class DownloadDocsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Unduh Dokumen Berkas')),
+      appBar: const GlassAppBar(title: 'Unduh Dokumen Berkas'),
       body: SafeArea(
         child: StreamBuilder(
           stream: repository.watchApprovedDocuments(),
