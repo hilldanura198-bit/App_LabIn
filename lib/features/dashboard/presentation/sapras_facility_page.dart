@@ -51,55 +51,91 @@ class _FacilityList extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<List<LabInventory>>(
       stream: repository.watchInventories(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text(snapshot.error.toString()));
+      builder: (context, inventorySnapshot) {
+        if (inventorySnapshot.hasError) {
+          return Center(child: Text(inventorySnapshot.error.toString()));
         }
-        if (!snapshot.hasData) {
+        if (!inventorySnapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        final items = snapshot.data!;
-        return ListView.separated(
-          padding: const EdgeInsets.all(18),
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final item = items[index];
-            final code = _assetCode(index);
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 620;
-                    final detail = _FacilityDetail(item: item, code: code);
-                    final imageButton = IconButton.filledTonal(
-                      tooltip: 'Gambar',
-                      onPressed: () => _showFacilityImage(context, item),
-                      icon: const Icon(Icons.image_outlined),
-                    );
-                    if (compact) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          detail,
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: imageButton,
-                          ),
-                        ],
-                      );
-                    }
-                    return Row(
-                      children: [
-                        Expanded(child: detail),
-                        imageButton,
-                      ],
-                    );
-                  },
-                ),
-              ),
+        return StreamBuilder<List<LabBooking>>(
+          stream: repository.watchRoomSchedule(),
+          builder: (context, bookingSnapshot) {
+            final items = inventorySnapshot.data!;
+            final bookings = bookingSnapshot.data ?? const <LabBooking>[];
+            return ListView.separated(
+              padding: const EdgeInsets.all(18),
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final code = _assetCode(index);
+                final booking = _latestBookingForLab(bookings, item.labId);
+                final odd = index.isOdd;
+                return Container(
+                  decoration: BoxDecoration(
+                    color: odd
+                        ? const Color(0xFF111827)
+                        : const Color(0xFF0F1B33),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: odd
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : AppTheme.electricBlue.withValues(alpha: 0.22),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compact = constraints.maxWidth < 620;
+                        final image = _FacilityImage(
+                          imageUrl: _facilityImageUrl(item.namaAlat),
+                          height: compact ? 150 : 112,
+                        );
+                        final detail = _FacilityDetail(
+                          item: item,
+                          code: code,
+                          booking: booking,
+                        );
+                        if (compact) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              image,
+                              const SizedBox(height: 14),
+                              detail,
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: _DetailButton(
+                                  onPressed: () => _showFacilityImage(
+                                    context,
+                                    item,
+                                    booking,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            SizedBox(width: 150, child: image),
+                            const SizedBox(width: 14),
+                            Expanded(child: detail),
+                            const SizedBox(width: 12),
+                            _DetailButton(
+                              onPressed: () =>
+                                  _showFacilityImage(context, item, booking),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
             );
           },
         );
@@ -111,53 +147,119 @@ class _FacilityList extends StatelessWidget {
     return '1.B.18.19.A01.${(index + 15).toString().padLeft(3, '0')}';
   }
 
-  void _showFacilityImage(BuildContext context, LabInventory item) {
+  LabBooking? _latestBookingForLab(List<LabBooking> bookings, String labId) {
+    final activeBookings =
+        bookings
+            .where(
+              (booking) =>
+                  booking.labId == labId &&
+                  booking.status != 'returned' &&
+                  booking.status != 'rejected',
+            )
+            .toList()
+          ..sort((a, b) => b.tanggalPinjam.compareTo(a.tanggalPinjam));
+    return activeBookings.isEmpty ? null : activeBookings.first;
+  }
+
+  void _showFacilityImage(
+    BuildContext context,
+    LabInventory item,
+    LabBooking? booking,
+  ) {
     showDialog<void>(
       context: context,
       builder: (_) => _ImageDialog(
         title: item.namaAlat,
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
+        imageUrl: _facilityImageUrl(item.namaAlat),
+        booking: booking,
         icon: Icons.precision_manufacturing_outlined,
       ),
     );
   }
+
+  String _facilityImageUrl(String name) {
+    final lowerName = name.toLowerCase();
+    if (lowerName.contains('proyektor')) {
+      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('ac') || lowerName.contains('pendingin')) {
+      return 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('komputer') || lowerName.contains('pc')) {
+      return 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('mikro') || lowerName.contains('alat')) {
+      return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=900&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=900&q=80';
+  }
 }
 
 class _FacilityDetail extends StatelessWidget {
-  const _FacilityDetail({required this.item, required this.code});
+  const _FacilityDetail({
+    required this.item,
+    required this.code,
+    required this.booking,
+  });
 
   final LabInventory item;
   final String code;
+  final LabBooking? booking;
 
   @override
   Widget build(BuildContext context) {
     final good = item.kondisi == 'bagus';
-    return Wrap(
-      spacing: 14,
-      runSpacing: 10,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _DataPill(label: 'Kode Aset', value: code),
-        _DataPill(label: 'Nama Sarana', value: item.namaAlat),
-        _DataPill(label: 'Nama Ruangan', value: _roomName(item.labId)),
-        const _DataPill(label: 'Gedung', value: 'Gedung Teknologi'),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: AppTheme.richBronze.withValues(alpha: good ? 0.14 : 0.08),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            good ? 'Baik' : 'Rusak',
-            style: TextStyle(
-              color: good ? AppTheme.richBronze : AppTheme.sepia,
-              fontWeight: FontWeight.w900,
+        Wrap(
+          spacing: 14,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _DataPill(label: 'Kode Aset', value: code),
+            _DataPill(label: 'Nama Sarana', value: item.namaAlat),
+            _DataPill(label: 'Nama Ruangan', value: _roomName(item.labId)),
+            const _DataPill(label: 'Gedung', value: 'Gedung Teknologi'),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color:
+                    (good ? const Color(0xFF22F55E) : const Color(0xFFFF4D6D))
+                        .withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: good
+                      ? const Color(0xFF22F55E)
+                      : const Color(0xFFFF4D6D),
+                ),
+              ),
+              child: Text(
+                good ? 'Baik' : 'Rusak',
+                style: TextStyle(
+                  color: good
+                      ? const Color(0xFF22F55E)
+                      : const Color(0xFFFF4D6D),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
-          ),
+            _DataPill(
+              label: 'Jumlah Stok',
+              value: '${item.stokTersedia}/${item.totalStok}',
+            ),
+          ],
         ),
-        _DataPill(
-          label: 'Jumlah Stok',
-          value: '${item.stokTersedia}/${item.totalStok}',
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _UsageStatusChip(status: booking?.status ?? 'available'),
+            _UsageScheduleChip(booking: booking),
+          ],
         ),
       ],
     );
@@ -186,21 +288,138 @@ class _DataPill extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.68),
+            ),
           ),
           Text(
             value,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+class _FacilityImage extends StatelessWidget {
+  const _FacilityImage({required this.imageUrl, required this.height});
+
+  final String imageUrl;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.network(
+        imageUrl,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: height,
+            decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
+            child: const Icon(
+              Icons.image_not_supported_outlined,
+              color: Colors.white,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DetailButton extends StatelessWidget {
+  const _DetailButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.open_in_full_rounded),
+      label: const Text('Detail'),
+    );
+  }
+}
+
+class _UsageStatusChip extends StatelessWidget {
+  const _UsageStatusChip({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _statusColor(status);
+    return InputChip(
+      onPressed: () {},
+      avatar: Icon(_statusIcon(status), color: color, size: 18),
+      label: Text(_statusLabel(status)),
+      labelStyle: TextStyle(color: color, fontWeight: FontWeight.w900),
+      backgroundColor: color.withValues(alpha: 0.14),
+      side: BorderSide(color: color.withValues(alpha: 0.70)),
+    );
+  }
+}
+
+class _UsageScheduleChip extends StatelessWidget {
+  const _UsageScheduleChip({required this.booking});
+
+  final LabBooking? booking;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = booking == null
+        ? 'Jadwal penggunaan: tersedia'
+        : 'Jadwal penggunaan: ${_twoDigits(booking!.tanggalPinjam.hour)}:${_twoDigits(booking!.tanggalPinjam.minute)}';
+    return Chip(
+      avatar: const Icon(Icons.event_available_outlined, size: 18),
+      label: Text(label),
+      labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+      backgroundColor: Colors.white.withValues(alpha: 0.10),
+      side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+    );
+  }
+}
+
+Color _statusColor(String status) {
+  return switch (status) {
+    'approved_aslab' || 'approved_kalab' || 'active' => const Color(0xFF22F55E),
+    'pending' => const Color(0xFFFFB020),
+    'rejected' => const Color(0xFFFF4D6D),
+    _ => AppTheme.electricBlue,
+  };
+}
+
+IconData _statusIcon(String status) {
+  return switch (status) {
+    'approved_aslab' || 'approved_kalab' || 'active' => Icons.verified_rounded,
+    'pending' => Icons.pending_actions_rounded,
+    'rejected' => Icons.cancel_rounded,
+    _ => Icons.check_circle_outline_rounded,
+  };
+}
+
+String _statusLabel(String status) {
+  return switch (status) {
+    'approved_aslab' || 'approved_kalab' => 'Disetujui',
+    'active' => 'Sedang Dipakai',
+    'pending' => 'Pending',
+    'rejected' => 'Ditolak',
+    _ => 'Tersedia',
+  };
+}
+
+String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
 class _InfrastructureList extends StatelessWidget {
   const _InfrastructureList({required this.repository});
@@ -245,6 +464,8 @@ class _InfrastructureList extends StatelessWidget {
                 builder: (_) => _ImageDialog(
                   title: room.name,
                   subtitle: '${room.location} - Status ${room.status}',
+                  imageUrl: _roomImageUrl(room.name),
+                  booking: null,
                   icon: Icons.apartment_rounded,
                 ),
               ),
@@ -255,12 +476,31 @@ class _InfrastructureList extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.meeting_room_outlined,
-                        color: AppTheme.deepTeal,
-                        size: 34,
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.network(
+                            _roomImageUrl(room.name),
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.cyberGradient,
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.meeting_room_outlined,
+                                    color: Colors.white,
+                                    size: 34,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 12),
                       Text(
                         room.name,
                         style: Theme.of(context).textTheme.titleMedium
@@ -281,6 +521,23 @@ class _InfrastructureList extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _roomImageUrl(String name) {
+    final lowerName = name.toLowerCase();
+    if (lowerName.contains('rektor')) {
+      return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('convention')) {
+      return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('gudang')) {
+      return 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('area')) {
+      return 'https://images.unsplash.com/photo-1497366412874-3415097a27e7?auto=format&fit=crop&w=900&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1581092160607-ee22731c8f4e?auto=format&fit=crop&w=900&q=80';
   }
 }
 
@@ -523,11 +780,15 @@ class _ImageDialog extends StatelessWidget {
   const _ImageDialog({
     required this.title,
     required this.subtitle,
+    required this.imageUrl,
+    required this.booking,
     required this.icon,
   });
 
   final String title;
   final String subtitle;
+  final String imageUrl;
+  final LabBooking? booking;
   final IconData icon;
 
   @override
@@ -542,15 +803,22 @@ class _ImageDialog extends StatelessWidget {
             Container(
               height: 220,
               width: double.infinity,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
-                  colors: [AppTheme.deepTeal, AppTheme.emerald],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
               ),
-              child: Icon(icon, size: 88, color: Colors.white),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.cyberGradient,
+                    ),
+                    child: Icon(icon, size: 88, color: Colors.white),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -567,6 +835,16 @@ class _ImageDialog extends StatelessWidget {
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _UsageStatusChip(status: booking?.status ?? 'available'),
+                _UsageScheduleChip(booking: booking),
+              ],
             ),
             const SizedBox(height: 16),
             FilledButton(
