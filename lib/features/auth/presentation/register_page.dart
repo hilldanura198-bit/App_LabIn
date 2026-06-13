@@ -1,9 +1,13 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/validation.dart';
 import '../bloc/auth_bloc.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -23,6 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _picker = ImagePicker();
   XFile? _ktmImage;
   bool _obscurePassword = true;
+  String? _ktmQualityWarning;
 
   @override
   void dispose() {
@@ -82,43 +87,71 @@ class _RegisterPageState extends State<RegisterPage> {
                                     ?.copyWith(color: AppTheme.muted),
                               ),
                               const SizedBox(height: 22),
+                              if (_ktmQualityWarning != null) ...[
+                                _KtmWarningBanner(message: _ktmQualityWarning!),
+                                const SizedBox(height: 12),
+                              ],
                               TextFormField(
                                 controller: _nameController,
                                 textInputAction: TextInputAction.next,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 decoration: const InputDecoration(
                                   labelText: 'Nama lengkap',
                                   prefixIcon: Icon(Icons.badge_outlined),
                                 ),
-                                validator: _required('Nama wajib diisi'),
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.trim().length < 3) {
+                                    return 'Nama wajib diisi minimal 3 karakter';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
                                 controller: _nimController,
                                 keyboardType: TextInputType.number,
                                 textInputAction: TextInputAction.next,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 decoration: const InputDecoration(
                                   labelText: 'NIM',
                                   prefixIcon: Icon(Icons.numbers_rounded),
                                 ),
-                                validator: _required('NIM wajib diisi'),
+                                validator: (value) {
+                                  if (value == null ||
+                                      !AppValidation.isValidNim(value)) {
+                                    return 'NIM harus 8-15 digit angka';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
                                 controller: _programStudiController,
                                 textInputAction: TextInputAction.next,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 decoration: const InputDecoration(
                                   labelText: 'Program Studi',
                                   prefixIcon: Icon(Icons.school_outlined),
                                 ),
-                                validator: _required(
-                                  'Program studi wajib diisi',
-                                ),
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.trim().length < 3) {
+                                    return 'Program studi wajib diisi';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.next,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 decoration: const InputDecoration(
                                   labelText: 'Email',
                                   prefixIcon: Icon(Icons.mail_outline),
@@ -127,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Email wajib diisi';
                                   }
-                                  if (!value.contains('@')) {
+                                  if (!AppValidation.isValidEmail(value)) {
                                     return 'Format email belum valid';
                                   }
                                   return null;
@@ -137,6 +170,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 decoration: InputDecoration(
                                   labelText: 'Password',
                                   prefixIcon: const Icon(Icons.lock_outline),
@@ -163,6 +198,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               const SizedBox(height: 16),
                               _KtmPickerCard(
                                 fileName: _ktmImage?.name,
+                                qualityWarning: _ktmQualityWarning,
                                 onPick: _pickKtmImage,
                               ),
                               const SizedBox(height: 12),
@@ -206,50 +242,69 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  FormFieldValidator<String> _required(String message) {
-    return (value) {
-      if (value == null || value.trim().isEmpty) {
-        return message;
-      }
-      return null;
-    };
-  }
-
   Future<void> _pickKtmImage() async {
+    final messenger = ScaffoldMessenger.of(context);
     final image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 82,
+      source: ImageSource.camera,
+      imageQuality: 92,
+      maxWidth: 1920,
     );
     if (image == null) {
       return;
     }
+    final qualityWarning = await _assessKtmQuality(image);
     setState(() {
       _ktmImage = image;
+      _ktmQualityWarning = qualityWarning;
     });
+    if (qualityWarning != null) {
+      messenger.showMaterialBanner(
+        MaterialBanner(
+          content: Text(qualityWarning),
+          backgroundColor: AppTheme.richBronze.withValues(alpha: 0.18),
+          leading: const Icon(Icons.warning_amber_rounded),
+          actions: [
+            TextButton(
+              onPressed: () {
+                messenger.hideCurrentMaterialBanner();
+              },
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     await _recognizeKtmText(image);
   }
 
   Future<void> _scanKtmText() async {
-    if (_ktmImage != null) {
-      await _recognizeKtmText(_ktmImage!);
+    if (_ktmImage == null) {
+      await _pickKtmImage();
       return;
     }
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const _KtmScannerDialog(),
-    );
-    if (!mounted) {
+    final messenger = ScaffoldMessenger.of(context);
+    final warning = await _assessKtmQuality(_ktmImage!);
+    setState(() => _ktmQualityWarning = warning);
+    if (warning != null) {
+      messenger.showMaterialBanner(
+        MaterialBanner(
+          content: Text(warning),
+          backgroundColor: AppTheme.richBronze.withValues(alpha: 0.18),
+          leading: const Icon(Icons.warning_amber_rounded),
+          actions: [
+            TextButton(
+              onPressed: () {
+                messenger.hideCurrentMaterialBanner();
+              },
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
       return;
     }
-    setState(() {
-      _nameController.text = 'Mahasiswa LabIN';
-      _nimController.text = '230401001';
-      _programStudiController.text = 'Teknik Informatika';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data KTM berhasil dipindai otomatis.')),
-    );
+    await _recognizeKtmText(_ktmImage!);
   }
 
   void _submit() {
@@ -272,6 +327,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (image.path.isEmpty) {
       return;
     }
+    final messenger = ScaffoldMessenger.of(context);
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
     try {
       final result = await recognizer.processImage(
@@ -298,27 +354,55 @@ class _RegisterPageState extends State<RegisterPage> {
             line.toLowerCase().contains('teknik'),
         orElse: () => '',
       );
+      final extractedName = _normalizeCandidate(nameLine);
+      final extractedNim = nimMatch?.group(0)?.trim();
       if (!mounted) {
         return;
       }
+      final didExtractSomething =
+          extractedName.isNotEmpty || extractedNim != null;
       setState(() {
-        if (nameLine.isNotEmpty) _nameController.text = nameLine;
-        if (nimMatch != null) _nimController.text = nimMatch.group(0)!;
+        if (extractedName.isNotEmpty) _nameController.text = extractedName;
+        if (extractedNim != null) _nimController.text = extractedNim;
         if (programLine.isNotEmpty) {
           _programStudiController.text = programLine;
         }
+        _ktmQualityWarning = didExtractSomething
+            ? null
+            : 'Foto belum sesuai atau kurang jelas!';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!didExtractSomething) {
+        messenger.showMaterialBanner(
+          MaterialBanner(
+            content: const Text('Foto belum sesuai atau kurang jelas!'),
+            backgroundColor: AppTheme.richBronze.withValues(alpha: 0.18),
+            leading: const Icon(Icons.warning_amber_rounded),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  messenger.hideCurrentMaterialBanner();
+                },
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('OCR KTM/KTP selesai dan form terisi otomatis.'),
         ),
       );
     } on Object catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      setState(
+        () => _ktmQualityWarning = 'Foto belum sesuai atau kurang jelas!',
+      );
+      messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'OCR belum menemukan teks jelas. Isi manual bila perlu.',
+            'Foto belum sesuai atau kurang jelas! OCR belum menemukan teks jelas.',
           ),
         ),
       );
@@ -326,79 +410,122 @@ class _RegisterPageState extends State<RegisterPage> {
       await recognizer.close();
     }
   }
-}
 
-class _KtmScannerDialog extends StatefulWidget {
-  const _KtmScannerDialog();
-
-  @override
-  State<_KtmScannerDialog> createState() => _KtmScannerDialogState();
-}
-
-class _KtmScannerDialogState extends State<_KtmScannerDialog> {
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        Navigator.of(context).pop();
+  Future<String?> _assessKtmQuality(XFile image) async {
+    try {
+      final bytes = await image.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final uiImage = frame.image;
+      final data = await uiImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (data == null) {
+        return 'Foto belum sesuai atau kurang jelas!';
       }
-    });
+      final width = uiImage.width;
+      final height = uiImage.height;
+      final pixels = data.buffer.asUint8List();
+      const stride = 4;
+      final sampleStep = math.max(1, (width * height / 180000).ceil());
+
+      final luminances = <double>[];
+      var laplacianSum = 0.0;
+      var laplacianSumSquares = 0.0;
+      var laplacianCount = 0;
+
+      int getGray(int index) {
+        final r = pixels[index];
+        final g = pixels[index + 1];
+        final b = pixels[index + 2];
+        return ((0.299 * r) + (0.587 * g) + (0.114 * b)).round();
+      }
+
+      for (var y = 1; y < height - 1; y += sampleStep) {
+        for (var x = 1; x < width - 1; x += sampleStep) {
+          final index = (y * width + x) * stride;
+          final center = getGray(index);
+          luminances.add(center.toDouble());
+
+          final left = getGray(index - stride);
+          final right = getGray(index + stride);
+          final up = getGray(index - width * stride);
+          final down = getGray(index + width * stride);
+          final laplacian = (4 * center) - left - right - up - down;
+          laplacianSum += laplacian;
+          laplacianSumSquares += laplacian * laplacian;
+          laplacianCount++;
+        }
+      }
+
+      if (luminances.isEmpty || laplacianCount == 0) {
+        return 'Foto belum sesuai atau kurang jelas!';
+      }
+
+      final meanLum =
+          luminances.fold<double>(0, (sum, value) => sum + value) /
+          luminances.length;
+      final varianceLum =
+          luminances
+              .map((value) => math.pow(value - meanLum, 2).toDouble())
+              .fold<double>(0, (sum, value) => sum + value) /
+          luminances.length;
+      final stdDevLum = math.sqrt(varianceLum);
+
+      final meanLap = laplacianSum / laplacianCount;
+      final varianceLap =
+          (laplacianSumSquares / laplacianCount) - (meanLap * meanLap);
+
+      if (stdDevLum < 28 ||
+          varianceLap < 1200 ||
+          meanLum < 30 ||
+          meanLum > 225) {
+        return 'Foto belum sesuai atau kurang jelas!';
+      }
+      return null;
+    } on Object {
+      return 'Foto belum sesuai atau kurang jelas!';
+    }
   }
+
+  String _normalizeCandidate(String value) {
+    return value
+        .replaceAll(RegExp(r"[^A-Za-z\s'.-]"), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+}
+
+class _KtmWarningBanner extends StatelessWidget {
+  const _KtmWarningBanner({required this.message});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 150,
-              decoration: BoxDecoration(
-                color: AppTheme.richBronze.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.cleanCyan, width: 2),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Icon(
-                    Icons.badge_outlined,
-                    size: 58,
-                    color: AppTheme.deepTeal,
-                  ),
-                  Positioned(
-                    left: 18,
-                    right: 18,
-                    child: Container(height: 3, color: AppTheme.cleanCyan),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'Memindai teks KTM...',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 12),
-            const LinearProgressIndicator(),
-          ],
+    return MaterialBanner(
+      padding: const EdgeInsets.all(14),
+      backgroundColor: Colors.redAccent.withValues(alpha: 0.10),
+      leading: const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+      content: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.w700,
         ),
       ),
+      actions: const [SizedBox.shrink()],
     );
   }
 }
 
 class _KtmPickerCard extends StatelessWidget {
-  const _KtmPickerCard({required this.fileName, required this.onPick});
+  const _KtmPickerCard({
+    required this.fileName,
+    required this.qualityWarning,
+    required this.onPick,
+  });
 
   final String? fileName;
+  final String? qualityWarning;
   final VoidCallback onPick;
 
   @override
@@ -439,13 +566,25 @@ class _KtmPickerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    fileName ?? 'Pilih gambar dari galeri',
+                    fileName ?? 'Pilih gambar dari kamera',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
                   ),
+                  if (qualityWarning != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      qualityWarning!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_cubit.dart';
+import '../../../core/validation.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
@@ -52,7 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() {
         _nameController.text = profile.name;
         _nimController.text = profile.nimNip;
-        _waController.text = profile.noWhatsapp;
+        _waController.text = profile.whatsappNumber;
         _avatarUrl = profile.avatarUrl;
         _biometricEnabled = profile.biometricEnabled;
         _realtimeNotifications = profile.realtimeNotificationsEnabled;
@@ -280,13 +281,20 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _save() async {
+    final whatsapp = _waController.text.trim();
+    if (whatsapp.isNotEmpty && !AppValidation.isValidWhatsappNumber(whatsapp)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format WhatsApp belum valid.')),
+      );
+      return;
+    }
     try {
       await widget.repository.updateProfileSettings(
         ProfileSettings(
           name: _nameController.text,
           nimNip: _nimController.text,
           role: _role,
-          noWhatsapp: _waController.text,
+          whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
           avatarUrl: _avatarUrl,
           biometricEnabled: _biometricEnabled,
           realtimeNotificationsEnabled: _realtimeNotifications,

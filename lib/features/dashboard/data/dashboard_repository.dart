@@ -158,7 +158,7 @@ class DashboardRepository {
 
   Future<LabBooking> createMultiStepBooking({
     required String labId,
-    required String noWhatsapp,
+    required String whatsappNumber,
     required DateTime tanggalPinjam,
     required String? deskNo,
     required List<BookingItemDraft> items,
@@ -169,7 +169,7 @@ class DashboardRepository {
     }
     await _supabase
         .from('profiles')
-        .update({'no_whatsapp': noWhatsapp.trim()})
+        .update({'whatsapp_number': whatsappNumber.trim()})
         .eq('id', userId);
 
     final booking = await _supabase
@@ -242,7 +242,7 @@ class DashboardRepository {
     final row = await _supabase
         .from('profiles')
         .select(
-          'nama,nim_nip,role,no_whatsapp,avatar_url,biometric_enabled,realtime_notifications_enabled,notification_sound_enabled',
+          'nama,nim_nip,role,whatsapp_number,avatar_url,biometric_enabled,realtime_notifications_enabled,notification_sound_enabled',
         )
         .eq('id', userId)
         .single();
@@ -259,7 +259,7 @@ class DashboardRepository {
         .update({
           'nama': settings.name.trim(),
           'nim_nip': settings.nimNip.trim(),
-          'no_whatsapp': settings.noWhatsapp.trim(),
+          'whatsapp_number': settings.whatsappNumber.trim(),
           'avatar_url': settings.avatarUrl,
           'biometric_enabled': settings.biometricEnabled,
           'realtime_notifications_enabled':

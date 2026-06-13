@@ -110,7 +110,7 @@ class ProfileSettings {
     required this.name,
     required this.nimNip,
     required this.role,
-    required this.noWhatsapp,
+    required this.whatsappNumber,
     required this.avatarUrl,
     required this.biometricEnabled,
     required this.realtimeNotificationsEnabled,
@@ -120,7 +120,7 @@ class ProfileSettings {
   final String name;
   final String nimNip;
   final String role;
-  final String noWhatsapp;
+  final String whatsappNumber;
   final String? avatarUrl;
   final bool biometricEnabled;
   final bool realtimeNotificationsEnabled;
@@ -131,7 +131,7 @@ class ProfileSettings {
       name: map['nama'] as String? ?? '',
       nimNip: map['nim_nip'] as String? ?? '',
       role: map['role'] as String? ?? 'mahasiswa',
-      noWhatsapp: map['no_whatsapp'] as String? ?? '',
+      whatsappNumber: map['whatsapp_number'] as String? ?? '',
       avatarUrl: map['avatar_url'] as String?,
       biometricEnabled: map['biometric_enabled'] as bool? ?? false,
       realtimeNotificationsEnabled:

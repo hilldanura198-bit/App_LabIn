@@ -24,6 +24,10 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>LabIN membutuhkan kamera untuk memotret KTM dan laporan kerusakan.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>LabIN menggunakan biometrik untuk membuka sesi yang tersimpan secara lokal.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

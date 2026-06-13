@@ -89,16 +89,22 @@ class AuthRepository {
   }
 
   Future<String> signInWithBiometricSession() async {
+    final session = _supabase.auth.currentSession;
     final canAuthenticate =
         await _localAuth.canCheckBiometrics ||
         await _localAuth.isDeviceSupported();
     if (!canAuthenticate) {
       throw Exception('Biometric login tidak tersedia di perangkat ini.');
     }
+    if (session == null || _supabase.auth.currentUser == null) {
+      throw Exception(
+        'Aktifkan sesi Supabase terlebih dahulu sebelum masuk biometrik.',
+      );
+    }
 
     final authenticated = await _localAuth.authenticate(
       localizedReason: 'Gunakan biometrik untuk membuka sesi LabIN',
-      biometricOnly: false,
+      biometricOnly: true,
       persistAcrossBackgrounding: true,
     );
     if (!authenticated) {

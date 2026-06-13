@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/validation.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'booking_success_page.dart';
@@ -244,11 +245,18 @@ class _BookingFormPageState extends State<BookingFormPage> {
       setState(() => _step = 0);
       return;
     }
+    final whatsapp = _waController.text.trim();
+    if (!AppValidation.isValidWhatsappNumber(whatsapp)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format No WhatsApp belum valid.')),
+      );
+      return;
+    }
     try {
       setState(() => _submitting = true);
       final booking = await widget.repository.createMultiStepBooking(
         labId: _selectedLabId!,
-        noWhatsapp: _waController.text,
+        whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
         tanggalPinjam: DateTime.now().add(const Duration(days: 1)),
         deskNo: _selectedDeskNo,
         items: _selectedItems.values.toList(),

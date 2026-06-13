@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/validation.dart';
 import '../bloc/auth_bloc.dart';
+import 'campus_sso_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -93,6 +95,8 @@ class _LoginPageState extends State<LoginPage> {
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   decoration: const InputDecoration(
                                     labelText: 'Email',
                                     prefixIcon: Icon(Icons.mail_outline),
@@ -101,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                                     if (value == null || value.trim().isEmpty) {
                                       return 'Email wajib diisi';
                                     }
-                                    if (!value.contains('@')) {
+                                    if (!AppValidation.isValidEmail(value)) {
                                       return 'Format email belum valid';
                                     }
                                     return null;
@@ -112,6 +116,8 @@ class _LoginPageState extends State<LoginPage> {
                                   controller: _passwordController,
                                   obscureText: _obscurePassword,
                                   textInputAction: TextInputAction.done,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   decoration: InputDecoration(
                                     labelText: 'Password',
                                     prefixIcon: const Icon(Icons.lock_outline),
@@ -168,9 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                                           label: 'Masuk dengan SSO Kampus',
                                           onPressed: isLoading
                                               ? null
-                                              : () => context.read<AuthBloc>().add(
-                                                  const AuthCampusSsoRequested(),
-                                                ),
+                                              : _startCampusSso,
                                         ),
                                         _AuthOptionButton(
                                           icon: Icons.fingerprint_rounded,
@@ -223,6 +227,23 @@ class _LoginPageState extends State<LoginPage> {
       AuthLoginRequested(
         email: _emailController.text,
         password: _passwordController.text,
+      ),
+    );
+  }
+
+  Future<void> _startCampusSso() async {
+    final identity = await Navigator.of(context).push<CampusIdentity>(
+      MaterialPageRoute(builder: (_) => const CampusSsoPage()),
+    );
+    if (!mounted || identity == null) {
+      return;
+    }
+    _emailController.text = identity.email;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'SSO UDB membaca NIM ${identity.nim} dan email ${identity.email}.',
+        ),
       ),
     );
   }

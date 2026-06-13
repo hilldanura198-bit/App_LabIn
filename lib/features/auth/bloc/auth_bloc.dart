@@ -173,13 +173,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCampusSsoRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(const AuthLoading());
-    try {
-      await _repository.signInWithCampusSso();
-      emit(const Unauthenticated());
-    } on Object catch (error) {
-      emit(AuthFailure(_friendlyMessage(error)));
-    }
+    emit(
+      const AuthFailure(
+        'Tombol SSO Kampus sudah dipindahkan ke alur webview simulasi pada halaman login.',
+      ),
+    );
   }
 
   String _friendlyMessage(Object error) {

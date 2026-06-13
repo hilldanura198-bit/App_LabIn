@@ -13,7 +13,7 @@ create table if not exists public.profiles (
   role text not null default 'mahasiswa',
   ktm_url text,
   avatar_url text,
-  no_whatsapp text,
+  whatsapp_number text,
   biometric_enabled boolean not null default false,
   realtime_notifications_enabled boolean not null default true,
   notification_sound_enabled boolean not null default true,
@@ -127,12 +127,32 @@ create index if not exists maintenance_reports_status_perbaikan_idx on public.ma
 create index if not exists satisfaction_surveys_periode_idx on public.satisfaction_surveys(periode);
 
 alter table public.profiles
-add column if not exists no_whatsapp text,
+add column if not exists whatsapp_number text,
 add column if not exists program_studi text,
 add column if not exists avatar_url text,
 add column if not exists biometric_enabled boolean not null default false,
 add column if not exists realtime_notifications_enabled boolean not null default true,
 add column if not exists notification_sound_enabled boolean not null default true;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'profiles'
+      and column_name = 'no_whatsapp'
+  ) and not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'profiles'
+      and column_name = 'whatsapp_number'
+  ) then
+    alter table public.profiles rename column no_whatsapp to whatsapp_number;
+  end if;
+end;
+$$;
 
 alter table public.bookings
 add column if not exists reservation_no text;
