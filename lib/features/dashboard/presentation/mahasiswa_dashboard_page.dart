@@ -234,15 +234,21 @@ class _LabInTopNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final menu = [
+    final compact = MediaQuery.sizeOf(context).width < 1120;
+    final primaryMenu = [
       ('Dashboard', Icons.dashboard_outlined, onDashboard),
       ('Kalender', Icons.calendar_month_outlined, onCalendar),
       ('Peminjaman', Icons.assignment_add, onBooking),
       ('Jadwal Ruangan', Icons.meeting_room_outlined, onSchedule),
+    ];
+    final secondaryMenu = [
       ('Sarpras', Icons.apartment_outlined, onSapras),
       ('Laporan', Icons.report_problem_outlined, onReport),
       ('Profil', Icons.person_outline, onProfile),
     ];
+    final visibleMenu = compact
+        ? primaryMenu
+        : [...primaryMenu, ...secondaryMenu];
 
     return AppBar(
       automaticallyImplyLeading: false,
@@ -272,7 +278,7 @@ class _LabInTopNavbar extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (final item in menu)
+                  for (final item in visibleMenu)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: TextButton.icon(
@@ -288,6 +294,38 @@ class _LabInTopNavbar extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
+                        ),
+                      ),
+                    ),
+                  if (compact)
+                    PopupMenuButton<VoidCallback>(
+                      tooltip: 'Menu lainnya',
+                      onSelected: (callback) => callback(),
+                      itemBuilder: (context) => [
+                        for (final item in secondaryMenu)
+                          PopupMenuItem<VoidCallback>(
+                            value: item.$3,
+                            child: Row(
+                              children: [
+                                Icon(item.$2, size: 18),
+                                const SizedBox(width: 10),
+                                Text(item.$1),
+                              ],
+                            ),
+                          ),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.more_horiz_rounded, size: 18),
+                            SizedBox(width: 6),
+                            Text('Lainnya'),
+                          ],
                         ),
                       ),
                     ),
