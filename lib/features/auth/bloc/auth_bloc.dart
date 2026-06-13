@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_repository.dart';
 
@@ -183,6 +184,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   String _friendlyMessage(Object error) {
+    if (error is AuthException) {
+      final code = error.code?.toLowerCase();
+      final message = error.message.toLowerCase();
+      if (code == 'user_already_exists' ||
+          message.contains('already registered') ||
+          message.contains('already exists')) {
+        return 'Email ini sudah terdaftar. Silakan masuk dengan email tersebut atau gunakan email lain.';
+      }
+      if (message.contains('invalid login credentials')) {
+        return 'Email atau password salah.';
+      }
+      if (message.contains('email not confirmed')) {
+        return 'Email belum dikonfirmasi. Cek inbox email kamu dulu.';
+      }
+      if (message.contains('rate limit')) {
+        return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.';
+      }
+      return error.message;
+    }
+
     final raw = error.toString().replaceFirst('Exception: ', '');
     if (raw.contains('not configured')) {
       return 'Supabase belum dikonfigurasi. Jalankan app dengan SUPABASE_URL dan SUPABASE_ANON_KEY.';

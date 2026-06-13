@@ -42,9 +42,18 @@ class _RegisterPageState extends State<RegisterPage> {
           Navigator.of(context).pop();
         }
         if (state is AuthFailure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          final alreadyRegistered = state.message.contains('sudah terdaftar');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              action: alreadyRegistered
+                  ? SnackBarAction(
+                      label: 'Masuk',
+                      onPressed: () => Navigator.of(context).pop(),
+                    )
+                  : null,
+            ),
+          );
         }
       },
       child: Scaffold(
