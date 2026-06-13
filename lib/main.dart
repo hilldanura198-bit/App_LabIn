@@ -54,7 +54,7 @@ class LabInApp extends StatelessWidget {
               theme: AppTheme.light,
               darkTheme: AppTheme.dark,
               themeMode: themeMode,
-              home: const MahasiswaDashboardPage(),
+              home: const AuthGate(),
             );
           },
         ),
@@ -102,7 +102,14 @@ class AuthGate extends StatelessWidget {
         }
 
         final message = state is AuthFailure ? state.message : null;
-        return LoginPage(message: message);
+        return LoginPage(
+          message: message,
+          onDemoPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MahasiswaDashboardPage()),
+            );
+          },
+        );
       },
     );
   }

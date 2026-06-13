@@ -6,9 +6,10 @@ import '../bloc/auth_bloc.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.message});
+  const LoginPage({super.key, this.message, this.onDemoPressed});
 
   final String? message;
+  final VoidCallback? onDemoPressed;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -181,6 +182,15 @@ class _LoginPageState extends State<LoginPage> {
                                                   const AuthBiometricLoginRequested(),
                                                 ),
                                         ),
+                                        if (widget.onDemoPressed != null)
+                                          _AuthOptionButton(
+                                            icon: Icons
+                                                .dashboard_customize_outlined,
+                                            label: 'Lihat Demo Dashboard',
+                                            onPressed: isLoading
+                                                ? null
+                                                : widget.onDemoPressed,
+                                          ),
                                       ],
                                     );
                                   },
