@@ -314,6 +314,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
   }
 
   Future<void> _continue() async {
+    if (!_validateCurrentStep()) {
+      return;
+    }
     if (_step < 3) {
       setState(() => _step++);
       return;
@@ -321,53 +324,13 @@ class _BookingFormPageState extends State<BookingFormPage> {
     if (_selectedLabId == null) {
       return;
     }
-    if (_nameController.text.trim().isEmpty ||
-        _identityController.text.trim().isEmpty ||
-        _waController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nama, nomor identitas, dan No WhatsApp wajib diisi.'),
-        ),
-      );
-      setState(() => _step = 0);
-      return;
-    }
-    if (_purposeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tujuan peminjaman wajib diisi.')),
-      );
-      return;
-    }
     try {
       setState(() => _submitting = true);
-      final startDateTime = DateTime(
-        _bookingDate.year,
-        _bookingDate.month,
-        _bookingDate.day,
-        _startTime.hour,
-        _startTime.minute,
-      );
-      final endDateTime = DateTime(
-        _bookingDate.year,
-        _bookingDate.month,
-        _bookingDate.day,
-        _endTime.hour,
-        _endTime.minute,
-      );
-      if (!endDateTime.isAfter(startDateTime)) {
-        setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Waktu selesai harus setelah waktu mulai.'),
-          ),
-        );
-        return;
-      }
       final booking = await widget.repository.createMultiStepBooking(
         labId: _selectedLabId!,
         noWhatsapp: _waController.text,
-        tanggalPinjam: startDateTime,
-        tanggalKembali: endDateTime,
+        tanggalPinjam: _startDateTime,
+        tanggalKembali: _endDateTime,
         deskNo: _selectedDeskNo,
         items: _selectedItems.values.toList(),
       );
@@ -391,6 +354,62 @@ class _BookingFormPageState extends State<BookingFormPage> {
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
+  }
+
+  DateTime get _startDateTime {
+    return DateTime(
+      _bookingDate.year,
+      _bookingDate.month,
+      _bookingDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+  }
+
+  DateTime get _endDateTime {
+    return DateTime(
+      _bookingDate.year,
+      _bookingDate.month,
+      _bookingDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+  }
+
+  bool _validateCurrentStep() {
+    if (_step == 0 &&
+        (_nameController.text.trim().isEmpty ||
+            _identityController.text.trim().isEmpty ||
+            _waController.text.trim().isEmpty)) {
+      _showValidationMessage(
+        'Nama, nomor identitas, dan No WhatsApp wajib diisi.',
+      );
+      return false;
+    }
+
+    if (_step == 1) {
+      if (_selectedLabId == null) {
+        _showValidationMessage('Pilih ruangan atau laboratorium dulu.');
+        return false;
+      }
+      if (!_endDateTime.isAfter(_startDateTime)) {
+        _showValidationMessage('Waktu selesai harus setelah waktu mulai.');
+        return false;
+      }
+    }
+
+    if (_step == 3 && _purposeController.text.trim().isEmpty) {
+      _showValidationMessage('Tujuan peminjaman wajib diisi.');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showValidationMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -777,7 +796,7 @@ class _ConsumableReviewStep extends StatelessWidget {
           ),
         const SizedBox(height: 8),
         Text(
-          'Saat dikirim, data ruangan, meja, dan barang yang dipilih akan tersimpan ke tabel bookings dan booking_items Supabase.',
+          'Saat dikirim, pengajuan akan masuk dengan status Pending sampai diverifikasi asisten atau admin laboratorium.',
           textAlign: TextAlign.center,
           style: Theme.of(
             context,
