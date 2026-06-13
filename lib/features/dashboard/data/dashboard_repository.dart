@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'dashboard_models.dart';
@@ -157,15 +158,28 @@ class DashboardRepository {
   }
 
   Future<LabBooking> createMultiStepBooking({
-    required String labId,
+    required String borrowerName,
     required String whatsappNumber,
-    required DateTime tanggalPinjam,
+    required String facultyCode,
+    required String labId,
+    required String labNameSnapshot,
+    required DateTime requestDate,
+    required DateTime borrowDate,
+    required String startTime,
+    required String endTime,
+    required String purpose,
     required String? deskNo,
     required List<BookingItemDraft> items,
+    String? otherItems,
   }) async {
     final userId = currentUserId;
     if (userId == null) {
       throw Exception('User belum login.');
+    }
+    final startDateTime = _combineDateAndTime(borrowDate, startTime);
+    final endDateTime = _combineDateAndTime(borrowDate, endTime);
+    if (endDateTime.isBefore(startDateTime)) {
+      throw Exception('Jam selesai harus setelah jam mulai.');
     }
     await _supabase
         .from('profiles')
@@ -177,15 +191,31 @@ class DashboardRepository {
         .insert({
           'user_id': userId,
           'lab_id': labId,
+          'lab_name_snapshot': labNameSnapshot,
+          'borrower_name': borrowerName.trim(),
+          'whatsapp_number': whatsappNumber.trim(),
+          'faculty_code': facultyCode,
+          'request_date': DateFormat('yyyy-MM-dd').format(requestDate),
+          'purpose': purpose.trim(),
+          'start_time': startTime,
+          'end_time': endTime,
           'status': 'pending',
-          'tanggal_pinjam': tanggalPinjam.toIso8601String(),
-          'tanggal_kembali': tanggalPinjam
-              .add(const Duration(hours: 3))
-              .toIso8601String(),
+          'tanggal_pinjam': startDateTime.toIso8601String(),
+          'tanggal_kembali': endDateTime.toIso8601String(),
           'desk_no': deskNo,
+          'items_snapshot': items
+              .map(
+                (item) => BookingSnapshotItem(
+                  name: item.inventory.namaAlat,
+                  quantity: item.quantity,
+                  labId: item.inventory.labId,
+                ).toMap(),
+              )
+              .toList(),
+          'other_items': otherItems?.trim(),
         })
         .select(
-          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url',
+          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,desk_no',
         )
         .single();
 
@@ -406,5 +436,12 @@ class DashboardRepository {
         .from('inventories')
         .update({'kondisi': 'bagus'})
         .eq('id', barcode);
+  }
+
+  DateTime _combineDateAndTime(DateTime date, String time) {
+    final parts = time.split(':');
+    final hour = int.parse(parts.first);
+    final minute = int.parse(parts.last);
+    return DateTime(date.year, date.month, date.day, hour, minute);
   }
 }

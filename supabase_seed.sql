@@ -7,7 +7,13 @@ insert into public.laboratories (id, nama_lab, lokasi, status_operasional)
 values
   ('11111111-1111-4111-8111-111111111111', 'Lab RPL', 'Gedung Teknologi Lt. 2', 'aktif'),
   ('22222222-2222-4222-8222-222222222222', 'Lab IoT', 'Gedung Teknologi Lt. 3', 'aktif'),
-  ('33333333-3333-4333-8333-333333333333', 'Lab Jaringan', 'Gedung Teknologi Lt. 1', 'aktif')
+  ('33333333-3333-4333-8333-333333333333', 'Lab Jaringan', 'Gedung Teknologi Lt. 1', 'aktif'),
+  ('44444444-4444-4444-8444-444444444444', 'Lab Akuntansi Digital', 'Gedung Bisnis Lt. 1', 'aktif'),
+  ('55555555-5555-4555-8555-555555555555', 'Lab Business Analytics', 'Gedung Bisnis Lt. 2', 'aktif'),
+  ('66666666-6666-4666-8666-666666666666', 'Lab Legal Tech', 'Gedung Hukum Lt. 1', 'aktif'),
+  ('77777777-7777-4777-8777-777777777777', 'Lab Mediasi Digital', 'Gedung Hukum Lt. 2', 'aktif'),
+  ('88888888-8888-4888-8888-888888888888', 'Lab Simulasi Klinik', 'Gedung Kesehatan Lt. 1', 'aktif'),
+  ('99999999-9999-4999-8999-999999999999', 'Lab Kesehatan Masyarakat', 'Gedung Kesehatan Lt. 2', 'aktif')
 on conflict (id) do update
 set
   nama_lab = excluded.nama_lab,
@@ -129,6 +135,114 @@ values
     'LAN Cable Tester',
     5,
     3,
+    'bagus',
+    null
+  ),
+  (
+    'dddddddd-1001-4101-8101-dddddddd1001',
+    '44444444-4444-4444-8444-444444444444',
+    'Laptop Akuntansi',
+    12,
+    10,
+    'bagus',
+    null
+  ),
+  (
+    'dddddddd-1002-4102-8102-dddddddd1002',
+    '44444444-4444-4444-8444-444444444444',
+    'Printer Thermal',
+    4,
+    2,
+    'bagus',
+    null
+  ),
+  (
+    'eeeeeeee-1001-4101-8101-eeeeeeee1001',
+    '55555555-5555-4555-8555-555555555555',
+    'Monitor Ultrawide',
+    10,
+    7,
+    'bagus',
+    null
+  ),
+  (
+    'eeeeeeee-1002-4102-8102-eeeeeeee1002',
+    '55555555-5555-4555-8555-555555555555',
+    'Webcam Conference',
+    8,
+    5,
+    'bagus',
+    null
+  ),
+  (
+    'ffffffff-1001-4101-8101-ffffffff1001',
+    '66666666-6666-4666-8666-666666666666',
+    'Scanner Dokumen',
+    6,
+    4,
+    'bagus',
+    null
+  ),
+  (
+    'ffffffff-1002-4102-8102-ffffffff1002',
+    '66666666-6666-4666-8666-666666666666',
+    'Kamera Sidang',
+    5,
+    3,
+    'bagus',
+    null
+  ),
+  (
+    '11111111-1001-4101-8101-111111111001',
+    '77777777-7777-4777-8777-777777777777',
+    'Microphone Meeting',
+    12,
+    8,
+    'bagus',
+    null
+  ),
+  (
+    '11111111-1002-4102-8102-111111111002',
+    '77777777-7777-4777-8777-777777777777',
+    'Smart TV 55',
+    3,
+    2,
+    'bagus',
+    null
+  ),
+  (
+    '22222222-1001-4101-8101-222222221001',
+    '88888888-8888-4888-8888-888888888888',
+    'Manekin CPR',
+    4,
+    3,
+    'bagus',
+    null
+  ),
+  (
+    '22222222-1002-4102-8102-222222221002',
+    '88888888-8888-4888-8888-888888888888',
+    'Tensimeter Digital',
+    10,
+    6,
+    'bagus',
+    null
+  ),
+  (
+    '33333333-1001-4101-8101-333333331001',
+    '99999999-9999-4999-8999-999999999999',
+    'Alat Ukur Antropometri',
+    7,
+    4,
+    'bagus',
+    null
+  ),
+  (
+    '33333333-1002-4102-8102-333333331002',
+    '99999999-9999-4999-8999-999999999999',
+    'Tablet Survey',
+    15,
+    11,
     'bagus',
     null
   )

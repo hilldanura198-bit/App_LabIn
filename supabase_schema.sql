@@ -160,6 +160,18 @@ add column if not exists reservation_no text;
 alter table public.bookings
 add column if not exists desk_no text;
 
+alter table public.bookings
+add column if not exists borrower_name text,
+add column if not exists whatsapp_number text,
+add column if not exists faculty_code text,
+add column if not exists request_date date,
+add column if not exists purpose text,
+add column if not exists start_time text,
+add column if not exists end_time text,
+add column if not exists items_snapshot jsonb not null default '[]'::jsonb,
+add column if not exists other_items text,
+add column if not exists lab_name_snapshot text;
+
 update public.bookings
 set reservation_no = 'PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))
 where reservation_no is null;

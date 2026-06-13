@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class LabInventory {
   const LabInventory({
     required this.id,
@@ -40,6 +42,38 @@ class BookingItemDraft {
   final int quantity;
 }
 
+class BookingSnapshotItem {
+  const BookingSnapshotItem({
+    required this.name,
+    required this.quantity,
+    required this.labId,
+    this.note,
+  });
+
+  final String name;
+  final int quantity;
+  final String labId;
+  final String? note;
+
+  factory BookingSnapshotItem.fromMap(Map<String, dynamic> map) {
+    return BookingSnapshotItem(
+      name: map['name'] as String? ?? map['nama'] as String? ?? 'Item',
+      quantity: map['quantity'] as int? ?? 1,
+      labId: map['lab_id'] as String? ?? '',
+      note: map['note'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'quantity': quantity,
+      'lab_id': labId,
+      if (note != null && note!.trim().isNotEmpty) 'note': note!.trim(),
+    };
+  }
+}
+
 class LabBooking {
   const LabBooking({
     required this.id,
@@ -50,7 +84,17 @@ class LabBooking {
     required this.tanggalKembali,
     required this.reservationNo,
     required this.qrToken,
+    required this.borrowerName,
+    required this.whatsappNumber,
+    required this.facultyCode,
+    required this.purpose,
+    required this.requestDate,
+    required this.startTime,
+    required this.endTime,
+    required this.itemsSnapshot,
     this.signatureUrl,
+    this.otherItems,
+    this.labNameSnapshot,
   });
 
   final String id;
@@ -61,9 +105,32 @@ class LabBooking {
   final DateTime tanggalKembali;
   final String reservationNo;
   final String qrToken;
+  final String borrowerName;
+  final String whatsappNumber;
+  final String facultyCode;
+  final String purpose;
+  final DateTime? requestDate;
+  final String startTime;
+  final String endTime;
+  final List<BookingSnapshotItem> itemsSnapshot;
   final String? signatureUrl;
+  final String? otherItems;
+  final String? labNameSnapshot;
 
   factory LabBooking.fromMap(Map<String, dynamic> map) {
+    final rawItems = map['items_snapshot'];
+    final itemsSnapshot = <BookingSnapshotItem>[];
+    if (rawItems is List) {
+      for (final item in rawItems) {
+        if (item is Map<String, dynamic>) {
+          itemsSnapshot.add(BookingSnapshotItem.fromMap(item));
+        } else if (item is Map) {
+          itemsSnapshot.add(
+            BookingSnapshotItem.fromMap(Map<String, dynamic>.from(item)),
+          );
+        }
+      }
+    }
     return LabBooking(
       id: map['id'] as String,
       userId: map['user_id'] as String,
@@ -77,9 +144,58 @@ class LabBooking {
           map['reservation_no'] as String? ??
           'PMJ-${map['id'].toString().substring(0, 5).toUpperCase()}',
       qrToken: map['qr_token'] as String? ?? '',
+      borrowerName: map['borrower_name'] as String? ?? 'Mahasiswa',
+      whatsappNumber: map['whatsapp_number'] as String? ?? '',
+      facultyCode: map['faculty_code'] as String? ?? 'FIK',
+      purpose: map['purpose'] as String? ?? '',
+      requestDate: map['request_date'] == null
+          ? null
+          : DateTime.parse(map['request_date'] as String).toLocal(),
+      startTime: map['start_time'] as String? ?? '',
+      endTime: map['end_time'] as String? ?? '',
+      itemsSnapshot: itemsSnapshot,
       signatureUrl: map['signature_url'] as String?,
+      otherItems: map['other_items'] as String?,
+      labNameSnapshot: map['lab_name_snapshot'] as String?,
     );
   }
+
+  String get labDisplayName => labNameSnapshot ?? labId;
+  String get facultyLabel {
+    return switch (facultyCode) {
+      'FIK' => 'FIK',
+      'FEB' => 'FEB',
+      'FH' => 'FH',
+      'FK' => 'FK',
+      _ => facultyCode,
+    };
+  }
+
+  String get statusLabel {
+    return switch (status) {
+      'pending' => 'Pending',
+      'approved_aslab' || 'approved_kalab' => 'Approved',
+      'active' => 'Active',
+      'rejected' => 'Ditolak',
+      'returned' => 'Selesai',
+      'late' => 'Terlambat',
+      _ => status,
+    };
+  }
+
+  Color get statusColor {
+    return switch (status) {
+      'approved_aslab' ||
+      'approved_kalab' ||
+      'active' => const Color(0xFF22F55E),
+      'rejected' => const Color(0xFFFF4D6D),
+      'late' => const Color(0xFFFFC53D),
+      _ => const Color(0xFFFFB020),
+    };
+  }
+
+  List<String> get itemNames =>
+      itemsSnapshot.map((item) => '${item.name} x${item.quantity}').toList();
 }
 
 class LabRoom {

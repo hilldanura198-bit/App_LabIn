@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/lab_catalog.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validation.dart';
 import '../data/dashboard_models.dart';
@@ -17,21 +19,36 @@ class BookingFormPage extends StatefulWidget {
 }
 
 class _BookingFormPageState extends State<BookingFormPage> {
+  final _stepOneKey = GlobalKey<FormState>();
+  final _stepTwoKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _waController = TextEditingController();
+  final _purposeController = TextEditingController();
+  final _otherItemsController = TextEditingController();
+  final _requestDateController = TextEditingController();
+  final _borrowDateController = TextEditingController();
+  final _startTimeController = TextEditingController();
+  final _endTimeController = TextEditingController();
+
   int _step = 0;
-  List<LabRoom> _labs = const [];
-  List<LabInventory> _inventories = const [];
-  String? _selectedLabId;
-  String? _selectedDeskNo;
-  final _selectedItems = <String, BookingItemDraft>{};
-  final _consumableNotesController = TextEditingController();
   bool _loading = true;
   bool _submitting = false;
+
+  List<LabInventory> _inventories = const [];
+  String? _selectedFacultyCode;
+  String? _selectedLabId;
+  DateTime? _requestDate;
+  DateTime? _borrowDate;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  final Map<String, BookingItemDraft> _selectedItems = {};
 
   @override
   void initState() {
     super.initState();
+    _selectedFacultyCode = AppLabCatalog.faculties.first.code;
+    _selectedLabId = AppLabCatalog.labsForFaculty(_selectedFacultyCode!).first.id;
     _load();
   }
 
@@ -39,28 +56,34 @@ class _BookingFormPageState extends State<BookingFormPage> {
   void dispose() {
     _nameController.dispose();
     _waController.dispose();
-    _consumableNotesController.dispose();
+    _purposeController.dispose();
+    _otherItemsController.dispose();
+    _requestDateController.dispose();
+    _borrowDateController.dispose();
+    _startTimeController.dispose();
+    _endTimeController.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    try {
-      final labs = await widget.repository.fetchLaboratories();
-      final inventories = await widget.repository.watchInventories().first;
-      setState(() {
-        _labs = labs;
-        _inventories = inventories;
-        _selectedLabId = labs.isEmpty ? null : labs.first.id;
-        _loading = false;
-      });
-    } on Object catch (error) {
-      setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+  List<LabCatalog> get _availableLabs {
+    final code = _selectedFacultyCode ?? AppLabCatalog.faculties.first.code;
+    final labs = AppLabCatalog.labsForFaculty(code);
+    return labs.isEmpty ? AppLabCatalog.labs : labs;
+  }
+
+  LabCatalog? get _selectedLab {
+    for (final lab in AppLabCatalog.labs) {
+      if (lab.id == _selectedLabId) {
+        return lab;
       }
     }
+    return null;
+  }
+
+  List<LabInventory> get _selectedLabInventories {
+    final labId = _selectedLabId;
+    if (labId == null) return const [];
+    return _inventories.where((item) => item.labId == labId).toList();
   }
 
   @override
@@ -70,137 +93,584 @@ class _BookingFormPageState extends State<BookingFormPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: Stepper(
-                currentStep: _step,
-                onStepContinue: _submitting ? null : _continue,
-                onStepCancel: _step == 0 || _submitting
-                    ? null
-                    : () => setState(() => _step--),
-                controlsBuilder: (context, details) {
-                  final last = _step == 3;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: CyberGradientButton(
-                            onPressed: details.onStepContinue,
-                            child: _submitting && last
-                                ? const SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth >= 980
+                      ? 920.0
+                      : constraints.maxWidth;
+                  return Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                                  primary: AppTheme.electricBlue,
+                                ),
+                          ),
+                          child: Stepper(
+                            currentStep: _step,
+                            type: StepperType.vertical,
+                            physics: const NeverScrollableScrollPhysics(),
+                            onStepContinue:
+                                _submitting ? null : _handleStepContinue,
+                            onStepCancel: _submitting || _step == 0
+                                ? null
+                                : () => setState(() => _step--),
+                            controlsBuilder: (context, details) {
+                              final isLast = _step == 3;
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: CyberGradientButton(
+                                        onPressed: details.onStepContinue,
+                                        child: _submitting && isLast
+                                            ? const SizedBox.square(
+                                                dimension: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            : Text(isLast ? 'Kirim' : 'Lanjut'),
+                                      ),
                                     ),
-                                  )
-                                : Text(last ? 'Kirim Pengajuan' : 'Lanjut'),
+                                    if (_step > 0) ...[
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          onPressed: details.onStepCancel,
+                                          child: const Text('Kembali'),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
+                            steps: [
+                              Step(
+                                title: const Text('Identitas & Jadwal'),
+                                isActive: _step >= 0,
+                                content: Form(
+                                  key: _stepOneKey,
+                                  child: _StepShell(
+                                    child: Wrap(
+                                      spacing: 14,
+                                      runSpacing: 14,
+                                      children: [
+                                        _fieldBox(
+                                          context: context,
+                                          child: TextFormField(
+                                            controller: _nameController,
+                                            textInputAction:
+                                                TextInputAction.next,
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.trim().isEmpty) {
+                                                return 'Nama peminjam wajib diisi';
+                                              }
+                                              return null;
+                                            },
+                                            decoration: const InputDecoration(
+                                              labelText: 'Nama Peminjam',
+                                              prefixIcon: Icon(
+                                                Icons.person_outline,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        _fieldBox(
+                                          context: context,
+                                          child: TextFormField(
+                                            controller: _waController,
+                                            keyboardType: TextInputType.phone,
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.trim().isEmpty) {
+                                                return 'Nomor WhatsApp wajib diisi';
+                                              }
+                                              if (!AppValidation
+                                                  .isValidWhatsappNumber(
+                                                    value,
+                                                  )) {
+                                                return 'Format WhatsApp tidak valid';
+                                              }
+                                              return null;
+                                            },
+                                            decoration: const InputDecoration(
+                                              labelText: 'Nomor WhatsApp',
+                                              prefixIcon: Icon(
+                                                Icons.phone_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        _fieldBox(
+                                          context: context,
+                                          child: TextFormField(
+                                            controller: _requestDateController,
+                                            readOnly: true,
+                                            validator: (value) {
+                                              if (_requestDate == null) {
+                                                return 'Tanggal pengajuan wajib dipilih';
+                                              }
+                                              return null;
+                                            },
+                                            onTap: () => _pickDate(
+                                              context: context,
+                                              title: 'Pilih Tanggal Pengajuan',
+                                              initial: _requestDate ??
+                                                  DateTime.now(),
+                                              onSelected: (date) {
+                                                setState(() {
+                                                  _requestDate = date;
+                                                  _requestDateController.text =
+                                                      _formatDate(date);
+                                                });
+                                              },
+                                            ),
+                                            decoration: const InputDecoration(
+                                              labelText: 'Tanggal Pengajuan',
+                                              prefixIcon: Icon(
+                                                Icons.event_note_outlined,
+                                              ),
+                                              suffixIcon: Icon(
+                                                Icons.calendar_month_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        _fieldBox(
+                                          context: context,
+                                          child: TextFormField(
+                                            controller: _borrowDateController,
+                                            readOnly: true,
+                                            validator: (value) {
+                                              if (_borrowDate == null) {
+                                                return 'Tanggal peminjaman wajib dipilih';
+                                              }
+                                              if (_requestDate != null &&
+                                                  _borrowDate!
+                                                      .isBefore(_requestDate!)) {
+                                                return 'Tanggal pinjam tidak boleh sebelum tanggal pengajuan';
+                                              }
+                                              return null;
+                                            },
+                                            onTap: () => _pickDate(
+                                              context: context,
+                                              title: 'Pilih Tanggal Peminjaman',
+                                              initial: _borrowDate ??
+                                                  DateTime.now().add(
+                                                    const Duration(days: 1),
+                                                  ),
+                                              onSelected: (date) {
+                                                setState(() {
+                                                  _borrowDate = date;
+                                                  _borrowDateController.text =
+                                                      _formatDate(date);
+                                                });
+                                              },
+                                            ),
+                                            decoration: const InputDecoration(
+                                              labelText: 'Tanggal Peminjaman',
+                                              prefixIcon: Icon(
+                                                Icons.date_range_outlined,
+                                              ),
+                                              suffixIcon: Icon(
+                                                Icons.calendar_today_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        _fieldBox(
+                                          context: context,
+                                          child: TextFormField(
+                                            controller: _startTimeController,
+                                            readOnly: true,
+                                            validator: (value) {
+                                              if (_startTime == null) {
+                                                return 'Jam mulai wajib dipilih';
+                                              }
+                                              return null;
+                                            },
+                                            onTap: () => _pickTime(
+                                              context: context,
+                                              title: 'Pilih Jam Mulai',
+                                              initial: _startTime ??
+                                                  const TimeOfDay(hour: 8, minute: 0),
+                                              onSelected: (time) {
+                                                setState(() {
+                                                  _startTime = time;
+                                                  _startTimeController.text =
+                                                      _formatTime(time);
+                                                });
+                                              },
+                                            ),
+                                            decoration: const InputDecoration(
+                                              labelText: 'Jam Mulai',
+                                              prefixIcon: Icon(
+                                                Icons.schedule_outlined,
+                                              ),
+                                              suffixIcon: Icon(
+                                                Icons.access_time_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        _fieldBox(
+                                          context: context,
+                                          child: TextFormField(
+                                            controller: _endTimeController,
+                                            readOnly: true,
+                                            validator: (value) {
+                                              if (_endTime == null) {
+                                                return 'Jam selesai wajib dipilih';
+                                              }
+                                              if (_startTime != null &&
+                                                  !_isEndAfterStart()) {
+                                                return 'Jam selesai harus setelah jam mulai';
+                                              }
+                                              return null;
+                                            },
+                                            onTap: () => _pickTime(
+                                              context: context,
+                                              title: 'Pilih Jam Selesai',
+                                              initial: _endTime ??
+                                                  const TimeOfDay(hour: 11, minute: 0),
+                                              onSelected: (time) {
+                                                setState(() {
+                                                  _endTime = time;
+                                                  _endTimeController.text =
+                                                      _formatTime(time);
+                                                });
+                                              },
+                                            ),
+                                            decoration: const InputDecoration(
+                                              labelText: 'Jam Selesai',
+                                              prefixIcon: Icon(
+                                                Icons.alarm_on_outlined,
+                                              ),
+                                              suffixIcon: Icon(
+                                                Icons.access_time_filled_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: constraints.maxWidth >= 720
+                                              ? constraints.maxWidth
+                                              : double.infinity,
+                                          child: TextFormField(
+                                            controller: _purposeController,
+                                            maxLines: 3,
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.trim().isEmpty) {
+                                                return 'Keperluan/Tujuan wajib diisi';
+                                              }
+                                              if (value.trim().length < 8) {
+                                                return 'Keperluan terlalu singkat';
+                                              }
+                                              return null;
+                                            },
+                                            decoration: const InputDecoration(
+                                              labelText:
+                                                  'Keperluan / Tujuan Peminjaman',
+                                              hintText:
+                                                  'Contoh: praktikum, penelitian, seminar, atau tugas akhir',
+                                              prefixIcon: Icon(
+                                                Icons.description_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Step(
+                                title: const Text('Fakultas & Laboratorium'),
+                                isActive: _step >= 1,
+                                content: Form(
+                                  key: _stepTwoKey,
+                                  child: _StepShell(
+                                    child: Wrap(
+                                      spacing: 14,
+                                      runSpacing: 14,
+                                      children: [
+                                        _fieldBox(
+                                          context: context,
+                                          child:
+                                              DropdownButtonFormField<String>(
+                                            value: _selectedFacultyCode,
+                                            items: AppLabCatalog.faculties
+                                                .map(
+                                                  (faculty) =>
+                                                      DropdownMenuItem(
+                                                    value: faculty.code,
+                                                    child: Text(
+                                                      '${faculty.code} - ${faculty.name}',
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (value) {
+                                              if (value == null) return;
+                                              final labs = AppLabCatalog
+                                                  .labsForFaculty(value);
+                                              setState(() {
+                                                _selectedFacultyCode = value;
+                                                _selectedLabId = labs.isNotEmpty
+                                                    ? labs.first.id
+                                                    : AppLabCatalog.labs.first.id;
+                                              });
+                                            },
+                                            decoration: const InputDecoration(
+                                              labelText: 'Fakultas',
+                                              prefixIcon: Icon(
+                                                Icons.account_balance_outlined,
+                                              ),
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.trim().isEmpty) {
+                                                return 'Fakultas wajib dipilih';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                        ),
+                                        _fieldBox(
+                                          context: context,
+                                          child:
+                                              DropdownButtonFormField<String>(
+                                            value: _selectedLabId,
+                                            items: _availableLabs
+                                                .map(
+                                                  (lab) => DropdownMenuItem(
+                                                    value: lab.id,
+                                                    child: Text(
+                                                      '${lab.name} · ${lab.location}',
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedLabId = value;
+                                              });
+                                            },
+                                            decoration: const InputDecoration(
+                                              labelText: 'Laboratorium',
+                                              prefixIcon: Icon(
+                                                Icons.science_outlined,
+                                              ),
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.trim().isEmpty) {
+                                                return 'Laboratorium wajib dipilih';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                        ),
+                                        if (_selectedLab != null)
+                                          _LabPreviewCard(lab: _selectedLab!),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Step(
+                                title: const Text('Barang & Opsi Lainnya'),
+                                isActive: _step >= 2,
+                                content: _StepShell(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      _InventoryChecklist(
+                                        inventories: _selectedLabInventories,
+                                        selectedItems: _selectedItems,
+                                        onToggle: _toggleItem,
+                                        onQuantityChanged: _updateItemQuantity,
+                                        onRemoveItem: _removeItem,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      TextFormField(
+                                        controller: _otherItemsController,
+                                        minLines: 3,
+                                        maxLines: 5,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Opsi Lainnya',
+                                          hintText:
+                                              'Tulis request alat tambahan atau kebutuhan khusus lainnya',
+                                          prefixIcon: Icon(
+                                            Icons.pending_actions_outlined,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Step(
+                                title: const Text('Review & Kirim'),
+                                isActive: _step >= 3,
+                                content: _ReviewPanel(
+                                  requestDate: _requestDate,
+                                  borrowDate: _borrowDate,
+                                  startTime: _startTime,
+                                  endTime: _endTime,
+                                  selectedFacultyCode: _selectedFacultyCode,
+                                  selectedLab: _selectedLab,
+                                  borrowerName: _nameController.text.trim(),
+                                  whatsappNumber: _waController.text.trim(),
+                                  purpose: _purposeController.text.trim(),
+                                  selectedItems:
+                                      _selectedItems.values.toList(),
+                                  otherItems:
+                                      _otherItemsController.text.trim(),
+                                  onEditData: () => setState(() => _step = 0),
+                                  onAddItem: () => setState(() => _step = 2),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (_step > 0) ...[
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: details.onStepCancel,
-                              child: const Text('Kembali'),
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
                   );
                 },
-                steps: [
-                  Step(
-                    title: const Text('Identitas & No WhatsApp'),
-                    isActive: _step >= 0,
-                    content: Column(
-                      children: [
-                        TextField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nama peminjam',
-                            prefixIcon: Icon(Icons.person_outline),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _waController,
-                          keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'No WhatsApp',
-                            prefixIcon: Icon(Icons.phone_outlined),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Step(
-                    title: const Text('Pilih Ruangan/Laboratorium'),
-                    isActive: _step >= 1,
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          initialValue: _selectedLabId,
-                          items: _labs
-                              .map(
-                                (lab) => DropdownMenuItem(
-                                  value: lab.id,
-                                  child: Text('${lab.name} - ${lab.location}'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) =>
-                              setState(() => _selectedLabId = value),
-                          decoration: const InputDecoration(
-                            labelText: 'Laboratorium',
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _VirtualTourDeskGrid(
-                          selectedDeskNo: _selectedDeskNo,
-                          onSelected: (deskNo) =>
-                              setState(() => _selectedDeskNo = deskNo),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Step(
-                    title: const Text('Pilih Barang Tidak Habis Pakai'),
-                    isActive: _step >= 2,
-                    content: _InventoryChecklist(
-                      inventories: _inventories
-                          .where((item) => item.labId == _selectedLabId)
-                          .toList(),
-                      selectedItems: _selectedItems,
-                      onToggle: _toggleItem,
-                    ),
-                  ),
-                  Step(
-                    title: const Text('Konfirmasi & Barang Habis Pakai'),
-                    isActive: _step >= 3,
-                    content: _ConsumableReviewStep(
-                      selectedLab: _selectedLab,
-                      selectedDeskNo: _selectedDeskNo,
-                      selectedItems: _selectedItems.values.toList(),
-                      consumableNotesController: _consumableNotesController,
-                      onQuantityChanged: _updateItemQuantity,
-                      onRemoveItem: _removeItem,
-                    ),
-                  ),
-                ],
               ),
             ),
     );
   }
 
-  LabRoom? get _selectedLab {
-    for (final lab in _labs) {
-      if (lab.id == _selectedLabId) {
-        return lab;
+  Future<void> _load() async {
+    try {
+      final inventories = await widget.repository.watchInventories().first;
+      if (!mounted) return;
+      setState(() {
+        _inventories = inventories;
+        _loading = false;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
+  Future<void> _handleStepContinue() async {
+    if (_step == 0) {
+      if (!(_stepOneKey.currentState?.validate() ?? false)) {
+        _showWarning('Lengkapi data identitas dan jadwal dengan benar.');
+        return;
+      }
+      if (!_isEndAfterStart()) {
+        _showWarning('Jam selesai harus lebih besar dari jam mulai.');
+        return;
+      }
+      if (_borrowDate != null &&
+          _requestDate != null &&
+          _borrowDate!.isBefore(_requestDate!)) {
+        _showWarning('Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.');
+        return;
+      }
+      setState(() => _step = 1);
+      return;
+    }
+
+    if (_step == 1) {
+      if (!(_stepTwoKey.currentState?.validate() ?? false)) {
+        _showWarning('Pilih fakultas dan laboratorium terlebih dahulu.');
+        return;
+      }
+      setState(() => _step = 2);
+      return;
+    }
+
+    if (_step == 2) {
+      setState(() => _step = 3);
+      return;
+    }
+
+    await _submitBooking();
+  }
+
+  Future<void> _submitBooking() async {
+    if (!(_stepOneKey.currentState?.validate() ?? false) ||
+        !(_stepTwoKey.currentState?.validate() ?? false)) {
+      _showWarning('Masih ada field yang perlu dilengkapi.');
+      setState(() => _step = 0);
+      return;
+    }
+    if (_borrowDate == null ||
+        _requestDate == null ||
+        _startTime == null ||
+        _endTime == null ||
+        !_isEndAfterStart()) {
+      _showWarning('Jadwal belum lengkap atau jam selesai tidak valid.');
+      setState(() => _step = 0);
+      return;
+    }
+
+    final selectedLab = _selectedLab;
+    if (selectedLab == null) {
+      _showWarning('Laboratorium belum dipilih.');
+      setState(() => _step = 1);
+      return;
+    }
+
+    try {
+      setState(() => _submitting = true);
+      final booking = await widget.repository.createMultiStepBooking(
+        borrowerName: _nameController.text.trim(),
+        whatsappNumber: AppValidation.normalizeWhatsappNumber(
+          _waController.text.trim(),
+        ),
+        facultyCode: _selectedFacultyCode ?? AppLabCatalog.faculties.first.code,
+        labId: selectedLab.id,
+        labNameSnapshot: selectedLab.name,
+        requestDate: _requestDate!,
+        borrowDate: _borrowDate!,
+        startTime: _formatTime(_startTime!),
+        endTime: _formatTime(_endTime!),
+        purpose: _purposeController.text.trim(),
+        deskNo: null,
+        items: _selectedItems.values.toList(),
+        otherItems: _otherItemsController.text.trim().isEmpty
+            ? null
+            : _otherItemsController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengajuan berhasil dikirim ke Supabase.')),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => BookingSuccessPage(booking: booking),
+        ),
+      );
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
       }
     }
-    return null;
   }
 
   void _toggleItem(LabInventory inventory, bool selected) {
@@ -226,161 +696,133 @@ class _BookingFormPageState extends State<BookingFormPage> {
   }
 
   void _removeItem(LabInventory inventory) {
-    setState(() => _selectedItems.remove(inventory.id));
+    setState(() {
+      _selectedItems.remove(inventory.id);
+    });
   }
 
-  Future<void> _continue() async {
-    if (_step < 3) {
-      setState(() => _step++);
-      return;
+  Future<void> _pickDate({
+    required BuildContext context,
+    required String title,
+    required DateTime initial,
+    required ValueChanged<DateTime> onSelected,
+  }) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: title,
+    );
+    if (picked != null) {
+      onSelected(picked);
     }
-    if (_selectedLabId == null) {
-      return;
+  }
+
+  Future<void> _pickTime({
+    required BuildContext context,
+    required String title,
+    required TimeOfDay initial,
+    required ValueChanged<TimeOfDay> onSelected,
+  }) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      helpText: title,
+    );
+    if (picked != null) {
+      onSelected(picked);
     }
-    if (_nameController.text.trim().isEmpty ||
-        _waController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama dan No WhatsApp wajib diisi.')),
-      );
-      setState(() => _step = 0);
-      return;
-    }
-    final whatsapp = _waController.text.trim();
-    if (!AppValidation.isValidWhatsappNumber(whatsapp)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Format No WhatsApp belum valid.')),
-      );
-      return;
-    }
-    try {
-      setState(() => _submitting = true);
-      final booking = await widget.repository.createMultiStepBooking(
-        labId: _selectedLabId!,
-        whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
-        tanggalPinjam: DateTime.now().add(const Duration(days: 1)),
-        deskNo: _selectedDeskNo,
-        items: _selectedItems.values.toList(),
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengajuan multi-step berhasil dikirim.')),
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => BookingSuccessPage(booking: booking)),
-      );
-    } on Object catch (error) {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
-      }
-    }
+  }
+
+  bool _isEndAfterStart() {
+    final start = _startTime;
+    final end = _endTime;
+    if (start == null || end == null) return false;
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes = end.hour * 60 + end.minute;
+    return endMinutes > startMinutes;
+  }
+
+  String _formatDate(DateTime date) => DateFormat('dd/MM/yyyy').format(date);
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  void _showWarning(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.orange.shade700,
+      ),
+    );
+  }
+
+  Widget _fieldBox({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    final width = MediaQuery.sizeOf(context).width;
+    final boxWidth = width >= 760 ? (width / 2) - 28 : double.infinity;
+    return SizedBox(width: boxWidth, child: child);
   }
 }
 
-class _VirtualTourDeskGrid extends StatelessWidget {
-  const _VirtualTourDeskGrid({
-    required this.selectedDeskNo,
-    required this.onSelected,
-  });
+class _StepShell extends StatelessWidget {
+  const _StepShell({required this.child});
 
-  final String? selectedDeskNo;
-  final ValueChanged<String> onSelected;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final desks = List.generate(18, (index) => 'M-${index + 1}');
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Interactive Lab Virtual Tour',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+        padding: const EdgeInsets.all(16),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _LabPreviewCard extends StatelessWidget {
+  const _LabPreviewCard({required this.lab});
+
+  final LabCatalog lab;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: AppTheme.cyberGradient,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            lab.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Pilih nomor meja komputer spesifik untuk sesi praktikum.',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-            ),
-            const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 430 ? 6 : 3;
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: desks.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1.1,
-                  ),
-                  itemBuilder: (context, index) {
-                    final deskNo = desks[index];
-                    final selected = selectedDeskNo == deskNo;
-                    final occupied = index == 2 || index == 9 || index == 14;
-                    return InkWell(
-                      onTap: occupied ? null : () => onSelected(deskNo),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: occupied
-                              ? AppTheme.richBronze.withValues(alpha: 0.22)
-                              : selected
-                              ? AppTheme.cleanCyan
-                              : AppTheme.richBronze.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: selected
-                                ? AppTheme.deepTeal
-                                : AppTheme.richBronze.withValues(alpha: 0.40),
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.desktop_windows_outlined,
-                              color: selected
-                                  ? AppTheme.midnightNavy
-                                  : AppTheme.deepTeal,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              deskNo,
-                              style: TextStyle(
-                                color: selected
-                                    ? AppTheme.midnightNavy
-                                    : AppTheme.deepTeal,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${lab.facultyCode} • ${lab.location}',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            lab.description,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ],
       ),
     );
   }
@@ -391,28 +833,46 @@ class _InventoryChecklist extends StatelessWidget {
     required this.inventories,
     required this.selectedItems,
     required this.onToggle,
+    required this.onQuantityChanged,
+    required this.onRemoveItem,
   });
 
   final List<LabInventory> inventories;
   final Map<String, BookingItemDraft> selectedItems;
   final void Function(LabInventory inventory, bool selected) onToggle;
+  final void Function(LabInventory inventory, int quantity) onQuantityChanged;
+  final ValueChanged<LabInventory> onRemoveItem;
 
   @override
   Widget build(BuildContext context) {
     if (inventories.isEmpty) {
-      return const Text('Tidak ada inventaris untuk lab ini.');
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.electricBlue.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.electricBlue.withValues(alpha: 0.14)),
+        ),
+        child: const Text(
+          'Belum ada inventaris yang tersedia untuk laboratorium ini.',
+          textAlign: TextAlign.center,
+        ),
+      );
     }
+
     return Column(
       children: inventories
           .map(
-            (inventory) => CheckboxListTile(
-              value: selectedItems.containsKey(inventory.id),
-              onChanged: inventory.isAvailable
-                  ? (value) => onToggle(inventory, value ?? false)
-                  : null,
-              title: Text(inventory.namaAlat),
-              subtitle: Text('Stok ${inventory.stokTersedia}'),
-              contentPadding: EdgeInsets.zero,
+            (inventory) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _InventoryTile(
+                inventory: inventory,
+                selected: selectedItems.containsKey(inventory.id),
+                draft: selectedItems[inventory.id],
+                onToggle: onToggle,
+                onQuantityChanged: onQuantityChanged,
+                onRemoveItem: onRemoveItem,
+              ),
             ),
           )
           .toList(),
@@ -420,114 +880,260 @@ class _InventoryChecklist extends StatelessWidget {
   }
 }
 
-class _ConsumableReviewStep extends StatelessWidget {
-  const _ConsumableReviewStep({
-    required this.selectedLab,
-    required this.selectedDeskNo,
-    required this.selectedItems,
-    required this.consumableNotesController,
+class _InventoryTile extends StatelessWidget {
+  const _InventoryTile({
+    required this.inventory,
+    required this.selected,
+    required this.draft,
+    required this.onToggle,
     required this.onQuantityChanged,
     required this.onRemoveItem,
   });
 
-  final LabRoom? selectedLab;
-  final String? selectedDeskNo;
-  final List<BookingItemDraft> selectedItems;
-  final TextEditingController consumableNotesController;
+  final LabInventory inventory;
+  final bool selected;
+  final BookingItemDraft? draft;
+  final void Function(LabInventory inventory, bool selected) onToggle;
   final void Function(LabInventory inventory, int quantity) onQuantityChanged;
   final ValueChanged<LabInventory> onRemoveItem;
 
   @override
   Widget build(BuildContext context) {
+    final isAvailable = inventory.isAvailable;
+    final quantity = draft?.quantity ?? 1;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: selected
+              ? AppTheme.electricBlue
+              : AppTheme.electricBlue.withValues(alpha: 0.14),
+        ),
+      ),
+      child: Column(
+        children: [
+          CheckboxListTile(
+            value: selected,
+            onChanged: isAvailable
+                ? (value) => onToggle(inventory, value ?? false)
+                : null,
+            title: Text(
+              inventory.namaAlat,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            subtitle: Text(
+              isAvailable ? 'Stok tersedia ${inventory.stokTersedia}' : 'Stok habis',
+            ),
+            secondary: Icon(
+              isAvailable ? Icons.inventory_2_outlined : Icons.block_outlined,
+              color: isAvailable ? AppTheme.electricBlue : Colors.red,
+            ),
+          ),
+          if (selected)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: quantity <= 1
+                        ? null
+                        : () => onQuantityChanged(inventory, quantity - 1),
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text(
+                    '$quantity',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  IconButton(
+                    onPressed: quantity >= inventory.stokTersedia
+                        ? null
+                        : () => onQuantityChanged(inventory, quantity + 1),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => onRemoveItem(inventory),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Hapus'),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewPanel extends StatelessWidget {
+  const _ReviewPanel({
+    required this.requestDate,
+    required this.borrowDate,
+    required this.startTime,
+    required this.endTime,
+    required this.selectedFacultyCode,
+    required this.selectedLab,
+    required this.borrowerName,
+    required this.whatsappNumber,
+    required this.purpose,
+    required this.selectedItems,
+    required this.otherItems,
+    required this.onEditData,
+    required this.onAddItem,
+  });
+
+  final DateTime? requestDate;
+  final DateTime? borrowDate;
+  final TimeOfDay? startTime;
+  final TimeOfDay? endTime;
+  final String? selectedFacultyCode;
+  final LabCatalog? selectedLab;
+  final String borrowerName;
+  final String whatsappNumber;
+  final String purpose;
+  final List<BookingItemDraft> selectedItems;
+  final String otherItems;
+  final VoidCallback onEditData;
+  final VoidCallback onAddItem;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormatter = DateFormat('dd/MM/yyyy');
+    final items = selectedItems;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.electricBlue.withValues(alpha: 0.16),
-                AppTheme.vibrantPurple.withValues(alpha: 0.12),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: AppTheme.electricBlue.withValues(alpha: 0.18),
-            ),
+            gradient: AppTheme.cyberGradient,
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              _ReviewPill(
-                icon: Icons.meeting_room_outlined,
-                label: 'Ruangan',
-                value: selectedLab?.name ?? 'Belum dipilih',
+              _ReviewChip(icon: Icons.person_outline, label: 'Nama', value: borrowerName),
+              _ReviewChip(icon: Icons.phone_outlined, label: 'WhatsApp', value: whatsappNumber),
+              _ReviewChip(
+                icon: Icons.account_balance_outlined,
+                label: 'Fakultas',
+                value: selectedFacultyCode ?? '-',
               ),
-              _ReviewPill(
-                icon: Icons.location_on_outlined,
-                label: 'Lokasi',
-                value: selectedLab?.location ?? '-',
+              _ReviewChip(
+                icon: Icons.science_outlined,
+                label: 'Lab',
+                value: selectedLab?.name ?? '-',
               ),
-              _ReviewPill(
-                icon: Icons.desktop_windows_outlined,
-                label: 'Meja',
-                value: selectedDeskNo ?? 'Opsional',
+              _ReviewChip(
+                icon: Icons.event_note_outlined,
+                label: 'Pengajuan',
+                value: requestDate == null ? '-' : dateFormatter.format(requestDate!),
+              ),
+              _ReviewChip(
+                icon: Icons.date_range_outlined,
+                label: 'Peminjaman',
+                value: borrowDate == null ? '-' : dateFormatter.format(borrowDate!),
+              ),
+              _ReviewChip(
+                icon: Icons.schedule_outlined,
+                label: 'Waktu',
+                value: '${startTime == null ? '-' : _formatTime(startTime!)} - ${endTime == null ? '-' : _formatTime(endTime!)}',
               ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: consumableNotesController,
-          minLines: 3,
-          maxLines: 5,
-          decoration: const InputDecoration(
-            labelText: 'Catatan barang habis pakai / kebutuhan praktikum',
-            hintText: 'Contoh: kabel jumper, kertas label, spidol board...',
-            prefixIcon: Icon(Icons.note_alt_outlined),
-          ),
-        ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         Text(
-          'Ringkasan Barang',
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(height: 10),
-        if (selectedItems.isEmpty)
-          const _EmptyBookingItems()
-        else
-          ...selectedItems.map(
-            (draft) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _SelectedItemTile(
-                draft: draft,
-                onQuantityChanged: onQuantityChanged,
-                onRemoveItem: onRemoveItem,
+          'Tujuan Peminjaman',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
               ),
-            ),
-          ),
+        ),
         const SizedBox(height: 8),
         Text(
-          'Saat dikirim, data ruangan, meja, dan barang yang dipilih akan tersimpan ke tabel bookings dan booking_items Supabase.',
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppTheme.muted, height: 1.4),
+          purpose.isEmpty ? '-' : purpose,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Daftar Barang / Alat',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        const SizedBox(height: 8),
+        if (items.isEmpty)
+          const Text('Belum ada barang yang dipilih.')
+        else
+          ...items.map(
+            (draft) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _SelectedItemRow(draft: draft),
+            ),
+          ),
+        if (otherItems.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Opsi Lainnya',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(otherItems),
+        ],
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onEditData,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Ubah Data'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onAddItem,
+                icon: const Icon(Icons.add_shopping_cart_outlined),
+                label: const Text('Tambah Barang'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.electricBlue.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            'Pastikan semua data sudah benar. Saat tombol Kirim ditekan, booking akan tersimpan ke Supabase dan siap diproses.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.muted,
+                  height: 1.4,
+                ),
+          ),
         ),
       ],
     );
   }
+
+  static String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
 }
 
-class _ReviewPill extends StatelessWidget {
-  const _ReviewPill({
+class _ReviewChip extends StatelessWidget {
+  const _ReviewChip({
     required this.icon,
     required this.label,
     required this.value,
@@ -540,17 +1146,18 @@ class _ReviewPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 160,
+      width: 200,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              gradient: AppTheme.cyberGradient,
+              color: Colors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: Icon(icon, color: Colors.white),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -559,16 +1166,20 @@ class _ReviewPill extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.muted,
+                  style: const TextStyle(
+                    color: Colors.white70,
                     fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
                 Text(
                   value,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
@@ -579,112 +1190,32 @@ class _ReviewPill extends StatelessWidget {
   }
 }
 
-class _SelectedItemTile extends StatelessWidget {
-  const _SelectedItemTile({
-    required this.draft,
-    required this.onQuantityChanged,
-    required this.onRemoveItem,
-  });
+class _SelectedItemRow extends StatelessWidget {
+  const _SelectedItemRow({required this.draft});
 
   final BookingItemDraft draft;
-  final void Function(LabInventory inventory, int quantity) onQuantityChanged;
-  final ValueChanged<LabInventory> onRemoveItem;
 
   @override
   Widget build(BuildContext context) {
-    final inventory = draft.inventory;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.electricBlue.withValues(alpha: 0.14),
-        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.electricBlue.withValues(alpha: 0.14)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppTheme.electricBlue.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: AppTheme.electricBlue,
-            ),
-          ),
-          const SizedBox(width: 12),
+          const Icon(Icons.inventory_2_outlined, color: AppTheme.electricBlue),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  inventory.namaAlat,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                Text(
-                  'Stok tersedia ${inventory.stokTersedia}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-                ),
-              ],
+            child: Text(
+              draft.inventory.namaAlat,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
-          IconButton(
-            tooltip: 'Kurangi jumlah',
-            onPressed: draft.quantity <= 1
-                ? null
-                : () => onQuantityChanged(inventory, draft.quantity - 1),
-            icon: const Icon(Icons.remove_circle_outline),
-          ),
-          Text(
-            '${draft.quantity}',
-            style: const TextStyle(fontWeight: FontWeight.w900),
-          ),
-          IconButton(
-            tooltip: 'Tambah jumlah',
-            onPressed: draft.quantity >= inventory.stokTersedia
-                ? null
-                : () => onQuantityChanged(inventory, draft.quantity + 1),
-            icon: const Icon(Icons.add_circle_outline),
-          ),
-          IconButton(
-            tooltip: 'Hapus barang',
-            onPressed: () => onRemoveItem(inventory),
-            icon: const Icon(Icons.delete_outline),
-          ),
+          Text('x${draft.quantity}', style: const TextStyle(fontWeight: FontWeight.w900)),
         ],
-      ),
-    );
-  }
-}
-
-class _EmptyBookingItems extends StatelessWidget {
-  const _EmptyBookingItems();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.electricBlue.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.electricBlue.withValues(alpha: 0.16),
-        ),
-      ),
-      child: Text(
-        'Belum ada barang dipilih. Pengajuan ruangan tetap bisa dikirim, atau kembali ke langkah sebelumnya untuk menambahkan alat.',
-        textAlign: TextAlign.center,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted, height: 1.4),
       ),
     );
   }

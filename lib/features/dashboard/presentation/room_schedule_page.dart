@@ -31,7 +31,7 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const GlassAppBar(title: 'Jadwal Pemakaian Ruangan'),
+      appBar: const GlassAppBar(title: 'Jadwal Ruangan'),
       body: SafeArea(
         child: FutureBuilder<List<LabRoom>>(
           future: _roomsFuture,
@@ -79,7 +79,7 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                   ),
                                   const SizedBox(height: 18),
                                   Text(
-                                    'Jadwal Pemakaian Ruangan',
+                                    'Jadwal Ruangan',
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
                                         .textTheme
@@ -311,7 +311,7 @@ class _ScheduleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$roomName • $timeRange',
+                    '$roomName - $timeRange',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.muted,
                       fontWeight: FontWeight.w600,
@@ -326,7 +326,7 @@ class _ScheduleCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            _StatusChip(status: booking.status),
+            _StatusChip(booking: booking),
           ],
         ),
       ),
@@ -352,25 +352,14 @@ class _ScheduleCard extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
+  const _StatusChip({required this.booking});
 
-  final String status;
+  final LabBooking booking;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      'approved_aslab' ||
-      'approved_kalab' ||
-      'active' => const Color(0xFF22F55E),
-      'rejected' => const Color(0xFFFF4D6D),
-      _ => const Color(0xFFFFB020),
-    };
-    final label = switch (status) {
-      'approved_aslab' || 'approved_kalab' => 'Approved',
-      'active' => 'Active',
-      'rejected' => 'Ditolak',
-      _ => 'Pending',
-    };
+    final color = booking.statusColor;
+    final label = booking.statusLabel;
     return Chip(
       label: Text(label),
       labelStyle: TextStyle(color: color, fontWeight: FontWeight.w900),
