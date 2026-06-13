@@ -22,6 +22,7 @@ import 'room_schedule_page.dart';
 import 'sapras_facility_page.dart';
 import 'settings_page.dart';
 import 'widgets/busy_meter.dart';
+import 'widgets/booking_status_ui.dart';
 import 'widgets/status_timeline.dart';
 
 class MahasiswaDashboardPage extends StatelessWidget {
@@ -738,11 +739,7 @@ class _SmallStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final approved =
-        status == 'approved_aslab' ||
-        status == 'approved_kalab' ||
-        status == 'active';
-    final color = approved ? const Color(0xFF16A34A) : const Color(0xFFFF9800);
+    final color = BookingStatusUi.color(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -751,7 +748,7 @@ class _SmallStatusBadge extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
-        approved ? 'Disetujui' : 'Pending',
+        BookingStatusUi.label(status),
         style: TextStyle(color: color, fontWeight: FontWeight.w900),
       ),
     );
@@ -1006,12 +1003,7 @@ class _DashboardSummary extends StatelessWidget {
         .where((item) => item.status == 'pending')
         .length;
     final approved = state.bookings
-        .where(
-          (item) =>
-              item.status == 'approved_aslab' ||
-              item.status == 'approved_kalab' ||
-              item.status == 'active',
-        )
+        .where((item) => BookingStatusUi.isApprovedOrActive(item.status))
         .length;
     final available = state.inventories
         .where((item) => item.isAvailable)

@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/booking_status_ui.dart';
 import 'widgets/glass_app_bar.dart';
 
 class RoomSchedulePage extends StatefulWidget {
@@ -358,19 +359,8 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      'approved_aslab' ||
-      'approved_kalab' ||
-      'active' => const Color(0xFF22F55E),
-      'rejected' => const Color(0xFFFF4D6D),
-      _ => const Color(0xFFFFB020),
-    };
-    final label = switch (status) {
-      'approved_aslab' || 'approved_kalab' => 'Disetujui',
-      'active' => 'Disetujui',
-      'rejected' => 'Ditolak',
-      _ => 'Pending',
-    };
+    final color = BookingStatusUi.color(status);
+    final label = BookingStatusUi.label(status);
     return Chip(
       label: Text(label),
       labelStyle: TextStyle(color: color, fontWeight: FontWeight.w900),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'widgets/booking_status_ui.dart';
 import 'widgets/glass_app_bar.dart';
 
 class SaprasFacilityPage extends StatelessWidget {
@@ -395,31 +396,19 @@ class _UsageScheduleChip extends StatelessWidget {
 }
 
 Color _statusColor(String status) {
-  return switch (status) {
-    'approved_aslab' || 'approved_kalab' || 'active' => const Color(0xFF22F55E),
-    'pending' => const Color(0xFFFFB020),
-    'rejected' => const Color(0xFFFF4D6D),
-    _ => AppTheme.electricBlue,
-  };
+  return status == 'available'
+      ? AppTheme.electricBlue
+      : BookingStatusUi.color(status);
 }
 
 IconData _statusIcon(String status) {
-  return switch (status) {
-    'approved_aslab' || 'approved_kalab' || 'active' => Icons.verified_rounded,
-    'pending' => Icons.pending_actions_rounded,
-    'rejected' => Icons.cancel_rounded,
-    _ => Icons.check_circle_outline_rounded,
-  };
+  return status == 'available'
+      ? Icons.check_circle_outline_rounded
+      : BookingStatusUi.icon(status);
 }
 
 String _statusLabel(String status) {
-  return switch (status) {
-    'approved_aslab' || 'approved_kalab' => 'Disetujui',
-    'active' => 'Sedang Dipakai',
-    'pending' => 'Pending',
-    'rejected' => 'Ditolak',
-    _ => 'Tersedia',
-  };
+  return status == 'available' ? 'Tersedia' : BookingStatusUi.label(status);
 }
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
