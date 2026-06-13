@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/brand.dart';
 import '../../../auth/bloc/auth_bloc.dart';
 import 'glass_app_bar.dart';
 
@@ -23,7 +24,7 @@ class DashboardShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GlassAppBar(
-        title: 'LabIN',
+        title: AppBrand.name,
         showProfileAvatar: true,
         onProfilePressed: () {},
         actions: [

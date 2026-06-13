@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/brand.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
@@ -48,7 +49,7 @@ class _KalabDashboardView extends StatelessWidget {
       },
       child: Scaffold(
         appBar: GlassAppBar(
-          title: 'LabIN Kalab',
+          title: '${AppBrand.name} Kalab',
           showProfileAvatar: true,
           onProfilePressed: () => _openSettings(context),
           actions: [

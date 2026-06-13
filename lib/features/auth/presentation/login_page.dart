@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validation.dart';
 import '../bloc/auth_bloc.dart';
@@ -76,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Text(
-                                  'Masuk ke LabIN',
+                                  'Masuk ke ${AppBrand.name}',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context)
                                       .textTheme
@@ -282,7 +283,7 @@ class _LoginHero extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'LabIN',
+            AppBrand.name,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               color: Colors.white,
@@ -290,7 +291,7 @@ class _LoginHero extends StatelessWidget {
             ),
           ),
           Text(
-            'Laboratory Intelligence System',
+            AppBrand.compactTagline,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.84),

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validation.dart';
 import '../bloc/auth_bloc.dart';
@@ -74,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                'Buat akun LabIN',
+                                'Buat akun ${AppBrand.name}',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.headlineSmall
                                     ?.copyWith(fontWeight: FontWeight.w800),

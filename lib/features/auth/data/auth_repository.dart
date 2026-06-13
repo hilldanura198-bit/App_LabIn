@@ -2,6 +2,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/brand.dart';
 import '../bloc/auth_bloc.dart';
 
 class AuthRepository {
@@ -103,7 +104,7 @@ class AuthRepository {
     }
 
     final authenticated = await _localAuth.authenticate(
-      localizedReason: 'Gunakan biometrik untuk membuka sesi LabIN',
+      localizedReason: 'Gunakan biometrik untuk membuka sesi ${AppBrand.name}',
       biometricOnly: true,
       persistAcrossBackgrounding: true,
     );

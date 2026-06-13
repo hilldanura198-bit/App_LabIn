@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -23,9 +24,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   static const _slides = [
     _OnboardingSlideData(
-      title: 'SIMLAB Terpadu',
+      title: 'LabIn Terpadu',
       description:
-          'Kelola aktivitas laboratorium, inventaris, dan reservasi ruangan dalam satu pengalaman mobile yang cepat.',
+          'Kelola aktivitas multi-fasilitas, inventaris lintas fakultas, dan reservasi ruangan dalam satu pengalaman mobile yang cepat.',
       icon: Icons.hub_outlined,
     ),
     _OnboardingSlideData(
@@ -63,71 +64,83 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ? 520.0
                     : constraints.maxWidth;
                 return Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxWidth),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const _BrandLockup(),
-                          const Spacer(),
-                          _GlassOnboardingPanel(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  height: constraints.maxHeight < 640
-                                      ? 260
-                                      : 330,
-                                  child: PageView.builder(
-                                    controller: _controller,
-                                    itemCount: _slides.length,
-                                    onPageChanged: (value) =>
-                                        setState(() => _index = value),
-                                    itemBuilder: (context, index) {
-                                      return _OnboardingSlide(
-                                        data: _slides[index],
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: maxWidth,
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const _BrandLockup(),
+                            SizedBox(
+                              height: constraints.maxHeight < 700 ? 18 : 28,
+                            ),
+                            _GlassOnboardingPanel(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    height: constraints.maxHeight < 640
+                                        ? 240
+                                        : 330,
+                                    child: PageView.builder(
+                                      controller: _controller,
+                                      itemCount: _slides.length,
+                                      onPageChanged: (value) =>
+                                          setState(() => _index = value),
+                                      itemBuilder: (context, index) {
+                                        return _OnboardingSlide(
+                                          data: _slides[index],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _OnboardingDots(
+                                    activeIndex: _index,
+                                    length: _slides.length,
+                                  ),
+                                  SizedBox(
+                                    height: constraints.maxHeight < 700
+                                        ? 16
+                                        : 24,
+                                  ),
+                                  CyberGradientButton(
+                                    onPressed: () {
+                                      if (isLast) {
+                                        widget.onFinished();
+                                        return;
+                                      }
+                                      _controller.nextPage(
+                                        duration: const Duration(
+                                          milliseconds: 320,
+                                        ),
+                                        curve: Curves.easeOutCubic,
                                       );
                                     },
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          isLast ? 'Mulai Sekarang' : 'Lanjut',
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.arrow_forward_rounded),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                                _OnboardingDots(
-                                  activeIndex: _index,
-                                  length: _slides.length,
-                                ),
-                                const SizedBox(height: 24),
-                                CyberGradientButton(
-                                  onPressed: () {
-                                    if (isLast) {
-                                      widget.onFinished();
-                                      return;
-                                    }
-                                    _controller.nextPage(
-                                      duration: const Duration(
-                                        milliseconds: 320,
-                                      ),
-                                      curve: Curves.easeOutCubic,
-                                    );
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        isLast ? 'Mulai Sekarang' : 'Lanjut',
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(Icons.arrow_forward_rounded),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -210,7 +223,7 @@ class _BrandLockup extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          'LabIN',
+          AppBrand.name,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             color: Colors.white,
@@ -225,7 +238,7 @@ class _BrandLockup extends StatelessWidget {
           ),
         ),
         Text(
-          'Laboratory Intelligence System',
+          AppBrand.tagline,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.white.withValues(alpha: 0.86),

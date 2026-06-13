@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validation.dart';
 
@@ -75,7 +76,7 @@ class _CampusSsoPageState extends State<CampusSsoPage> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'SSO simulasi ini mengembalikan NIM, nama, dan email kampus untuk dipakai di LabIN.',
+                        'SSO simulasi ini mengembalikan NIM, nama, dan email kampus untuk dipakai di ${AppBrand.name}.',
                         textAlign: TextAlign.center,
                         style: Theme.of(
                           context,
@@ -141,7 +142,7 @@ class _CampusSsoPageState extends State<CampusSsoPage> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Sesudah valid, data identitas akan dikirim balik ke halaman login untuk dipakai otomatis.',
+                        'Sesudah valid, data identitas akan dikirim balik ke halaman login ${AppBrand.name} untuk dipakai otomatis.',
                         textAlign: TextAlign.center,
                         style: Theme.of(
                           context,

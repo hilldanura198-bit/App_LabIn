@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
@@ -78,10 +79,15 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
             BlocBuilder<DashboardBloc, DashboardState>(
               builder: (context, state) {
                 return Padding(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: Badge(
-                    label: Text('${state.cartCount}'),
-                    child: const Icon(Icons.shopping_bag_outlined),
+                  padding: const EdgeInsets.only(right: 6),
+                  child: IconButton(
+                    tooltip: 'Keranjang',
+                    onPressed: () => _openCart(context, state),
+                    icon: Badge(
+                      isLabelVisible: state.cartCount > 0,
+                      label: Text('${state.cartCount}'),
+                      child: const Icon(Icons.shopping_bag_outlined),
+                    ),
                   ),
                 );
               },
@@ -194,6 +200,155 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       ),
     );
   }
+
+  void _openCart(BuildContext context, DashboardState state) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.72,
+          minChildSize: 0.42,
+          maxChildSize: 0.94,
+          builder: (context, controller) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Container(
+                        width: 46,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: AppTheme.muted.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.shopping_bag_outlined,
+                            color: AppTheme.deepTeal,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Keranjang ${AppBrand.name}',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        controller: controller,
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                        itemBuilder: (context, index) {
+                          final item = state.cart.values.elementAt(index);
+                          return Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: AppTheme.cleanCyan.withValues(
+                                  alpha: 0.18,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    gradient: AppTheme.cyberGradient,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.inventory_2_outlined,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.inventory.namaAlat,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Jumlah ${item.quantity} | Sisa ${item.inventory.stokTersedia - item.quantity}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(color: AppTheme.muted),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () =>
+                                      context.read<DashboardBloc>().add(
+                                        DashboardCartItemRemoved(
+                                          item.inventory.id,
+                                        ),
+                                      ),
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemCount: state.cart.values.length,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      child: ElevatedButton.icon(
+                        onPressed: state.cart.isEmpty || state.isLoading
+                            ? null
+                            : () {
+                                context.read<DashboardBloc>().add(
+                                  const DashboardCheckoutRequested(),
+                                );
+                                Navigator.of(context).pop();
+                              },
+                        icon: const Icon(Icons.send_rounded),
+                        label: const Text('Checkout Keranjang'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 class _HomeScrollContent extends StatelessWidget {
@@ -208,9 +363,10 @@ class _HomeScrollContent extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth >= 1000
-              ? 940.0
+              ? 920.0
               : constraints.maxWidth;
-          final gridColumns = constraints.maxWidth >= 720 ? 3 : 2;
+          final gridColumns = constraints.maxWidth >= 760 ? 3 : 2;
+          final previewInventories = _previewInventories(state.inventories);
           return Center(
             child: RefreshIndicator(
               onRefresh: () async {
@@ -229,21 +385,47 @@ class _HomeScrollContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Campus Sarpras Portal',
+                        AppBrand.name,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w900),
                       ),
+                      const SizedBox(height: 6),
+                      Text(
+                        AppBrand.tagline,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                      ),
                       const SizedBox(height: 16),
                       _StockCalendar(state: state),
                       const SizedBox(height: 16),
-                      _SimlabMenu(repository: repository),
+                      _QuickModuleGrid(repository: repository),
                       const SizedBox(height: 16),
                       const _CampusInsights(),
                       const SizedBox(height: 16),
                       _InventoryGrid(
-                        inventories: state.inventories,
+                        inventories: previewInventories,
                         columns: gridColumns,
+                        cart: state.cart,
+                        repository: repository,
+                      ),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: OutlinedButton.icon(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    SaprasFacilityPage(repository: repository),
+                              ),
+                            ),
+                            icon: const Icon(Icons.storefront_outlined),
+                            label: const Text('Buka Katalog Lengkap'),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _CartCheckout(state: state),
@@ -273,8 +455,8 @@ class _HomeScrollContent extends StatelessWidget {
   }
 }
 
-class _SimlabMenu extends StatelessWidget {
-  const _SimlabMenu({required this.repository});
+class _QuickModuleGrid extends StatelessWidget {
+  const _QuickModuleGrid({required this.repository});
 
   final DashboardRepository repository;
 
@@ -321,52 +503,41 @@ class _SimlabMenu extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Modul SIMLAB & SAPRAS',
+              'Modul LabIn & Sarpras',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
-            const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.48,
-              ),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return InkWell(
-                  onTap: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => item.page)),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: item.color,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Icon(item.icon, color: AppTheme.deepTeal),
-                        Text(
-                          item.title,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                      ],
-                    ),
+            const SizedBox(height: 10),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 720 ? 3 : 2;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: items.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: columns == 3 ? 1.02 : 1.06,
                   ),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _QuickModuleCard(
+                      icon: item.icon,
+                      title: item.title,
+                      subtitle: _moduleSubtitle(index),
+                      onTap: () => Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (_) => item.page)),
+                    );
+                  },
                 );
               },
             ),
@@ -374,6 +545,17 @@ class _SimlabMenu extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _moduleSubtitle(int index) {
+    return switch (index) {
+      0 => 'Reservasi cepat dan presisi',
+      1 => 'Ajukan peminjaman terjadwal',
+      2 => 'Dokumen terhubung cloud',
+      3 => 'Jadwal ruang multi-lab',
+      4 => 'Pantau status instan',
+      _ => 'Katalog fasilitas kampus',
+    };
   }
 }
 
@@ -509,8 +691,8 @@ class _FaqAccordion extends StatelessWidget {
 
   static const _items = [
     (
-      'Siapa saja yang bisa menggunakan LabIN?',
-      'LabIN dapat digunakan oleh mahasiswa, asisten laboratorium, dan kepala laboratorium sesuai hak akses masing-masing.',
+      'Siapa saja yang bisa menggunakan LabIn?',
+      'LabIn dapat digunakan oleh mahasiswa, asisten laboratorium, dan kepala laboratorium sesuai hak akses masing-masing.',
     ),
     (
       'Apakah bisa meminjam lebih dari satu barang?',
@@ -592,6 +774,84 @@ class _MenuItem {
   final Widget page;
 }
 
+class _QuickModuleCard extends StatelessWidget {
+  const _QuickModuleCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: AppTheme.cyberGradient,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.electricBlue.withValues(alpha: 0.16),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: Colors.white, size: 26),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.88),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+List<LabInventory> _previewInventories(List<LabInventory> inventories) {
+  final sorted = [...inventories]
+    ..sort((a, b) => b.stokTersedia.compareTo(a.stokTersedia));
+  return sorted.take(8).toList();
+}
+
 class _StockCalendar extends StatelessWidget {
   const _StockCalendar({required this.state});
 
@@ -603,69 +863,85 @@ class _StockCalendar extends StatelessWidget {
       0,
       (sum, item) => sum + item.stokTersedia,
     );
-    final stockColor = totalAvailable > 0
-        ? AppTheme.richBronze
-        : AppTheme.sepia;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Live Stock & Smart Calendar',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 10),
-            TableCalendar<void>(
-              firstDay: DateTime.now().subtract(const Duration(days: 1)),
-              lastDay: DateTime.now().add(const Duration(days: 90)),
-              focusedDay: state.selectedDate,
-              selectedDayPredicate: (day) => isSameDay(day, state.selectedDate),
-              calendarFormat: CalendarFormat.week,
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: false,
-              ),
-              onDaySelected: (selectedDay, _) {
-                context.read<DashboardBloc>().add(
-                  DashboardDateSelected(
-                    DateTime(
-                      selectedDay.year,
-                      selectedDay.month,
-                      selectedDay.day,
-                      9,
+    final stockColor = totalAvailable > 0 ? AppTheme.cleanCyan : AppTheme.sepia;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Live Stock & Smart Calendar',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cyberGradient,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Text(
+                    '$totalAvailable stok tersedia saat ini',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                );
-              },
-              calendarBuilders: CalendarBuilders(
-                markerBuilder: (context, date, events) {
-                  return Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: stockColor,
-                        shape: BoxShape.circle,
+                ),
+                const SizedBox(height: 12),
+                TableCalendar<void>(
+                  firstDay: DateTime.now().subtract(const Duration(days: 1)),
+                  lastDay: DateTime.now().add(const Duration(days: 90)),
+                  focusedDay: state.selectedDate,
+                  selectedDayPredicate: (day) =>
+                      isSameDay(day, state.selectedDate),
+                  calendarFormat: CalendarFormat.week,
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                  ),
+                  onDaySelected: (selectedDay, _) {
+                    context.read<DashboardBloc>().add(
+                      DashboardDateSelected(
+                        DateTime(
+                          selectedDay.year,
+                          selectedDay.month,
+                          selectedDay.day,
+                          9,
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.circle, color: stockColor, size: 12),
-                const SizedBox(width: 8),
-                Text('$totalAvailable stok tersedia saat ini'),
+                    );
+                  },
+                  calendarBuilders: CalendarBuilders(
+                    markerBuilder: (context, date, events) {
+                      return Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: stockColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -673,15 +949,26 @@ class _StockCalendar extends StatelessWidget {
 }
 
 class _InventoryGrid extends StatelessWidget {
-  const _InventoryGrid({required this.inventories, required this.columns});
+  const _InventoryGrid({
+    required this.inventories,
+    required this.columns,
+    required this.cart,
+    required this.repository,
+  });
 
   final List<LabInventory> inventories;
   final int columns;
+  final Map<String, BookingItemDraft> cart;
+  final DashboardRepository repository;
 
   @override
   Widget build(BuildContext context) {
     if (inventories.isEmpty) {
-      return const _EmptyCard(text: 'Inventaris belum tersedia.');
+      return _EmptyCard(
+        text: 'Inventaris belum tersedia.',
+        actionLabel: 'Buka Katalog Lengkap',
+        onAction: () => _openCatalog(context),
+      );
     }
     return GridView.builder(
       shrinkWrap: true,
@@ -695,46 +982,91 @@ class _InventoryGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final inventory = inventories[index];
+        final reserved = cart[inventory.id]?.quantity ?? 0;
+        final remaining = inventory.stokTersedia - reserved;
+        final available = remaining > 0 && inventory.isAvailable;
         return Card(
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  inventory.isAvailable
-                      ? Icons.precision_manufacturing_outlined
-                      : Icons.warning_amber_rounded,
-                  color: inventory.isAvailable
-                      ? AppTheme.richBronze
-                      : AppTheme.sepia,
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cyberGradient,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    inventory.isAvailable
+                        ? Icons.precision_manufacturing_outlined
+                        : Icons.warning_amber_rounded,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   inventory.namaAlat,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: Theme.of(
                     context,
                   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                const Spacer(),
-                Text('Stok ${inventory.stokTersedia}/${inventory.totalStok}'),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: available
+                        ? AppTheme.cleanCyan.withValues(alpha: 0.12)
+                        : Colors.redAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    available ? 'Sisa $remaining' : 'Stok Habis',
+                    style: TextStyle(
+                      color: available ? AppTheme.deepTeal : Colors.redAccent,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                ),
                 const SizedBox(height: 10),
                 FilledButton.tonalIcon(
-                  onPressed: inventory.isAvailable
+                  onPressed: available
                       ? () => context.read<DashboardBloc>().add(
                           DashboardCartItemAdded(inventory),
                         )
                       : null,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Tambah'),
+                  label: Text(available ? 'Tambah' : 'Stok Habis'),
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  void _openCatalog(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SaprasFacilityPage(repository: repository),
+      ),
     );
   }
 }
@@ -953,14 +1285,32 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
 }
 
 class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.text});
+  const _EmptyCard({required this.text, this.actionLabel, this.onAction});
 
   final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(padding: const EdgeInsets.all(18), child: Text(text)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(text, textAlign: TextAlign.center),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: onAction,
+                icon: const Icon(Icons.storefront_outlined),
+                label: Text(actionLabel!),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
@@ -45,7 +46,7 @@ class _AslabDashboardView extends StatelessWidget {
       },
       child: Scaffold(
         appBar: GlassAppBar(
-          title: 'LabIN Aslab',
+          title: '${AppBrand.name} Aslab',
           showProfileAvatar: true,
           onProfilePressed: () => _openSettings(context),
           actions: [
