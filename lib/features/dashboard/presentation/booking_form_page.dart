@@ -504,6 +504,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           context: context,
                                           child: DropdownButtonFormField<String>(
                                             initialValue: _selectedFacultyCode,
+                                            isExpanded: true,
                                             autovalidateMode: AutovalidateMode
                                                 .onUserInteraction,
                                             items: AppLabCatalog.faculties
@@ -512,6 +513,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                     value: faculty.code,
                                                     child: Text(
                                                       '${faculty.code} - ${faculty.name}',
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 )
@@ -551,6 +555,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           context: context,
                                           child: DropdownButtonFormField<String>(
                                             initialValue: _selectedLabId,
+                                            isExpanded: true,
                                             autovalidateMode: AutovalidateMode
                                                 .onUserInteraction,
                                             items: _availableLabs
@@ -903,9 +908,16 @@ class _BookingFormPageState extends State<BookingFormPage> {
   }
 
   Widget _fieldBox({required BuildContext context, required Widget child}) {
-    final width = MediaQuery.sizeOf(context).width;
-    final boxWidth = width >= 760 ? (width / 2) - 28 : double.infinity;
-    return SizedBox(width: boxWidth, child: child);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        if (maxWidth.isFinite && maxWidth >= 680) {
+          final boxWidth = ((maxWidth - 14) / 2).clamp(280.0, 420.0);
+          return SizedBox(width: boxWidth, child: child);
+        }
+        return SizedBox(width: double.infinity, child: child);
+      },
+    );
   }
 }
 
