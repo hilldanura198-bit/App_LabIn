@@ -140,7 +140,10 @@ class _NotificationCard extends StatelessWidget {
                             child: Text(
                               notification.title,
                               style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w900),
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
                             ),
                           ),
                           if (!notification.isRead)
@@ -157,16 +160,17 @@ class _NotificationCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         notification.message,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                          height: 1.35,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         _formatTime(notification.createdAt),
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade300,
+                        ),
                       ),
                     ],
                   ),

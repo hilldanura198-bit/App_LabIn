@@ -62,8 +62,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
 
   bool get _isStepTwoValid {
     return (_selectedFacultyCode ?? '').trim().isNotEmpty &&
-        (_selectedLabId ?? '').trim().isNotEmpty &&
-        _hasSelectedItems;
+        (_selectedLabId ?? '').trim().isNotEmpty;
   }
 
   bool get _canProceedCurrentStep {
@@ -71,7 +70,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
       0 => _isStepOneValid,
       1 => _isStepTwoValid,
       2 => _hasSelectedItems,
-      _ => _isStepOneValid && _isStepTwoValid && _hasSelectedItems,
+      _ => _isStepOneValid && _isStepTwoValid,
     };
   }
 

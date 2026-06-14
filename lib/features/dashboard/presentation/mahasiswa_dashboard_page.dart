@@ -870,19 +870,19 @@ class _StockCalendar extends StatefulWidget {
 }
 
 class _StockCalendarState extends State<_StockCalendar> {
-  static const _pageSpan = 24;
+  static const _weekAnchor = 78;
+  static const _weekCount = 156;
   late final PageController _pageController;
-  late final DateTime _baseMonth;
+  late final DateTime _baseWeekStart;
   late int _visiblePage;
-  late DateTime _visibleMonth;
+  late DateTime _visibleWeekStart;
 
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _baseMonth = DateTime(now.year, now.month, 1);
-    _visiblePage = _pageSpan;
-    _visibleMonth = _monthForPage(_visiblePage);
+    _baseWeekStart = _startOfWeek(DateTime.now());
+    _visiblePage = _weekAnchor;
+    _visibleWeekStart = _weekForPage(_visiblePage);
     _pageController = PageController(initialPage: _visiblePage);
   }
 
@@ -898,8 +898,9 @@ class _StockCalendarState extends State<_StockCalendar> {
       0,
       (sum, item) => sum + item.stokTersedia,
     );
-    final stockColor = totalAvailable > 0 ? AppTheme.cleanCyan : AppTheme.sepia;
-    final totalLabel = '$totalAvailable stok tersedia saat ini';
+    final stockColor = totalAvailable > 0
+        ? AppTheme.vibrantPurple
+        : AppTheme.sepia;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
@@ -907,7 +908,7 @@ class _StockCalendarState extends State<_StockCalendar> {
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   children: [
@@ -916,14 +917,14 @@ class _StockCalendarState extends State<_StockCalendar> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            'Live Stock & Smart Calendar',
+                            'Smart Horizontal Calendar',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Geser bulan untuk menelusuri tanggal lain',
+                            'Geser untuk melihat minggu lain',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: AppTheme.muted),
@@ -931,19 +932,18 @@ class _StockCalendarState extends State<_StockCalendar> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
                     IconButton(
-                      onPressed: _goToPreviousMonth,
+                      onPressed: _goToPreviousWeek,
                       icon: const Icon(Icons.chevron_left_rounded),
                     ),
                     Text(
-                      _monthLabel(_visibleMonth),
+                      _weekLabel(_visibleWeekStart),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     IconButton(
-                      onPressed: _goToNextMonth,
+                      onPressed: _goToNextWeek,
                       icon: const Icon(Icons.chevron_right_rounded),
                     ),
                   ],
@@ -959,7 +959,7 @@ class _StockCalendarState extends State<_StockCalendar> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Text(
-                    totalLabel,
+                    '$totalAvailable stok tersedia saat ini',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
@@ -969,109 +969,102 @@ class _StockCalendarState extends State<_StockCalendar> {
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 330,
+                  height: 108,
                   child: PageView.builder(
                     controller: _pageController,
+                    itemCount: _weekCount,
                     onPageChanged: (page) {
                       setState(() {
                         _visiblePage = page;
-                        _visibleMonth = _monthForPage(page);
+                        _visibleWeekStart = _weekForPage(page);
                       });
                     },
-                    itemBuilder: (context, index) {
-                      final month = _monthForPage(index);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: TableCalendar<void>(
-                          firstDay: DateTime(
-                            month.year,
-                            month.month,
-                            1,
-                          ).subtract(const Duration(days: 7)),
-                          lastDay: DateTime(
-                            month.year,
-                            month.month + 1,
-                            0,
-                          ).add(const Duration(days: 7)),
-                          focusedDay: month,
-                          selectedDayPredicate: (day) =>
-                              isSameDay(day, widget.state.selectedDate),
-                          calendarFormat: CalendarFormat.month,
-                          availableCalendarFormats: const {
-                            CalendarFormat.month: 'Bulan',
-                          },
-                          availableGestures: AvailableGestures.none,
-                          headerVisible: false,
-                          startingDayOfWeek: StartingDayOfWeek.monday,
-                          sixWeekMonthsEnforced: false,
-                          onDaySelected: (selectedDay, _) {
-                            context.read<DashboardBloc>().add(
-                              DashboardDateSelected(
-                                DateTime(
-                                  selectedDay.year,
-                                  selectedDay.month,
-                                  selectedDay.day,
-                                  9,
-                                ),
+                    itemBuilder: (context, page) {
+                      final weekStart = _weekForPage(page);
+                      return Row(
+                        children: List.generate(7, (index) {
+                          final day = weekStart.add(Duration(days: index));
+                          final selected = isSameDay(
+                            day,
+                            widget.state.selectedDate,
+                          );
+                          final isToday = isSameDay(day, DateTime.now());
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
                               ),
-                            );
-                          },
-                          calendarStyle: CalendarStyle(
-                            outsideDaysVisible: false,
-                            todayDecoration: BoxDecoration(
-                              color: AppTheme.electricBlue.withValues(
-                                alpha: 0.16,
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            selectedDecoration: const BoxDecoration(
-                              gradient: AppTheme.cyberGradient,
-                              shape: BoxShape.circle,
-                            ),
-                            markerDecoration: BoxDecoration(
-                              color: stockColor,
-                              shape: BoxShape.circle,
-                            ),
-                            selectedTextStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            todayTextStyle: const TextStyle(
-                              color: AppTheme.electricBlue,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            weekendTextStyle: Theme.of(context)
-                                .textTheme
-                                .bodySmall!
-                                .copyWith(
-                                  color: AppTheme.vibrantPurple,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                          daysOfWeekStyle: const DaysOfWeekStyle(
-                            weekdayStyle: TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
-                            weekendStyle: TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          calendarBuilders: CalendarBuilders(
-                            markerBuilder: (context, date, events) {
-                              return Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Container(
-                                  width: 7,
-                                  height: 7,
+                              child: GestureDetector(
+                                onTap: () {
+                                  context.read<DashboardBloc>().add(
+                                    DashboardDateSelected(
+                                      DateTime(day.year, day.month, day.day, 9),
+                                    ),
+                                  );
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: stockColor,
-                                    shape: BoxShape.circle,
+                                    color: selected
+                                        ? AppTheme.electricBlue.withValues(
+                                            alpha: 0.10,
+                                          )
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: selected
+                                          ? AppTheme.electricBlue
+                                          : Colors.transparent,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        _weekdayShort(day.weekday),
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color: selected
+                                                  ? AppTheme.electricBlue
+                                                  : AppTheme.muted,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${day.day}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              color: selected || isToday
+                                                  ? AppTheme.midnightNavy
+                                                  : AppTheme.darkCharcoal,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: BoxDecoration(
+                                          color: stockColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-                        ),
+                              ),
+                            ),
+                          );
+                        }),
                       );
                     },
                   ),
@@ -1084,47 +1077,64 @@ class _StockCalendarState extends State<_StockCalendar> {
     );
   }
 
-  DateTime _monthForPage(int page) {
-    final offset = page - _pageSpan;
-    return DateTime(_baseMonth.year, _baseMonth.month + offset, 1);
+  DateTime _startOfWeek(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return normalized.subtract(Duration(days: normalized.weekday - 1));
   }
 
-  String _monthLabel(DateTime month) {
-    return '${_monthName(month.month)} ${month.year}';
+  DateTime _weekForPage(int page) {
+    return _baseWeekStart.add(Duration(days: (page - _weekAnchor) * 7));
   }
 
-  String _monthName(int month) {
-    return switch (month) {
-      1 => 'Januari',
-      2 => 'Februari',
-      3 => 'Maret',
-      4 => 'April',
-      5 => 'Mei',
-      6 => 'Juni',
-      7 => 'Juli',
-      8 => 'Agustus',
-      9 => 'September',
-      10 => 'Oktober',
-      11 => 'November',
-      _ => 'Desember',
+  String _weekLabel(DateTime weekStart) {
+    final end = weekStart.add(const Duration(days: 6));
+    return '${_dayLabel(weekStart)} - ${_dayLabel(end)}';
+  }
+
+  String _dayLabel(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
+  String _weekdayShort(int weekday) {
+    return switch (weekday) {
+      DateTime.monday => 'Sen',
+      DateTime.tuesday => 'Sel',
+      DateTime.wednesday => 'Rab',
+      DateTime.thursday => 'Kam',
+      DateTime.friday => 'Jum',
+      DateTime.saturday => 'Sab',
+      _ => 'Min',
     };
   }
 
-  Future<void> _goToPreviousMonth() async {
+  Future<void> _goToPreviousWeek() async {
     if (_visiblePage <= 0) return;
-    final target = _visiblePage - 1;
     await _pageController.animateToPage(
-      target,
-      duration: const Duration(milliseconds: 260),
+      _visiblePage - 1,
+      duration: const Duration(milliseconds: 240),
       curve: Curves.easeOut,
     );
   }
 
-  Future<void> _goToNextMonth() async {
-    final target = _visiblePage + 1;
+  Future<void> _goToNextWeek() async {
+    if (_visiblePage >= _weekCount - 1) return;
     await _pageController.animateToPage(
-      target,
-      duration: const Duration(milliseconds: 260),
+      _visiblePage + 1,
+      duration: const Duration(milliseconds: 240),
       curve: Curves.easeOut,
     );
   }
