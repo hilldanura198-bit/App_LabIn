@@ -11,6 +11,7 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/onboarding_page.dart';
 import 'features/auth/presentation/login_page.dart';
+import 'features/dashboard/presentation/admin_dashboard_page.dart';
 import 'features/dashboard/presentation/aslab_dashboard_page.dart';
 import 'features/dashboard/presentation/kalab_dashboard_page.dart';
 import 'features/dashboard/presentation/mahasiswa_dashboard_page.dart';
@@ -101,6 +102,7 @@ class AuthGate extends StatelessWidget {
             UserRole.mahasiswa => const MahasiswaDashboardPage(),
             UserRole.aslab => const AslabDashboardPage(),
             UserRole.kalab => const KalabDashboardPage(),
+            UserRole.admin => const AdminDashboardPage(),
           };
           return TermsGate(userId: state.userId, child: dashboard);
         }

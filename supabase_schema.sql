@@ -21,7 +21,7 @@ create table if not exists public.profiles (
   denda_terakumulasi integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint profiles_role_check check (role in ('mahasiswa', 'aslab', 'kalab')),
+  constraint profiles_role_check check (role in ('mahasiswa', 'aslab', 'kalab', 'pengurus', 'admin')),
   constraint profiles_compliance_score_check check (compliance_score between 0 and 100),
   constraint profiles_denda_terakumulasi_check check (denda_terakumulasi >= 0)
 );
