@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -50,7 +51,7 @@ class AuthRepository {
   Future<bool> signInWithGoogle() {
     return _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: 'io.supabase.labin://login-callback',
+      redirectTo: kIsWeb ? null : 'io.supabase.labin://login-callback',
       authScreenLaunchMode: LaunchMode.externalApplication,
       queryParams: const {'prompt': 'select_account'},
     );
@@ -109,9 +110,7 @@ class AuthRepository {
 
   Future<String> signInWithBiometricSession() async {
     final session = _supabase.auth.currentSession;
-    final canAuthenticate =
-        await _localAuth.canCheckBiometrics ||
-        await _localAuth.isDeviceSupported();
+    final canAuthenticate = await _canAuthenticateBiometrically();
     if (!canAuthenticate) {
       throw Exception('Biometric login tidak tersedia di perangkat ini.');
     }
@@ -135,6 +134,15 @@ class AuthRepository {
       throw Exception('Belum ada sesi Supabase aktif untuk biometric login.');
     }
     return userId;
+  }
+
+  Future<bool> _canAuthenticateBiometrically() async {
+    try {
+      return await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
+    } on Object {
+      return false;
+    }
   }
 
   Future<void> signOut() async {

@@ -58,10 +58,20 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final biometricSupported =
-          await _localAuth.canCheckBiometrics ||
-          await _localAuth.isDeviceSupported();
+      final biometricSupported = await _canUseBiometricsSafely();
       final profile = await widget.repository.fetchProfileSettings();
+      final currentUser = widget.repository.currentUser;
+      final metadata = currentUser?.userMetadata ?? const <String, dynamic>{};
+      final fallbackName = (metadata['nama'] ?? metadata['name'] ?? '')
+          .toString()
+          .trim();
+      final fallbackNim = (metadata['nim_nip'] ?? metadata['nim'] ?? '')
+          .toString()
+          .trim();
+      final fallbackWhatsapp =
+          (metadata['whatsapp_number'] ?? metadata['phone'] ?? '')
+              .toString()
+              .trim();
       final language = prefs.getString('app_language') ?? 'id';
       final locationEnabled = prefs.getBool('feature_location') ?? true;
       final deviceSecurityEnabled =
@@ -71,9 +81,15 @@ class _SettingsPageState extends State<SettingsPage> {
         _locationEnabled = locationEnabled;
         _deviceSecurityEnabled = deviceSecurityEnabled;
         _biometricSupported = biometricSupported;
-        _nameController.text = profile.name;
-        _nimController.text = profile.nimNip;
-        _waController.text = profile.whatsappNumber;
+        _nameController.text = profile.name.isNotEmpty
+            ? profile.name
+            : fallbackName;
+        _nimController.text = profile.nimNip.isNotEmpty
+            ? profile.nimNip
+            : fallbackNim;
+        _waController.text = profile.whatsappNumber.isNotEmpty
+            ? profile.whatsappNumber
+            : fallbackWhatsapp;
         _avatarUrl = profile.avatarUrl;
         _biometricEnabled =
             profile.biometricEnabled &&
@@ -91,6 +107,15 @@ class _SettingsPageState extends State<SettingsPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
+    }
+  }
+
+  Future<bool> _canUseBiometricsSafely() async {
+    try {
+      return await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
+    } on Object {
+      return false;
     }
   }
 
@@ -416,7 +441,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     try {
       final prefs = await SharedPreferences.getInstance();
-      await widget.repository.updateProfileSettings(
+      await widget.repository.updateProfile(
         ProfileSettings(
           name: _nameController.text,
           nimNip: _nimController.text,
