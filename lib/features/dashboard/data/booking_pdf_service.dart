@@ -59,6 +59,15 @@ class _Header extends pw.StatelessWidget {
         crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
           pw.Text(
+            'KOP SURAT ${AppBrand.name.toUpperCase()}',
+            style: pw.TextStyle(
+              color: PdfColors.white,
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
             AppBrand.name,
             style: pw.TextStyle(
               color: PdfColors.white,
@@ -104,7 +113,7 @@ class _InfoBlock extends pw.StatelessWidget {
   @override
   pw.Widget build(pw.Context context) {
     final rows = <_RowItem>[
-      _RowItem('Nomor Booking', booking.reservationNo),
+      _RowItem('Nomor Surat', booking.reservationNo),
       _RowItem('Nama Peminjam', booking.borrowerName),
       _RowItem('Fakultas', booking.facultyLabel),
       _RowItem('Lab / Ruang', booking.labDisplayName),
@@ -191,7 +200,7 @@ class _ItemBlock extends pw.StatelessWidget {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'Daftar Alat / Ruangan',
+            'Daftar Barang / Ruangan',
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 10),
@@ -202,7 +211,7 @@ class _ItemBlock extends pw.StatelessWidget {
             )
           else
             pw.TableHelper.fromTextArray(
-              headers: const ['No', 'Nama Alat', 'Qty'],
+              headers: const ['No', 'Nama Barang', 'Jumlah'],
               data: [
                 for (var i = 0; i < items.length; i++)
                   ['${i + 1}', items[i].name, '${items[i].quantity}'],
@@ -256,7 +265,7 @@ class _SignatureBlock extends pw.StatelessWidget {
           child: pw.Column(
             children: [
               pw.Text(
-                'Tanda Tangan',
+                'Pengesahan',
                 style: pw.TextStyle(
                   fontSize: 10,
                   fontWeight: pw.FontWeight.bold,

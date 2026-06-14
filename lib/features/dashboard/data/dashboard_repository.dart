@@ -21,6 +21,8 @@ class DashboardRepository {
 
   String? get currentUserId => _client?.auth.currentUser?.id;
 
+  User? get currentUser => _client?.auth.currentUser;
+
   Stream<List<LabInventory>> watchInventories() {
     return _supabase
         .from('inventories')
@@ -316,6 +318,10 @@ class DashboardRepository {
         .eq('id', userId)
         .single();
     return ProfileSettings.fromMap(row);
+  }
+
+  Future<void> updateProfile(ProfileSettings settings) {
+    return updateProfileSettings(settings);
   }
 
   Future<void> updateProfileSettings(ProfileSettings settings) async {
