@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -112,6 +113,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<bool> _canUseBiometricsSafely() async {
     try {
+      if (kIsWeb) {
+        return false;
+      }
       return await _localAuth.canCheckBiometrics ||
           await _localAuth.isDeviceSupported();
     } on Object {

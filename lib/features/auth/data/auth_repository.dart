@@ -109,6 +109,9 @@ class AuthRepository {
   }
 
   Future<String> signInWithBiometricSession() async {
+    if (kIsWeb) {
+      throw Exception('Biometrik tidak didukung di browser web.');
+    }
     final session = _supabase.auth.currentSession;
     final canAuthenticate = await _canAuthenticateBiometrically();
     if (!canAuthenticate) {
@@ -138,6 +141,9 @@ class AuthRepository {
 
   Future<bool> _canAuthenticateBiometrically() async {
     try {
+      if (kIsWeb) {
+        return false;
+      }
       return await _localAuth.canCheckBiometrics ||
           await _localAuth.isDeviceSupported();
     } on Object {

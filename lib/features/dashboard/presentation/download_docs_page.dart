@@ -1,15 +1,11 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/booking_pdf_service.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'download_docs_saver.dart';
 import 'widgets/glass_app_bar.dart';
 
 class DownloadDocsPage extends StatelessWidget {
@@ -52,15 +48,13 @@ class DownloadDocsPage extends StatelessWidget {
                       final bytes = await BookingPdfService.buildBookingLetter(
                         booking,
                       );
-                      final file = await _savePdfToDevice(
+                      final savedPath = await savePdfBytesToDevice(
                         bytes,
                         'LabIn-${booking.reservationNo}.pdf',
                       );
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('PDF tersimpan di ${file.path}'),
-                        ),
+                        SnackBar(content: Text('PDF tersimpan di $savedPath')),
                       );
                     } catch (error) {
                       if (!context.mounted) return;
@@ -77,24 +71,6 @@ class DownloadDocsPage extends StatelessWidget {
       ),
     );
   }
-}
-
-Future<File> _savePdfToDevice(Uint8List bytes, String filename) async {
-  if (Platform.isAndroid) {
-    await Permission.storage.request();
-  }
-
-  final baseDirectory =
-      await getDownloadsDirectory() ??
-      await getExternalStorageDirectory() ??
-      await getApplicationDocumentsDirectory();
-  final labInDirectory = Directory(
-    '${baseDirectory.path}${Platform.pathSeparator}LabIn',
-  );
-  await labInDirectory.create(recursive: true);
-  final file = File('${labInDirectory.path}${Platform.pathSeparator}$filename');
-  await file.writeAsBytes(bytes, flush: true);
-  return file;
 }
 
 class _BookingPdfCard extends StatelessWidget {
