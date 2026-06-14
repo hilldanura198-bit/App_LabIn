@@ -55,11 +55,6 @@ class _AslabDashboardView extends StatelessWidget {
               onPressed: () => _scanQr(context),
               icon: const Icon(Icons.qr_code_scanner_rounded),
             ),
-            IconButton(
-              tooltip: 'Pengaturan',
-              onPressed: () => _openSettings(context),
-              icon: const Icon(Icons.settings_outlined),
-            ),
             const SizedBox(width: 8),
           ],
         ),

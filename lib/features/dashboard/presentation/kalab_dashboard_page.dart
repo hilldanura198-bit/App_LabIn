@@ -58,11 +58,6 @@ class _KalabDashboardView extends StatelessWidget {
               onPressed: () => _scanBarcode(context),
               icon: const Icon(Icons.barcode_reader),
             ),
-            IconButton(
-              tooltip: 'Pengaturan',
-              onPressed: () => _openSettings(context),
-              icon: const Icon(Icons.settings_outlined),
-            ),
             const SizedBox(width: 8),
           ],
         ),

@@ -102,11 +102,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
               ),
               icon: const Icon(Icons.notifications_outlined),
             ),
-            IconButton(
-              tooltip: 'Pengaturan',
-              onPressed: () => _openSettings(context),
-              icon: const Icon(Icons.settings_outlined),
-            ),
             const SizedBox(width: 8),
           ],
         ),

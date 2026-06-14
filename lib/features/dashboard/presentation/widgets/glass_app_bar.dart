@@ -34,7 +34,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
     final foreground = Theme.of(context).colorScheme.onSurface;
     return AppBar(
       leading: leading,
-      title: Text(title, textAlign: TextAlign.center),
+      title: const SizedBox.shrink(),
       centerTitle: true,
       elevation: 0,
       scrolledUnderElevation: 0,
