@@ -44,6 +44,37 @@ class _BookingFormPageState extends State<BookingFormPage> {
   TimeOfDay? _endTime;
   final Map<String, BookingItemDraft> _selectedItems = {};
 
+  String get _invalidMessage => 'Data belum sesuai!';
+
+  bool get _hasSelectedItems =>
+      _selectedItems.isNotEmpty || _otherItemsController.text.trim().isNotEmpty;
+
+  bool get _isStepOneValid {
+    return _nameController.text.trim().isNotEmpty &&
+        AppValidation.isValidWhatsappNumber(_waController.text) &&
+        _requestDate != null &&
+        _borrowDate != null &&
+        _startTime != null &&
+        _endTime != null &&
+        _isEndAfterStart() &&
+        _purposeController.text.trim().length >= 8;
+  }
+
+  bool get _isStepTwoValid {
+    return (_selectedFacultyCode ?? '').trim().isNotEmpty &&
+        (_selectedLabId ?? '').trim().isNotEmpty &&
+        _hasSelectedItems;
+  }
+
+  bool get _canProceedCurrentStep {
+    return switch (_step) {
+      0 => _isStepOneValid,
+      1 => _isStepTwoValid,
+      2 => _hasSelectedItems,
+      _ => _isStepOneValid && _isStepTwoValid && _hasSelectedItems,
+    };
+  }
+
   @override
   void initState() {
     super.initState();
@@ -51,11 +82,35 @@ class _BookingFormPageState extends State<BookingFormPage> {
     _selectedLabId = AppLabCatalog.labsForFaculty(
       _selectedFacultyCode!,
     ).first.id;
+    for (final controller in [
+      _nameController,
+      _waController,
+      _purposeController,
+      _otherItemsController,
+      _requestDateController,
+      _borrowDateController,
+      _startTimeController,
+      _endTimeController,
+    ]) {
+      controller.addListener(_handleTextChange);
+    }
     _load();
   }
 
   @override
   void dispose() {
+    for (final controller in [
+      _nameController,
+      _waController,
+      _purposeController,
+      _otherItemsController,
+      _requestDateController,
+      _borrowDateController,
+      _startTimeController,
+      _endTimeController,
+    ]) {
+      controller.removeListener(_handleTextChange);
+    }
     _nameController.dispose();
     _waController.dispose();
     _purposeController.dispose();
@@ -65,6 +120,12 @@ class _BookingFormPageState extends State<BookingFormPage> {
     _startTimeController.dispose();
     _endTimeController.dispose();
     super.dispose();
+  }
+
+  void _handleTextChange() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   List<LabCatalog> get _availableLabs {
@@ -123,13 +184,17 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                 : () => setState(() => _step--),
                             controlsBuilder: (context, details) {
                               final isLast = _step == 3;
+                              final canProceed = _canProceedCurrentStep &&
+                                  !_submitting;
                               return Padding(
                                 padding: const EdgeInsets.only(top: 16),
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: CyberGradientButton(
-                                        onPressed: details.onStepContinue,
+                                        onPressed: canProceed
+                                            ? details.onStepContinue
+                                            : null,
                                         child: _submitting && isLast
                                             ? const SizedBox.square(
                                                 dimension: 18,
@@ -161,6 +226,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                 isActive: _step >= 0,
                                 content: Form(
                                   key: _stepOneKey,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   child: _StepShell(
                                     child: Wrap(
                                       spacing: 14,
@@ -172,10 +239,13 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             controller: _nameController,
                                             textInputAction:
                                                 TextInputAction.next,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
-                                                return 'Nama peminjam wajib diisi';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -192,15 +262,18 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _waController,
                                             keyboardType: TextInputType.phone,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
-                                                return 'Nomor WhatsApp wajib diisi';
+                                                return _invalidMessage;
                                               }
                                               if (!AppValidation.isValidWhatsappNumber(
                                                 value,
                                               )) {
-                                                return 'Format WhatsApp tidak valid';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -217,9 +290,12 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _requestDateController,
                                             readOnly: true,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (_requestDate == null) {
-                                                return 'Tanggal pengajuan wajib dipilih';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -253,15 +329,18 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _borrowDateController,
                                             readOnly: true,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (_borrowDate == null) {
-                                                return 'Tanggal peminjaman wajib dipilih';
+                                                return _invalidMessage;
                                               }
                                               if (_requestDate != null &&
                                                   _borrowDate!.isBefore(
                                                     _requestDate!,
                                                   )) {
-                                                return 'Tanggal pinjam tidak boleh sebelum tanggal pengajuan';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -297,9 +376,12 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _startTimeController,
                                             readOnly: true,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (_startTime == null) {
-                                                return 'Jam mulai wajib dipilih';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -336,13 +418,16 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _endTimeController,
                                             readOnly: true,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (_endTime == null) {
-                                                return 'Jam selesai wajib dipilih';
+                                                return _invalidMessage;
                                               }
                                               if (_startTime != null &&
                                                   !_isEndAfterStart()) {
-                                                return 'Jam selesai harus setelah jam mulai';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -382,13 +467,16 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _purposeController,
                                             maxLines: 3,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
-                                                return 'Keperluan/Tujuan wajib diisi';
+                                                return _invalidMessage;
                                               }
                                               if (value.trim().length < 8) {
-                                                return 'Keperluan terlalu singkat';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -413,6 +501,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                 isActive: _step >= 1,
                                 content: Form(
                                   key: _stepTwoKey,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   child: _StepShell(
                                     child: Wrap(
                                       spacing: 14,
@@ -422,6 +512,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           context: context,
                                           child: DropdownButtonFormField<String>(
                                             initialValue: _selectedFacultyCode,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             items: AppLabCatalog.faculties
                                                 .map(
                                                   (faculty) => DropdownMenuItem(
@@ -457,7 +550,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
-                                                return 'Fakultas wajib dipilih';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -467,6 +560,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           context: context,
                                           child: DropdownButtonFormField<String>(
                                             initialValue: _selectedLabId,
+                                            autovalidateMode:
+                                                AutovalidateMode
+                                                    .onUserInteraction,
                                             items: _availableLabs
                                                 .map(
                                                   (lab) => DropdownMenuItem(
@@ -491,7 +587,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
-                                                return 'Laboratorium wajib dipilih';
+                                                return _invalidMessage;
                                               }
                                               return null;
                                             },
@@ -512,18 +608,62 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.stretch,
                                     children: [
-                                      _InventoryChecklist(
-                                        inventories: _selectedLabInventories,
-                                        selectedItems: _selectedItems,
-                                        onToggle: _toggleItem,
-                                        onQuantityChanged: _updateItemQuantity,
-                                        onRemoveItem: _removeItem,
+                                      FormField<bool>(
+                                        autovalidateMode:
+                                            AutovalidateMode.onUserInteraction,
+                                        initialValue: _hasSelectedItems,
+                                        validator: (_) {
+                                          if (_hasSelectedItems) {
+                                            return null;
+                                          }
+                                          return _invalidMessage;
+                                        },
+                                        builder: (field) => Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            _InventoryChecklist(
+                                              inventories:
+                                                  _selectedLabInventories,
+                                              selectedItems: _selectedItems,
+                                              onToggle: _toggleItem,
+                                              onQuantityChanged:
+                                                  _updateItemQuantity,
+                                              onRemoveItem: _removeItem,
+                                            ),
+                                            if (field.errorText != null) ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                field.errorText!,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Colors.redAccent,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
                                       ),
                                       const SizedBox(height: 14),
                                       TextFormField(
                                         controller: _otherItemsController,
                                         minLines: 3,
                                         maxLines: 5,
+                                        autovalidateMode:
+                                            AutovalidateMode.onUserInteraction,
+                                        onChanged: (_) => setState(() {}),
+                                        validator: (value) {
+                                          if (_selectedItems.isNotEmpty ||
+                                              (value != null &&
+                                                  value.trim().isNotEmpty)) {
+                                            return null;
+                                          }
+                                          return _invalidMessage;
+                                        },
                                         decoration: const InputDecoration(
                                           labelText: 'Opsi Lainnya',
                                           hintText:
@@ -588,19 +728,17 @@ class _BookingFormPageState extends State<BookingFormPage> {
   Future<void> _handleStepContinue() async {
     if (_step == 0) {
       if (!(_stepOneKey.currentState?.validate() ?? false)) {
-        _showWarning('Lengkapi data identitas dan jadwal dengan benar.');
+        _showWarning(_invalidMessage);
         return;
       }
       if (!_isEndAfterStart()) {
-        _showWarning('Jam selesai harus lebih besar dari jam mulai.');
+        _showWarning(_invalidMessage);
         return;
       }
       if (_borrowDate != null &&
           _requestDate != null &&
           _borrowDate!.isBefore(_requestDate!)) {
-        _showWarning(
-          'Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.',
-        );
+        _showWarning(_invalidMessage);
         return;
       }
       setState(() => _step = 1);
@@ -609,7 +747,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
 
     if (_step == 1) {
       if (!(_stepTwoKey.currentState?.validate() ?? false)) {
-        _showWarning('Pilih fakultas dan laboratorium terlebih dahulu.');
+        _showWarning(_invalidMessage);
         return;
       }
       setState(() => _step = 2);
@@ -627,7 +765,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
   Future<void> _submitBooking() async {
     if (!(_stepOneKey.currentState?.validate() ?? false) ||
         !(_stepTwoKey.currentState?.validate() ?? false)) {
-      _showWarning('Masih ada field yang perlu dilengkapi.');
+      _showWarning(_invalidMessage);
       setState(() => _step = 0);
       return;
     }
@@ -636,14 +774,14 @@ class _BookingFormPageState extends State<BookingFormPage> {
         _startTime == null ||
         _endTime == null ||
         !_isEndAfterStart()) {
-      _showWarning('Jadwal belum lengkap atau jam selesai tidak valid.');
+      _showWarning(_invalidMessage);
       setState(() => _step = 0);
       return;
     }
 
     final selectedLab = _selectedLab;
     if (selectedLab == null) {
-      _showWarning('Laboratorium belum dipilih.');
+      _showWarning(_invalidMessage);
       setState(() => _step = 1);
       return;
     }

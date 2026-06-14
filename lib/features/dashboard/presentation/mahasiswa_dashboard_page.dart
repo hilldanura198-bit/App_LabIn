@@ -852,33 +852,93 @@ List<LabInventory> _previewInventories(List<LabInventory> inventories) {
   return sorted.take(8).toList();
 }
 
-class _StockCalendar extends StatelessWidget {
+class _StockCalendar extends StatefulWidget {
   const _StockCalendar({required this.state});
 
   final DashboardState state;
 
   @override
+  State<_StockCalendar> createState() => _StockCalendarState();
+}
+
+class _StockCalendarState extends State<_StockCalendar> {
+  static const _pageSpan = 24;
+  late final PageController _pageController;
+  late final DateTime _baseMonth;
+  late int _visiblePage;
+  late DateTime _visibleMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _baseMonth = DateTime(now.year, now.month, 1);
+    _visiblePage = _pageSpan;
+    _visibleMonth = _monthForPage(_visiblePage);
+    _pageController = PageController(initialPage: _visiblePage);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final totalAvailable = state.inventories.fold(
+    final totalAvailable = widget.state.inventories.fold(
       0,
       (sum, item) => sum + item.stokTersedia,
     );
     final stockColor = totalAvailable > 0 ? AppTheme.cleanCyan : AppTheme.sepia;
+    final totalLabel = '$totalAvailable stok tersedia saat ini';
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
         child: Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  'Live Stock & Smart Calendar',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Live Stock & Smart Calendar',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Geser bulan untuk menelusuri tanggal lain',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _goToPreviousMonth,
+                      icon: const Icon(Icons.chevron_left_rounded),
+                    ),
+                    Text(
+                      _monthLabel(_visibleMonth),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    IconButton(
+                      onPressed: _goToNextMonth,
+                      icon: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Container(
@@ -891,48 +951,108 @@ class _StockCalendar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Text(
-                    '$totalAvailable stok tersedia saat ini',
+                    totalLabel,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                TableCalendar<void>(
-                  firstDay: DateTime.now().subtract(const Duration(days: 1)),
-                  lastDay: DateTime.now().add(const Duration(days: 90)),
-                  focusedDay: state.selectedDate,
-                  selectedDayPredicate: (day) =>
-                      isSameDay(day, state.selectedDate),
-                  calendarFormat: CalendarFormat.week,
-                  headerStyle: const HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                  ),
-                  onDaySelected: (selectedDay, _) {
-                    context.read<DashboardBloc>().add(
-                      DashboardDateSelected(
-                        DateTime(
-                          selectedDay.year,
-                          selectedDay.month,
-                          selectedDay.day,
-                          9,
-                        ),
-                      ),
-                    );
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    markerBuilder: (context, date, events) {
-                      return Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: stockColor,
-                            shape: BoxShape.circle,
+                SizedBox(
+                  height: 330,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (page) {
+                      setState(() {
+                        _visiblePage = page;
+                        _visibleMonth = _monthForPage(page);
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final month = _monthForPage(index);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: TableCalendar<void>(
+                          firstDay: DateTime(month.year, month.month, 1)
+                              .subtract(const Duration(days: 7)),
+                          lastDay: DateTime(month.year, month.month + 1, 0)
+                              .add(const Duration(days: 7)),
+                          focusedDay: month,
+                          selectedDayPredicate: (day) =>
+                              isSameDay(day, widget.state.selectedDate),
+                          calendarFormat: CalendarFormat.month,
+                          availableCalendarFormats: const {
+                            CalendarFormat.month: 'Bulan',
+                          },
+                          availableGestures: AvailableGestures.none,
+                          headerVisible: false,
+                          startingDayOfWeek: StartingDayOfWeek.monday,
+                          sixWeekMonthsEnforced: false,
+                          onDaySelected: (selectedDay, _) {
+                            context.read<DashboardBloc>().add(
+                              DashboardDateSelected(
+                                DateTime(
+                                  selectedDay.year,
+                                  selectedDay.month,
+                                  selectedDay.day,
+                                  9,
+                                ),
+                              ),
+                            );
+                          },
+                          calendarStyle: CalendarStyle(
+                            outsideDaysVisible: false,
+                            todayDecoration: BoxDecoration(
+                              color: AppTheme.electricBlue.withValues(
+                                alpha: 0.16,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            selectedDecoration: const BoxDecoration(
+                              gradient: AppTheme.cyberGradient,
+                              shape: BoxShape.circle,
+                            ),
+                            markerDecoration: BoxDecoration(
+                              color: stockColor,
+                              shape: BoxShape.circle,
+                            ),
+                            selectedTextStyle: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            todayTextStyle: const TextStyle(
+                              color: AppTheme.electricBlue,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            weekendTextStyle: Theme.of(context)
+                                .textTheme
+                                .bodySmall!
+                                .copyWith(
+                                  color: AppTheme.vibrantPurple,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          daysOfWeekStyle: const DaysOfWeekStyle(
+                            weekdayStyle:
+                                TextStyle(fontWeight: FontWeight.w700),
+                            weekendStyle: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          calendarBuilders: CalendarBuilders(
+                            markerBuilder: (context, date, events) {
+                              return Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: stockColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       );
@@ -944,6 +1064,51 @@ class _StockCalendar extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  DateTime _monthForPage(int page) {
+    final offset = page - _pageSpan;
+    return DateTime(_baseMonth.year, _baseMonth.month + offset, 1);
+  }
+
+  String _monthLabel(DateTime month) {
+    return '${_monthName(month.month)} ${month.year}';
+  }
+
+  String _monthName(int month) {
+    return switch (month) {
+      1 => 'Januari',
+      2 => 'Februari',
+      3 => 'Maret',
+      4 => 'April',
+      5 => 'Mei',
+      6 => 'Juni',
+      7 => 'Juli',
+      8 => 'Agustus',
+      9 => 'September',
+      10 => 'Oktober',
+      11 => 'November',
+      _ => 'Desember',
+    };
+  }
+
+  Future<void> _goToPreviousMonth() async {
+    if (_visiblePage <= 0) return;
+    final target = _visiblePage - 1;
+    await _pageController.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _goToNextMonth() async {
+    final target = _visiblePage + 1;
+    await _pageController.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
     );
   }
 }

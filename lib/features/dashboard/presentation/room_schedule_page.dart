@@ -93,21 +93,27 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                     const Center(
                                       child: CircularProgressIndicator(),
                                     )
-                                  else if (selectedBookings.isEmpty)
+                                else if (selectedBookings.isEmpty)
                                     _EmptyScheduleCard(date: _selectedDay)
                                   else
-                                    ...selectedBookings.map(
-                                      (booking) => Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        child: _ScheduleCard(
-                                          booking: booking,
-                                          roomName:
-                                              roomNames[booking.labId] ??
-                                              'Ruang Laboratorium',
-                                        ),
-                                      ),
+                                    ...selectedBookings.asMap().entries.map(
+                                      (entry) {
+                                        final index = entry.key;
+                                        final booking = entry.value;
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: _ScheduleCard(
+                                            booking: booking,
+                                            roomName:
+                                                roomNames[booking.labId] ??
+                                                'Ruang Laboratorium',
+                                            accentColor:
+                                                _accentForIndex(index),
+                                          ),
+                                        );
+                                      },
                                     ),
                                 ],
                               ),
@@ -135,6 +141,20 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
     }).toList()..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
     return filtered;
   }
+}
+
+Color _accentForIndex(int index) {
+  const palette = [
+    AppTheme.electricBlue,
+    AppTheme.vibrantPurple,
+    AppTheme.cleanCyan,
+    AppTheme.deepTeal,
+    AppTheme.emerald,
+    AppTheme.richBronze,
+    Color(0xFF5A67FF),
+    Color(0xFF8B5CF6),
+  ];
+  return palette[index % palette.length];
 }
 
 class _CalendarPanel extends StatelessWidget {
@@ -258,10 +278,15 @@ class _RoomFilter extends StatelessWidget {
 }
 
 class _ScheduleCard extends StatelessWidget {
-  const _ScheduleCard({required this.booking, required this.roomName});
+  const _ScheduleCard({
+    required this.booking,
+    required this.roomName,
+    required this.accentColor,
+  });
 
   final LabBooking booking;
   final String roomName;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +294,7 @@ class _ScheduleCard extends StatelessWidget {
         '${DateFormat.Hm().format(booking.tanggalPinjam)} - '
         '${DateFormat.Hm().format(booking.tanggalKembali)}';
     return Card(
+      color: accentColor.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -277,7 +303,11 @@ class _ScheduleCard extends StatelessWidget {
               width: 72,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                gradient: AppTheme.cyberGradient,
+                gradient: LinearGradient(
+                  colors: [accentColor, AppTheme.vibrantPurple],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
