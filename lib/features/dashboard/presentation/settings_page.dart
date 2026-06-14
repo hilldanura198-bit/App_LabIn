@@ -188,6 +188,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(height: 12),
+                                  Center(
+                                    child: OutlinedButton.icon(
+                                      onPressed: _pickAvatar,
+                                      icon: const Icon(
+                                        Icons.photo_camera_outlined,
+                                      ),
+                                      label: const Text('Edit Foto Profil'),
+                                    ),
+                                  ),
                                   const SizedBox(height: 18),
                                   Text(
                                     'Edit Profil',
