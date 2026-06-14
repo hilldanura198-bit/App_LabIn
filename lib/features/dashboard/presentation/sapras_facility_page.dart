@@ -188,8 +188,17 @@ class _FacilityList extends StatelessWidget {
 
   String _facilityImageUrl(String name, int index) {
     final lowerName = name.toLowerCase();
+    if (lowerName.contains('arduino')) {
+      return 'https://commons.wikimedia.org/wiki/Special:FilePath/Arduino_Uno_-_R3.jpg';
+    }
+    if (lowerName.contains('ultrasonik') || lowerName.contains('ultrasonic')) {
+      return 'https://commons.wikimedia.org/wiki/Special:FilePath/HC-SR04_Ultrasonic_Sensor.jpg';
+    }
+    if (lowerName.contains('sensor')) {
+      return 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=80';
+    }
     if (lowerName.contains('proyektor')) {
-      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=900&q=80';
+      return 'https://images.unsplash.com/photo-1560472355-536de3962603?auto=format&fit=crop&w=900&q=80';
     }
     if (lowerName.contains('ac') || lowerName.contains('pendingin')) {
       return 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=80';
@@ -201,22 +210,14 @@ class _FacilityList extends StatelessWidget {
       return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=900&q=80';
     }
     const pool = [
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1485988412941-77a35537dae4?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1498050108023-3f8b6c6d2f3e?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1498050108023-5c1f4f18b7e3?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1581092921461-39b9d08a9b21?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1581091215367-59ab6b3f563d?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1581091870622-7c40f7fef4a0?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1581093458791-9d81cc7d2c81?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=80',
     ];
     return pool[index % pool.length];
   }
@@ -619,7 +620,7 @@ class _CampusMapTabs extends StatelessWidget {
       subtitle: 'Pusat administrasi dan layanan akademik utama.',
       layout: _CampusLayout.rektorat,
       bannerImageUrl:
-          'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80',
       rooms: [
         'Lobby Utama',
         'Ruang Rektor',
@@ -635,7 +636,7 @@ class _CampusMapTabs extends StatelessWidget {
       subtitle: 'Ruang kelas utama dan pusat aktivitas praktikum FIK.',
       layout: _CampusLayout.campus1,
       bannerImageUrl:
-          'https://images.unsplash.com/photo-1497366412874-3415097a27e7?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
       rooms: [
         'Lab RPL',
         'Lab IoT',
@@ -651,7 +652,7 @@ class _CampusMapTabs extends StatelessWidget {
       subtitle: 'Fokus pada klinik, simulasi, dan layanan kesehatan.',
       layout: _CampusLayout.campus2,
       bannerImageUrl:
-          'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1580281657521-47d7f5f1ab02?auto=format&fit=crop&w=1200&q=80',
       rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
     ),
     _CampusMapData(
@@ -660,7 +661,7 @@ class _CampusMapTabs extends StatelessWidget {
       subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
       layout: _CampusLayout.campus3,
       bannerImageUrl:
-          'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=80',
       rooms: [
         'Lab Legal Tech',
         'Lab Mediasi',
@@ -675,7 +676,7 @@ class _CampusMapTabs extends StatelessWidget {
       subtitle: 'Blok lanjutan untuk praktikum, diskusi, dan kegiatan modern.',
       layout: _CampusLayout.campus4,
       bannerImageUrl:
-          'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1200&q=80',
       rooms: [
         'Ruang Diskusi',
         'Lab Presentasi',
