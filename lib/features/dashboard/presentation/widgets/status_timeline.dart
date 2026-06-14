@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../data/dashboard_models.dart';
 
 class StatusTimeline extends StatelessWidget {
-  const StatusTimeline({super.key, required this.status});
+  const StatusTimeline({super.key, this.booking, this.status})
+    : assert(booking != null || status != null);
 
-  final String status;
+  final LabBooking? booking;
+  final String? status;
 
   static const _steps = [
     ('pending', 'Pending'),
@@ -17,22 +20,40 @@ class StatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex = _steps.indexWhere((step) => step.$1 == status);
+    final currentStatus = booking?.status ?? status ?? 'pending';
+    final activeIndex = _steps.indexWhere((step) => step.$1 == currentStatus);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.timeline_outlined,
+                  color: AppTheme.electricBlue,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Timeline Peminjaman',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             Text(
-              'Timeline Peminjaman',
+              'Status mengikuti perubahan real-time dari dashboard admin.',
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
             ),
             const SizedBox(height: 14),
             ...List.generate(_steps.length, (index) {
               final done = activeIndex >= index;
+              final stepStatus = _steps[index].$2;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -68,12 +89,26 @@ class StatusTimeline extends StatelessWidget {
                   const SizedBox(width: 12),
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      _steps[index].$2,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: done ? FontWeight.w800 : FontWeight.w500,
-                        color: done ? AppTheme.ink : AppTheme.muted,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stepStatus,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: done
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
+                                color: done ? AppTheme.ink : AppTheme.muted,
+                              ),
+                        ),
+                        if (booking != null && done && index == activeIndex)
+                          Text(
+                            booking!.reservationNo,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.muted),
+                          ),
+                      ],
                     ),
                   ),
                 ],

@@ -20,6 +20,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _nimController = TextEditingController();
   final _waController = TextEditingController();
@@ -86,84 +87,118 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                GestureDetector(
-                                  onTap: _pickAvatar,
-                                  child: Center(
-                                    child: Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 48,
-                                          backgroundColor: AppTheme.deepTeal,
-                                          backgroundImage: _avatarUrl == null
-                                              ? null
-                                              : NetworkImage(_avatarUrl!),
-                                          child: _avatarUrl == null
-                                              ? const Icon(
-                                                  Icons.person,
-                                                  color: Colors.white,
-                                                  size: 44,
-                                                )
-                                              : null,
-                                        ),
-                                        Positioned(
-                                          right: -4,
-                                          bottom: -4,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: const BoxDecoration(
-                                              color: AppTheme.cleanCyan,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.camera_alt_rounded,
-                                              size: 18,
-                                              color: AppTheme.midnightNavy,
+                        Form(
+                          key: _formKey,
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  GestureDetector(
+                                    onTap: _pickAvatar,
+                                    child: Center(
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 48,
+                                            backgroundColor: AppTheme.deepTeal,
+                                            backgroundImage: _avatarUrl == null
+                                                ? null
+                                                : NetworkImage(_avatarUrl!),
+                                            child: _avatarUrl == null
+                                                ? const Icon(
+                                                    Icons.person,
+                                                    color: Colors.white,
+                                                    size: 44,
+                                                  )
+                                                : null,
+                                          ),
+                                          Positioned(
+                                            right: -4,
+                                            bottom: -4,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: const BoxDecoration(
+                                                color: AppTheme.cleanCyan,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.camera_alt_rounded,
+                                                size: 18,
+                                                color: AppTheme.midnightNavy,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 18),
-                                Text(
-                                  'Edit Profil',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.w900),
-                                ),
-                                const SizedBox(height: 16),
-                                TextField(
-                                  controller: _nameController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Nama',
-                                    prefixIcon: Icon(Icons.person_outline),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    'Edit Profil',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.w900),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: _nimController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'NIM/NIP',
-                                    prefixIcon: Icon(Icons.badge_outlined),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _nameController,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Nama wajib diisi';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: const InputDecoration(
+                                      labelText: 'Nama',
+                                      prefixIcon: Icon(Icons.person_outline),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: _waController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'No WhatsApp',
-                                    prefixIcon: Icon(Icons.phone_outlined),
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _nimController,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'NIM/NIP wajib diisi';
+                                      }
+                                      if (!AppValidation.isValidNim(value)) {
+                                        return 'Format NIM/NIP tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: const InputDecoration(
+                                      labelText: 'NIM/NIP',
+                                      prefixIcon: Icon(Icons.badge_outlined),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _waController,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Nomor WhatsApp wajib diisi';
+                                      }
+                                      if (!AppValidation.isValidWhatsappNumber(
+                                        value,
+                                      )) {
+                                        return 'Format WhatsApp tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: const InputDecoration(
+                                      labelText: 'No WhatsApp',
+                                      prefixIcon: Icon(Icons.phone_outlined),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -282,10 +317,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _save() async {
     final whatsapp = _waController.text.trim();
-    if (whatsapp.isNotEmpty && !AppValidation.isValidWhatsappNumber(whatsapp)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Format WhatsApp belum valid.')),
-      );
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
     try {

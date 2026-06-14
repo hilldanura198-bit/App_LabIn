@@ -113,6 +113,29 @@ create table if not exists public.satisfaction_surveys (
   constraint satisfaction_surveys_skor_check check (skor between 0 and 100)
 );
 
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on update cascade on delete cascade,
+  rating integer not null,
+  message text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint feedback_rating_check check (rating between 1 and 5)
+);
+
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on update cascade on delete cascade,
+  title text not null,
+  message text not null,
+  kind text not null default 'general',
+  target_type text not null default 'booking',
+  target_id text not null default '',
+  is_read boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists inventories_lab_id_idx on public.inventories(lab_id);
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
 create index if not exists bookings_lab_id_idx on public.bookings(lab_id);
@@ -125,6 +148,11 @@ create index if not exists maintenance_reports_user_id_idx on public.maintenance
 create index if not exists maintenance_reports_inventory_id_idx on public.maintenance_reports(inventory_id);
 create index if not exists maintenance_reports_status_perbaikan_idx on public.maintenance_reports(status_perbaikan);
 create index if not exists satisfaction_surveys_periode_idx on public.satisfaction_surveys(periode);
+create index if not exists feedback_user_id_idx on public.feedback(user_id);
+create index if not exists feedback_created_at_idx on public.feedback(created_at);
+create index if not exists notifications_user_id_idx on public.notifications(user_id);
+create index if not exists notifications_created_at_idx on public.notifications(created_at);
+create index if not exists notifications_is_read_idx on public.notifications(is_read);
 
 alter table public.profiles
 add column if not exists whatsapp_number text,
@@ -219,6 +247,16 @@ for each row execute function public.set_updated_at();
 drop trigger if exists set_maintenance_reports_updated_at on public.maintenance_reports;
 create trigger set_maintenance_reports_updated_at
 before update on public.maintenance_reports
+for each row execute function public.set_updated_at();
+
+drop trigger if exists set_feedback_updated_at on public.feedback;
+create trigger set_feedback_updated_at
+before update on public.feedback
+for each row execute function public.set_updated_at();
+
+drop trigger if exists set_notifications_updated_at on public.notifications;
+create trigger set_notifications_updated_at
+before update on public.notifications
 for each row execute function public.set_updated_at();
 
 alter table public.bookings replica identity full;

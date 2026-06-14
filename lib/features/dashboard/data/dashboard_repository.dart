@@ -42,6 +42,26 @@ class DashboardRepository {
         .map((rows) => rows.map(LabBooking.fromMap).toList());
   }
 
+  Stream<List<AppNotification>> watchNotifications() {
+    final userId = currentUserId;
+    if (userId == null) {
+      return Stream.value(const []);
+    }
+    return _supabase
+        .from('notifications')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .map((rows) => rows.map(AppNotification.fromMap).toList());
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    await _supabase
+        .from('notifications')
+        .update({'is_read': true})
+        .eq('id', notificationId);
+  }
+
   Stream<List<LabBooking>> watchReservation(String reservationNo) {
     final normalized = reservationNo.trim().toUpperCase();
     if (normalized.isEmpty) {
@@ -155,6 +175,14 @@ class DashboardRepository {
               )
               .toList(),
         );
+    await _insertNotification(
+      userId: userId,
+      title: 'Pengajuan tersimpan',
+      message: 'Pengajuan reservasi berhasil dikirim dan menunggu verifikasi.',
+      kind: 'booking_created',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
   }
 
   Future<LabBooking> createMultiStepBooking({
@@ -235,6 +263,15 @@ class DashboardRepository {
                 .toList(),
           );
     }
+    await _insertNotification(
+      userId: userId,
+      title: 'Pengajuan multi-step tersimpan',
+      message:
+          'Reservasi untuk ${labNameSnapshot.trim()} sudah masuk ke Supabase.',
+      kind: 'booking_created',
+      targetType: 'booking',
+      targetId: booking['id'] as String,
+    );
     return LabBooking.fromMap(booking);
   }
 
@@ -297,6 +334,14 @@ class DashboardRepository {
           'notification_sound_enabled': settings.notificationSoundEnabled,
         })
         .eq('id', userId);
+    await _insertNotification(
+      userId: userId,
+      title: 'Profil diperbarui',
+      message: 'Data profil Anda berhasil disinkronkan ke Supabase.',
+      kind: 'profile_update',
+      targetType: 'profile',
+      targetId: userId,
+    );
   }
 
   Future<String> uploadAvatar(XFile image) async {
@@ -368,19 +413,47 @@ class DashboardRepository {
       'foto_url': photoUrl,
       'status_perbaikan': 'diterima',
     });
+    await _insertNotification(
+      userId: userId,
+      title: 'Laporan maintenance terkirim',
+      message:
+          'Laporan untuk ${inventory.namaAlat} sudah diteruskan ke tim lab.',
+      kind: 'maintenance_report',
+      targetType: 'maintenance',
+      targetId: inventory.id,
+    );
   }
 
   Future<void> approveAslab(String bookingId) async {
+    final booking = await _supabase
+        .from('bookings')
+        .select('user_id,reservation_no')
+        .eq('id', bookingId)
+        .single();
     await _supabase
         .from('bookings')
         .update({'status': 'approved_aslab'})
         .eq('id', bookingId);
+    await _insertNotification(
+      userId: booking['user_id'] as String,
+      title: 'Reservasi disetujui Aslab',
+      message:
+          'Pengajuan ${booking['reservation_no'] as String? ?? bookingId} sedang menunggu persetujuan Kalab.',
+      kind: 'booking_status',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
   }
 
   Future<void> approveKalab({
     required String bookingId,
     required Uint8List signatureBytes,
   }) async {
+    final booking = await _supabase
+        .from('bookings')
+        .select('user_id,reservation_no')
+        .eq('id', bookingId)
+        .single();
     final path =
         'kalab/$bookingId-${DateTime.now().millisecondsSinceEpoch}.png';
     await _supabase.storage
@@ -401,6 +474,15 @@ class DashboardRepository {
         .from('bookings')
         .update({'status': 'approved_kalab', 'signature_url': signatureUrl})
         .eq('id', bookingId);
+    await _insertNotification(
+      userId: booking['user_id'] as String,
+      title: 'Reservasi disetujui Kalab',
+      message:
+          'Pengajuan ${booking['reservation_no'] as String? ?? bookingId} telah disahkan.',
+      kind: 'booking_status',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
   }
 
   Future<void> applyQrValidation(String rawCode) async {
@@ -429,6 +511,20 @@ class DashboardRepository {
         .from('bookings')
         .update({'status': nextStatus})
         .eq('id', bookingId);
+    final updatedBooking = await _supabase
+        .from('bookings')
+        .select('user_id,reservation_no')
+        .eq('id', bookingId)
+        .single();
+    await _insertNotification(
+      userId: updatedBooking['user_id'] as String,
+      title: 'QR berhasil divalidasi',
+      message:
+          'Status ${updatedBooking['reservation_no'] as String? ?? bookingId} berubah menjadi $nextStatus.',
+      kind: 'booking_status',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
   }
 
   Future<void> markAssetAudited(String barcode) async {
@@ -438,10 +534,55 @@ class DashboardRepository {
         .eq('id', barcode);
   }
 
+  Future<void> submitFeedback({
+    required int rating,
+    required String message,
+  }) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw Exception('User belum login.');
+    }
+    if (rating < 1 || rating > 5) {
+      throw Exception('Rating harus antara 1 sampai 5.');
+    }
+    await _supabase.from('feedback').insert({
+      'user_id': userId,
+      'rating': rating,
+      'message': message.trim(),
+    });
+    await _insertNotification(
+      userId: userId,
+      title: 'Feedback tersimpan',
+      message: 'Terima kasih, masukan Anda sudah tercatat di Supabase.',
+      kind: 'feedback',
+      targetType: 'feedback',
+      targetId: userId,
+    );
+  }
+
   DateTime _combineDateAndTime(DateTime date, String time) {
     final parts = time.split(':');
     final hour = int.parse(parts.first);
     final minute = int.parse(parts.last);
     return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  Future<void> _insertNotification({
+    required String userId,
+    required String title,
+    required String message,
+    required String kind,
+    required String targetType,
+    required String targetId,
+  }) async {
+    await _supabase.from('notifications').insert({
+      'user_id': userId,
+      'title': title,
+      'message': message,
+      'kind': kind,
+      'target_type': targetType,
+      'target_id': targetId,
+      'is_read': false,
+    });
   }
 }

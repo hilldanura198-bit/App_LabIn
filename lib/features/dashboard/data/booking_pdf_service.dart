@@ -13,14 +13,12 @@ class BookingPdfService {
 
   static Future<Uint8List> buildBookingLetter(LabBooking booking) async {
     final document = pw.Document();
-    final formatter = DateFormat('d MMMM y', 'id_ID');
+    final formatter = DateFormat('dd/MM/yyyy');
     final timeFormatter = DateFormat.Hm();
 
     document.addPage(
       pw.MultiPage(
-        pageTheme: pw.PageTheme(
-          margin: const pw.EdgeInsets.all(28),
-        ),
+        pageTheme: pw.PageTheme(margin: const pw.EdgeInsets.all(28)),
         build: (context) {
           return [
             _Header(),
@@ -54,7 +52,7 @@ class _Header extends pw.StatelessWidget {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromInt(AppTheme.deepTeal.value),
+        color: PdfColor.fromInt(AppTheme.deepTeal.toARGB32()),
         borderRadius: pw.BorderRadius.circular(14),
       ),
       child: pw.Column(
@@ -72,10 +70,7 @@ class _Header extends pw.StatelessWidget {
           pw.Text(
             AppBrand.tagline,
             textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(
-              color: PdfColors.white,
-              fontSize: 9,
-            ),
+            style: const pw.TextStyle(color: PdfColors.white, fontSize: 9),
           ),
           pw.SizedBox(height: 10),
           pw.Divider(color: PdfColors.white, thickness: 1),
@@ -179,7 +174,7 @@ class _InfoBlock extends pw.StatelessWidget {
 }
 
 class _ItemBlock extends pw.StatelessWidget {
-  const _ItemBlock({required this.booking});
+  _ItemBlock({required this.booking});
 
   final LabBooking booking;
 
@@ -201,27 +196,23 @@ class _ItemBlock extends pw.StatelessWidget {
           ),
           pw.SizedBox(height: 10),
           if (items.isEmpty)
-            const pw.Text(
+            pw.Text(
               'Tidak ada daftar alat terpisah. Data peminjaman dicatat sebagai reservasi ruang.',
               style: pw.TextStyle(fontSize: 9),
             )
           else
-            pw.Table.fromTextArray(
+            pw.TableHelper.fromTextArray(
               headers: const ['No', 'Nama Alat', 'Qty'],
               data: [
                 for (var i = 0; i < items.length; i++)
-                  [
-                    '${i + 1}',
-                    items[i].name,
-                    '${items[i].quantity}',
-                  ],
+                  ['${i + 1}', items[i].name, '${items[i].quantity}'],
               ],
               headerStyle: pw.TextStyle(
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColors.white,
               ),
-              headerDecoration: BoxDecoration(
-                color: PdfColor.fromInt(AppTheme.electricBlue.value),
+              headerDecoration: pw.BoxDecoration(
+                color: PdfColor.fromInt(AppTheme.electricBlue.toARGB32()),
               ),
               cellStyle: const pw.TextStyle(fontSize: 9),
               cellAlignment: pw.Alignment.centerLeft,
@@ -248,7 +239,7 @@ class _SignatureBlock extends pw.StatelessWidget {
             padding: const pw.EdgeInsets.only(top: 8),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: const [
+              children: [
                 pw.Text('Catatan:', style: pw.TextStyle(fontSize: 9)),
                 pw.SizedBox(height: 4),
                 pw.Text(
@@ -266,12 +257,15 @@ class _SignatureBlock extends pw.StatelessWidget {
             children: [
               pw.Text(
                 'Tanda Tangan',
-                style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                ),
               ),
               pw.SizedBox(height: 54),
               pw.Container(height: 1, color: PdfColors.black),
               pw.SizedBox(height: 4),
-              const pw.Text('Nama & Paraf', style: pw.TextStyle(fontSize: 9)),
+              pw.Text('Nama & Paraf', style: pw.TextStyle(fontSize: 9)),
             ],
           ),
         ),

@@ -69,7 +69,7 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         appBar: GlassAppBar(
           title: [
             'Beranda',
-            'Cek Reservasi',
+            'Pencarian Pintar',
             'Notifikasi',
             'Pengaturan',
           ][_selectedIndex],
@@ -433,7 +433,7 @@ class _HomeScrollContent extends StatelessWidget {
                       if (state.latestBooking != null) ...[
                         _DynamicQrPass(booking: state.latestBooking!),
                         const SizedBox(height: 16),
-                        StatusTimeline(status: state.latestBooking!.status),
+                        StatusTimeline(booking: state.latestBooking!),
                         const SizedBox(height: 16),
                       ],
                       BusyMeter(hours: state.busyHours),
@@ -465,7 +465,7 @@ class _QuickModuleGrid extends StatelessWidget {
     final items = [
       _MenuItem(
         icon: Icons.manage_search_outlined,
-        title: 'Cek Status Reservasi',
+        title: 'Pencarian Pintar',
         color: AppTheme.richBronze.withValues(alpha: 0.12),
         page: CheckReservationPage(repository: repository),
       ),
@@ -550,7 +550,7 @@ class _QuickModuleGrid extends StatelessWidget {
   String _moduleSubtitle(int index) {
     return switch (index) {
       0 => 'Reservasi cepat dan presisi',
-      1 => 'Ajukan peminjaman terjadwal',
+      1 => 'Cari nomor peminjaman instan',
       2 => 'Dokumen terhubung cloud',
       3 => 'Jadwal ruang multi-lab',
       4 => 'Pantau status instan',

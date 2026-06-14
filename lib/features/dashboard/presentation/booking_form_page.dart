@@ -48,7 +48,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
   void initState() {
     super.initState();
     _selectedFacultyCode = AppLabCatalog.faculties.first.code;
-    _selectedLabId = AppLabCatalog.labsForFaculty(_selectedFacultyCode!).first.id;
+    _selectedLabId = AppLabCatalog.labsForFaculty(
+      _selectedFacultyCode!,
+    ).first.id;
     _load();
   }
 
@@ -106,15 +108,16 @@ class _BookingFormPageState extends State<BookingFormPage> {
                         child: Theme(
                           data: Theme.of(context).copyWith(
                             colorScheme: Theme.of(context).colorScheme.copyWith(
-                                  primary: AppTheme.electricBlue,
-                                ),
+                              primary: AppTheme.electricBlue,
+                            ),
                           ),
                           child: Stepper(
                             currentStep: _step,
                             type: StepperType.vertical,
                             physics: const NeverScrollableScrollPhysics(),
-                            onStepContinue:
-                                _submitting ? null : _handleStepContinue,
+                            onStepContinue: _submitting
+                                ? null
+                                : _handleStepContinue,
                             onStepCancel: _submitting || _step == 0
                                 ? null
                                 : () => setState(() => _step--),
@@ -132,9 +135,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                 dimension: 18,
                                                 child:
                                                     CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white,
-                                                ),
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
                                               )
                                             : Text(isLast ? 'Kirim' : 'Lanjut'),
                                       ),
@@ -194,10 +197,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                   value.trim().isEmpty) {
                                                 return 'Nomor WhatsApp wajib diisi';
                                               }
-                                              if (!AppValidation
-                                                  .isValidWhatsappNumber(
-                                                    value,
-                                                  )) {
+                                              if (!AppValidation.isValidWhatsappNumber(
+                                                value,
+                                              )) {
                                                 return 'Format WhatsApp tidak valid';
                                               }
                                               return null;
@@ -224,7 +226,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             onTap: () => _pickDate(
                                               context: context,
                                               title: 'Pilih Tanggal Pengajuan',
-                                              initial: _requestDate ??
+                                              initial:
+                                                  _requestDate ??
                                                   DateTime.now(),
                                               onSelected: (date) {
                                                 setState(() {
@@ -255,8 +258,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                 return 'Tanggal peminjaman wajib dipilih';
                                               }
                                               if (_requestDate != null &&
-                                                  _borrowDate!
-                                                      .isBefore(_requestDate!)) {
+                                                  _borrowDate!.isBefore(
+                                                    _requestDate!,
+                                                  )) {
                                                 return 'Tanggal pinjam tidak boleh sebelum tanggal pengajuan';
                                               }
                                               return null;
@@ -264,7 +268,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             onTap: () => _pickDate(
                                               context: context,
                                               title: 'Pilih Tanggal Peminjaman',
-                                              initial: _borrowDate ??
+                                              initial:
+                                                  _borrowDate ??
                                                   DateTime.now().add(
                                                     const Duration(days: 1),
                                                   ),
@@ -301,8 +306,12 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             onTap: () => _pickTime(
                                               context: context,
                                               title: 'Pilih Jam Mulai',
-                                              initial: _startTime ??
-                                                  const TimeOfDay(hour: 8, minute: 0),
+                                              initial:
+                                                  _startTime ??
+                                                  const TimeOfDay(
+                                                    hour: 8,
+                                                    minute: 0,
+                                                  ),
                                               onSelected: (time) {
                                                 setState(() {
                                                   _startTime = time;
@@ -340,8 +349,12 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             onTap: () => _pickTime(
                                               context: context,
                                               title: 'Pilih Jam Selesai',
-                                              initial: _endTime ??
-                                                  const TimeOfDay(hour: 11, minute: 0),
+                                              initial:
+                                                  _endTime ??
+                                                  const TimeOfDay(
+                                                    hour: 11,
+                                                    minute: 0,
+                                                  ),
                                               onSelected: (time) {
                                                 setState(() {
                                                   _endTime = time;
@@ -356,7 +369,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                 Icons.alarm_on_outlined,
                                               ),
                                               suffixIcon: Icon(
-                                                Icons.access_time_filled_outlined,
+                                                Icons
+                                                    .access_time_filled_outlined,
                                               ),
                                             ),
                                           ),
@@ -406,13 +420,11 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                       children: [
                                         _fieldBox(
                                           context: context,
-                                          child:
-                                              DropdownButtonFormField<String>(
-                                            value: _selectedFacultyCode,
+                                          child: DropdownButtonFormField<String>(
+                                            initialValue: _selectedFacultyCode,
                                             items: AppLabCatalog.faculties
                                                 .map(
-                                                  (faculty) =>
-                                                      DropdownMenuItem(
+                                                  (faculty) => DropdownMenuItem(
                                                     value: faculty.code,
                                                     child: Text(
                                                       '${faculty.code} - ${faculty.name}',
@@ -422,13 +434,18 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                 .toList(),
                                             onChanged: (value) {
                                               if (value == null) return;
-                                              final labs = AppLabCatalog
-                                                  .labsForFaculty(value);
+                                              final labs =
+                                                  AppLabCatalog.labsForFaculty(
+                                                    value,
+                                                  );
                                               setState(() {
                                                 _selectedFacultyCode = value;
                                                 _selectedLabId = labs.isNotEmpty
                                                     ? labs.first.id
-                                                    : AppLabCatalog.labs.first.id;
+                                                    : AppLabCatalog
+                                                          .labs
+                                                          .first
+                                                          .id;
                                               });
                                             },
                                             decoration: const InputDecoration(
@@ -448,9 +465,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                         ),
                                         _fieldBox(
                                           context: context,
-                                          child:
-                                              DropdownButtonFormField<String>(
-                                            value: _selectedLabId,
+                                          child: DropdownButtonFormField<String>(
+                                            initialValue: _selectedLabId,
                                             items: _availableLabs
                                                 .map(
                                                   (lab) => DropdownMenuItem(
@@ -534,10 +550,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                   borrowerName: _nameController.text.trim(),
                                   whatsappNumber: _waController.text.trim(),
                                   purpose: _purposeController.text.trim(),
-                                  selectedItems:
-                                      _selectedItems.values.toList(),
-                                  otherItems:
-                                      _otherItemsController.text.trim(),
+                                  selectedItems: _selectedItems.values.toList(),
+                                  otherItems: _otherItemsController.text.trim(),
                                   onEditData: () => setState(() => _step = 0),
                                   onAddItem: () => setState(() => _step = 2),
                                 ),
@@ -565,9 +579,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -584,7 +598,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
       if (_borrowDate != null &&
           _requestDate != null &&
           _borrowDate!.isBefore(_requestDate!)) {
-        _showWarning('Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.');
+        _showWarning(
+          'Tanggal peminjaman tidak boleh sebelum tanggal pengajuan.',
+        );
         return;
       }
       setState(() => _step = 1);
@@ -656,19 +672,19 @@ class _BookingFormPageState extends State<BookingFormPage> {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengajuan berhasil dikirim ke Supabase.')),
+        const SnackBar(
+          content: Text('Pengajuan berhasil dikirim ke Supabase.'),
+        ),
       );
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => BookingSuccessPage(booking: booking),
-        ),
+        MaterialPageRoute(builder: (_) => BookingSuccessPage(booking: booking)),
       );
     } on Object catch (error) {
       if (mounted) {
         setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
   }
@@ -754,17 +770,11 @@ class _BookingFormPageState extends State<BookingFormPage> {
 
   void _showWarning(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.orange.shade700,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.orange.shade700),
     );
   }
 
-  Widget _fieldBox({
-    required BuildContext context,
-    required Widget child,
-  }) {
+  Widget _fieldBox({required BuildContext context, required Widget child}) {
     final width = MediaQuery.sizeOf(context).width;
     final boxWidth = width >= 760 ? (width / 2) - 28 : double.infinity;
     return SizedBox(width: boxWidth, child: child);
@@ -779,10 +789,7 @@ class _StepShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: child,
-      ),
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
     );
   }
 }
@@ -818,10 +825,7 @@ class _LabPreviewCard extends StatelessWidget {
             style: const TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 6),
-          Text(
-            lab.description,
-            style: const TextStyle(color: Colors.white),
-          ),
+          Text(lab.description, style: const TextStyle(color: Colors.white)),
         ],
       ),
     );
@@ -851,7 +855,9 @@ class _InventoryChecklist extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.electricBlue.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.electricBlue.withValues(alpha: 0.14)),
+          border: Border.all(
+            color: AppTheme.electricBlue.withValues(alpha: 0.14),
+          ),
         ),
         child: const Text(
           'Belum ada inventaris yang tersedia untuk laboratorium ini.',
@@ -923,7 +929,9 @@ class _InventoryTile extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             subtitle: Text(
-              isAvailable ? 'Stok tersedia ${inventory.stokTersedia}' : 'Stok habis',
+              isAvailable
+                  ? 'Stok tersedia ${inventory.stokTersedia}'
+                  : 'Stok habis',
             ),
             secondary: Icon(
               isAvailable ? Icons.inventory_2_outlined : Icons.block_outlined,
@@ -1015,8 +1023,16 @@ class _ReviewPanel extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _ReviewChip(icon: Icons.person_outline, label: 'Nama', value: borrowerName),
-              _ReviewChip(icon: Icons.phone_outlined, label: 'WhatsApp', value: whatsappNumber),
+              _ReviewChip(
+                icon: Icons.person_outline,
+                label: 'Nama',
+                value: borrowerName,
+              ),
+              _ReviewChip(
+                icon: Icons.phone_outlined,
+                label: 'WhatsApp',
+                value: whatsappNumber,
+              ),
               _ReviewChip(
                 icon: Icons.account_balance_outlined,
                 label: 'Fakultas',
@@ -1030,17 +1046,22 @@ class _ReviewPanel extends StatelessWidget {
               _ReviewChip(
                 icon: Icons.event_note_outlined,
                 label: 'Pengajuan',
-                value: requestDate == null ? '-' : dateFormatter.format(requestDate!),
+                value: requestDate == null
+                    ? '-'
+                    : dateFormatter.format(requestDate!),
               ),
               _ReviewChip(
                 icon: Icons.date_range_outlined,
                 label: 'Peminjaman',
-                value: borrowDate == null ? '-' : dateFormatter.format(borrowDate!),
+                value: borrowDate == null
+                    ? '-'
+                    : dateFormatter.format(borrowDate!),
               ),
               _ReviewChip(
                 icon: Icons.schedule_outlined,
                 label: 'Waktu',
-                value: '${startTime == null ? '-' : _formatTime(startTime!)} - ${endTime == null ? '-' : _formatTime(endTime!)}',
+                value:
+                    '${startTime == null ? '-' : _formatTime(startTime!)} - ${endTime == null ? '-' : _formatTime(endTime!)}',
               ),
             ],
           ),
@@ -1048,9 +1069,9 @@ class _ReviewPanel extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'Tujuan Peminjaman',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 8),
         Text(
@@ -1060,9 +1081,9 @@ class _ReviewPanel extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'Daftar Barang / Alat',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 8),
         if (items.isEmpty)
@@ -1078,9 +1099,9 @@ class _ReviewPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Opsi Lainnya',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),
           Text(otherItems),
@@ -1115,10 +1136,9 @@ class _ReviewPanel extends StatelessWidget {
           child: Text(
             'Pastikan semua data sudah benar. Saat tombol Kirim ditekan, booking akan tersimpan ke Supabase dan siap diproses.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.muted,
-                  height: 1.4,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppTheme.muted, height: 1.4),
           ),
         ),
       ],
@@ -1202,7 +1222,9 @@ class _SelectedItemRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.electricBlue.withValues(alpha: 0.14)),
+        border: Border.all(
+          color: AppTheme.electricBlue.withValues(alpha: 0.14),
+        ),
       ),
       child: Row(
         children: [
@@ -1214,7 +1236,10 @@ class _SelectedItemRow extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
-          Text('x${draft.quantity}', style: const TextStyle(fontWeight: FontWeight.w900)),
+          Text(
+            'x${draft.quantity}',
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
         ],
       ),
     );

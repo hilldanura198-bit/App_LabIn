@@ -45,17 +45,18 @@ class DownloadDocsPage extends StatelessWidget {
                   booking: booking,
                   onDownload: () async {
                     try {
-                      final bytes =
-                          await BookingPdfService.buildBookingLetter(booking);
+                      final bytes = await BookingPdfService.buildBookingLetter(
+                        booking,
+                      );
                       await Printing.sharePdf(
                         bytes: bytes,
                         filename: 'LabIn-${booking.reservationNo}.pdf',
                       );
                     } catch (error) {
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error.toString())),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error.toString())));
                     }
                   },
                 );
@@ -69,10 +70,7 @@ class DownloadDocsPage extends StatelessWidget {
 }
 
 class _BookingPdfCard extends StatelessWidget {
-  const _BookingPdfCard({
-    required this.booking,
-    required this.onDownload,
-  });
+  const _BookingPdfCard({required this.booking, required this.onDownload});
 
   final LabBooking booking;
   final VoidCallback onDownload;
@@ -117,9 +115,9 @@ class _BookingPdfCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         booking.labDisplayName,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.muted,
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
                       ),
                     ],
                   ),
@@ -138,18 +136,18 @@ class _BookingPdfCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Jadwal: $schedule',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
             ),
             const SizedBox(height: 4),
             Text(
               'Keperluan: ${booking.purpose.isEmpty ? '-' : booking.purpose}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
             ),
             if (booking.itemNames.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -157,9 +155,9 @@ class _BookingPdfCard extends StatelessWidget {
                 'Barang: ${booking.itemNames.join(', ')}',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.muted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
               ),
             ],
             const SizedBox(height: 14),
@@ -178,10 +176,7 @@ class _BookingPdfCard extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.status,
-    required this.color,
-  });
+  const _StatusChip({required this.status, required this.color});
 
   final String status;
   final Color color;

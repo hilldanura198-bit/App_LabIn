@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
@@ -544,40 +545,63 @@ class _InfrastructureList extends StatelessWidget {
 class _CampusMapTabs extends StatelessWidget {
   const _CampusMapTabs();
 
+  static const _campuses = [
+    _CampusMapData(
+      title: 'Kampus Rektorat',
+      address: 'Jl. Ki Mangun Sarkoro No.20, Nusukan, Banjarsari, Surakarta',
+      subtitle: 'Pusat administrasi, rektorat, dan layanan utama UDB.',
+      layout: _CampusLayout.rektorat,
+      rooms: ['Lobby', 'Ruang Rektor', 'Biro Akademik', 'Ruang Rapat', 'Aula'],
+    ),
+    _CampusMapData(
+      title: 'Kampus 1',
+      address: 'Jl. Bhayangkara No.55, Tipes, Serengan, Surakarta',
+      subtitle: 'Rumah bagi laboratorium inti dan ruang kelas intensif.',
+      layout: _CampusLayout.academic,
+      rooms: ['Lab RPL', 'Lab IoT', 'Perpustakaan', 'Kelas', 'Kantin'],
+    ),
+    _CampusMapData(
+      title: 'Kampus Kesehatan Sondakan',
+      address: 'Jl. KH Samanhudi No.93, Sondakan, Laweyan, Surakarta',
+      subtitle: 'Fokus pada praktikum kesehatan, klinik, dan layanan akademik.',
+      layout: _CampusLayout.health,
+      rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
+    ),
+    _CampusMapData(
+      title: 'Kampus Cemani',
+      address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
+      subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
+      layout: _CampusLayout.cemani,
+      rooms: [
+        'Lab Legal Tech',
+        'Lab Mediasi',
+        'Auditorium',
+        'Seminar',
+        'Parkir',
+      ],
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: _campuses.length,
       child: Column(
         children: [
           const TabBar(
+            isScrollable: true,
             tabs: [
+              Tab(text: 'Rektorat'),
               Tab(text: 'Kampus 1'),
-              Tab(text: 'Kampus 2'),
+              Tab(text: 'Sondakan'),
+              Tab(text: 'Cemani'),
             ],
           ),
           Expanded(
             child: TabBarView(
-              children: [
-                _CampusMap(
-                  title: 'Gedung A - Laboratorium & Administrasi',
-                  rooms: const [
-                    'Lab RPL',
-                    'Keuangan',
-                    'Convention Hall',
-                    'Area Luar',
-                  ],
-                ),
-                _CampusMap(
-                  title: 'Gedung B - Riset & Jaringan',
-                  rooms: const [
-                    'Lab IoT',
-                    'Lab Jaringan',
-                    'Gudang',
-                    'Ruang Rektor',
-                  ],
-                ),
-              ],
+              children: _campuses
+                  .map((campus) => _CampusMapPanel(campus: campus))
+                  .toList(),
             ),
           ),
         ],
@@ -586,11 +610,10 @@ class _CampusMapTabs extends StatelessWidget {
   }
 }
 
-class _CampusMap extends StatelessWidget {
-  const _CampusMap({required this.title, required this.rooms});
+class _CampusMapPanel extends StatelessWidget {
+  const _CampusMapPanel({required this.campus});
 
-  final String title;
-  final List<String> rooms;
+  final _CampusMapData campus;
 
   @override
   Widget build(BuildContext context) {
@@ -598,62 +621,197 @@ class _CampusMap extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       children: [
         Text(
-          title,
+          campus.title,
           textAlign: TextAlign.center,
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppTheme.richBronze.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.richBronze.withValues(alpha: 0.35),
-            ),
-          ),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: rooms.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.45,
-            ),
-            itemBuilder: (context, index) {
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.deepTeal.withValues(alpha: 0.18),
+        const SizedBox(height: 6),
+        Text(
+          campus.subtitle,
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+        ),
+        const SizedBox(height: 14),
+        _CampusDenahPreview(campus: campus),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: () async {
+            final uri = Uri.parse(campus.mapUrl);
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          },
+          icon: const Icon(Icons.map_outlined),
+          label: const Text('Buka Google Maps'),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: campus.rooms
+              .map(
+                (room) => Chip(
+                  label: Text(room),
+                  backgroundColor: campus.accent.withValues(alpha: 0.12),
+                  side: BorderSide(
+                    color: campus.accent.withValues(alpha: 0.28),
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppTheme.deepTeal,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      rooms[index],
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          campus.address,
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
         ),
       ],
+    );
+  }
+}
+
+class _CampusDenahPreview extends StatelessWidget {
+  const _CampusDenahPreview({required this.campus});
+
+  final _CampusMapData campus;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1.55,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              campus.accent.withValues(alpha: 0.16),
+              AppTheme.vibrantPurple.withValues(alpha: 0.10),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: campus.accent.withValues(alpha: 0.28)),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 10,
+              right: 10,
+              top: 10,
+              bottom: 10,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
+            ..._campusRooms(campus).map(
+              (room) => Positioned(
+                left: room.left,
+                top: room.top,
+                child: _RoomBlock(room: room, accent: campus.accent),
+              ),
+            ),
+            Positioned(
+              right: 18,
+              bottom: 18,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.cyberGradient,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'LabIn Campus Map',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<_RoomPin> _campusRooms(_CampusMapData campus) {
+    return switch (campus.layout) {
+      _CampusLayout.rektorat => [
+        _RoomPin('Lobby', 18, 24, 96, 56),
+        _RoomPin('Ruang Rektor', 132, 18, 118, 62),
+        _RoomPin('Biro Akademik', 266, 26, 116, 56),
+        _RoomPin('Ruang Rapat', 48, 108, 126, 56),
+        _RoomPin('Aula', 210, 112, 146, 72),
+      ],
+      _CampusLayout.academic => [
+        _RoomPin('Lab RPL', 18, 24, 126, 70),
+        _RoomPin('Lab IoT', 170, 18, 126, 70),
+        _RoomPin('Perpustakaan', 302, 22, 120, 70),
+        _RoomPin('Kelas', 70, 122, 120, 60),
+        _RoomPin('Kantin', 232, 122, 120, 60),
+      ],
+      _CampusLayout.health => [
+        _RoomPin('Klinik', 20, 24, 110, 70),
+        _RoomPin('Lab Simulasi', 156, 20, 134, 70),
+        _RoomPin('Farmasi', 308, 24, 110, 70),
+        _RoomPin('Ruang Dosen', 58, 124, 132, 60),
+        _RoomPin('Admin', 220, 124, 120, 60),
+      ],
+      _CampusLayout.cemani => [
+        _RoomPin('Lab Legal Tech', 18, 26, 134, 66),
+        _RoomPin('Lab Mediasi', 170, 22, 126, 66),
+        _RoomPin('Auditorium', 310, 28, 116, 66),
+        _RoomPin('Seminar', 62, 124, 120, 60),
+        _RoomPin('Parkir', 236, 124, 112, 60),
+      ],
+    };
+  }
+}
+
+class _RoomBlock extends StatelessWidget {
+  const _RoomBlock({required this.room, required this.accent});
+
+  final _RoomPin room;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: room.width,
+      height: room.height,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.10),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          room.label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+        ),
+      ),
     );
   }
 }
@@ -668,7 +826,16 @@ class _SatisfactionAnalytics extends StatefulWidget {
 }
 
 class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
+  final _feedbackController = TextEditingController();
+  int _rating = 5;
   String _period = 'Semester Genap 2026';
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _feedbackController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -690,13 +857,81 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Analisis Kepuasan Pengguna',
+                      'Analisis Kepuasan & Feedback',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
+                    _StarRatingSelector(
+                      rating: _rating,
+                      onChanged: (value) => setState(() => _rating = value),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _feedbackController,
+                      minLines: 4,
+                      maxLines: 6,
+                      decoration: const InputDecoration(
+                        labelText:
+                            'Kritik, Saran, dan Masukan Mengenai Peminjaman Ruangan/Alat',
+                        hintText:
+                            'Tulis masukan yang ingin Anda sampaikan kepada LabIn.',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    CyberGradientButton(
+                      onPressed: _submitting
+                          ? null
+                          : () async {
+                              final message = _feedbackController.text.trim();
+                              if (message.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Masukan feedback wajib diisi.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              try {
+                                setState(() => _submitting = true);
+                                await widget.repository.submitFeedback(
+                                  rating: _rating,
+                                  message: message,
+                                );
+                                if (!context.mounted) return;
+                                setState(() {
+                                  _submitting = false;
+                                  _feedbackController.clear();
+                                  _rating = 5;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Feedback berhasil dikirim.'),
+                                  ),
+                                );
+                              } catch (error) {
+                                if (!context.mounted) return;
+                                setState(() => _submitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())),
+                                );
+                              }
+                            },
+                      child: _submitting
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Kirim Feedback'),
+                    ),
+                    const SizedBox(height: 18),
                     DropdownButtonFormField<String>(
                       initialValue: periods.contains(_period)
                           ? _period
@@ -716,12 +951,6 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () => setState(() {}),
-                      icon: const Icon(Icons.bar_chart_rounded),
-                      label: const Text('Tampilkan'),
-                    ),
-                    const SizedBox(height: 18),
                     if (filtered.isEmpty)
                       const Text('Data kuisioner belum tersedia.')
                     else
@@ -733,6 +962,45 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
           ],
         );
       },
+    );
+  }
+}
+
+class _StarRatingSelector extends StatelessWidget {
+  const _StarRatingSelector({required this.rating, required this.onChanged});
+
+  final int rating;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          'Rating: $rating / 5',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(5, (index) {
+            final value = index + 1;
+            final active = value <= rating;
+            return IconButton(
+              onPressed: () => onChanged(value),
+              icon: Icon(
+                active ? Icons.star_rounded : Icons.star_border_rounded,
+                color: active ? Colors.amber : AppTheme.muted,
+                size: 30,
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }
@@ -856,4 +1124,44 @@ class _ImageDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+enum _CampusLayout { rektorat, academic, health, cemani }
+
+class _CampusMapData {
+  const _CampusMapData({
+    required this.title,
+    required this.address,
+    required this.subtitle,
+    required this.layout,
+    required this.rooms,
+  });
+
+  final String title;
+  final String address;
+  final String subtitle;
+  final _CampusLayout layout;
+  final List<String> rooms;
+
+  String get mapUrl =>
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}';
+
+  Color get accent {
+    return switch (layout) {
+      _CampusLayout.rektorat => AppTheme.electricBlue,
+      _CampusLayout.academic => AppTheme.vibrantPurple,
+      _CampusLayout.health => AppTheme.emerald,
+      _CampusLayout.cemani => AppTheme.deepTeal,
+    };
+  }
+}
+
+class _RoomPin {
+  const _RoomPin(this.label, this.left, this.top, this.width, this.height);
+
+  final String label;
+  final double left;
+  final double top;
+  final double width;
+  final double height;
 }

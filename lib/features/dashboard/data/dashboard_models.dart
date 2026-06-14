@@ -287,3 +287,67 @@ class SatisfactionScore {
     );
   }
 }
+
+class AppNotification {
+  const AppNotification({
+    required this.id,
+    required this.userId,
+    required this.title,
+    required this.message,
+    required this.kind,
+    required this.targetType,
+    required this.targetId,
+    required this.isRead,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String userId;
+  final String title;
+  final String message;
+  final String kind;
+  final String targetType;
+  final String targetId;
+  final bool isRead;
+  final DateTime createdAt;
+
+  factory AppNotification.fromMap(Map<String, dynamic> map) {
+    return AppNotification(
+      id: map['id'] as String,
+      userId: map['user_id'] as String,
+      title: map['title'] as String? ?? 'Notifikasi',
+      message: map['message'] as String? ?? '',
+      kind: map['kind'] as String? ?? 'general',
+      targetType: map['target_type'] as String? ?? 'booking',
+      targetId: map['target_id'] as String? ?? '',
+      isRead: map['is_read'] as bool? ?? false,
+      createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+    );
+  }
+}
+
+class FeedbackEntry {
+  const FeedbackEntry({
+    required this.id,
+    required this.userId,
+    required this.rating,
+    required this.message,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String userId;
+  final int rating;
+  final String message;
+  final DateTime createdAt;
+
+  factory FeedbackEntry.fromMap(Map<String, dynamic> map) {
+    return FeedbackEntry(
+      id: map['id'] as String,
+      userId: map['user_id'] as String,
+      rating: map['rating'] as int? ?? 0,
+      message: map['message'] as String? ?? '',
+      createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+    );
+  }
+}
