@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_cubit.dart';
@@ -26,12 +28,17 @@ class _SettingsPageState extends State<SettingsPage> {
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
+  final _localAuth = LocalAuthentication();
   bool _biometricEnabled = false;
+  bool _biometricSupported = false;
+  bool _deviceSecurityEnabled = true;
+  bool _locationEnabled = true;
   bool _realtimeNotifications = true;
   bool _notificationSound = true;
   bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
+  String _language = 'id';
 
   @override
   void initState() {
@@ -50,13 +57,28 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _load() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final biometricSupported =
+          await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
       final profile = await widget.repository.fetchProfileSettings();
+      final language = prefs.getString('app_language') ?? 'id';
+      final locationEnabled = prefs.getBool('feature_location') ?? true;
+      final deviceSecurityEnabled =
+          prefs.getBool('feature_device_security') ?? biometricSupported;
       setState(() {
+        _language = language;
+        _locationEnabled = locationEnabled;
+        _deviceSecurityEnabled = deviceSecurityEnabled;
+        _biometricSupported = biometricSupported;
         _nameController.text = profile.name;
         _nimController.text = profile.nimNip;
         _waController.text = profile.whatsappNumber;
         _avatarUrl = profile.avatarUrl;
-        _biometricEnabled = profile.biometricEnabled;
+        _biometricEnabled =
+            profile.biometricEnabled &&
+            deviceSecurityEnabled &&
+            biometricSupported;
         _realtimeNotifications = profile.realtimeNotificationsEnabled;
         _notificationSound = profile.notificationSoundEnabled;
         _role = profile.role;
@@ -210,6 +232,73 @@ class _SettingsPageState extends State<SettingsPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Text(
+                                  'General Preferences',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w900),
+                                ),
+                                const SizedBox(height: 12),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _language,
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'id',
+                                      child: Text('Bahasa Indonesia'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'en',
+                                      child: Text('English'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() => _language = value);
+                                  },
+                                  decoration: const InputDecoration(
+                                    labelText: 'Pengaturan Bahasa',
+                                    prefixIcon: Icon(Icons.language_rounded),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SwitchListTile(
+                                  value: _locationEnabled,
+                                  onChanged: (value) =>
+                                      setState(() => _locationEnabled = value),
+                                  title: const Text('Fitur Lokasi'),
+                                  subtitle: const Text(
+                                    'Izinkan penggunaan lokasi untuk cek reservasi dan verifikasi akses.',
+                                  ),
+                                ),
+                                SwitchListTile(
+                                  value: _deviceSecurityEnabled,
+                                  onChanged: _biometricSupported
+                                      ? (value) {
+                                          setState(() {
+                                            _deviceSecurityEnabled = value;
+                                            if (!value) {
+                                              _biometricEnabled = false;
+                                            }
+                                          });
+                                        }
+                                      : null,
+                                  title: const Text('Keamanan Perangkat'),
+                                  subtitle: Text(
+                                    _biometricSupported
+                                        ? 'Sinkronkan perlindungan perangkat dan biometrik lokal.'
+                                        : 'Perangkat ini belum mendukung biometrik.',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
                                   'Account Security',
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.w900),
@@ -253,11 +342,16 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               SwitchListTile(
                                 value: _biometricEnabled,
-                                onChanged: (value) =>
-                                    setState(() => _biometricEnabled = value),
+                                onChanged:
+                                    (_biometricSupported &&
+                                        _deviceSecurityEnabled)
+                                    ? (value) => setState(
+                                        () => _biometricEnabled = value,
+                                      )
+                                    : null,
                                 title: const Text('Biometric Login'),
                                 subtitle: const Text(
-                                  'Aktifkan preferensi biometric login.',
+                                  'Aktifkan preferensi biometric login untuk perangkat lokal.',
                                 ),
                               ),
                               SwitchListTile(
@@ -321,6 +415,7 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
     try {
+      final prefs = await SharedPreferences.getInstance();
       await widget.repository.updateProfileSettings(
         ProfileSettings(
           name: _nameController.text,
@@ -328,11 +423,17 @@ class _SettingsPageState extends State<SettingsPage> {
           role: _role,
           whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
           avatarUrl: _avatarUrl,
-          biometricEnabled: _biometricEnabled,
+          biometricEnabled:
+              _biometricEnabled &&
+              _biometricSupported &&
+              _deviceSecurityEnabled,
           realtimeNotificationsEnabled: _realtimeNotifications,
           notificationSoundEnabled: _notificationSound,
         ),
       );
+      await prefs.setString('app_language', _language);
+      await prefs.setBool('feature_location', _locationEnabled);
+      await prefs.setBool('feature_device_security', _deviceSecurityEnabled);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pengaturan berhasil disimpan.')),

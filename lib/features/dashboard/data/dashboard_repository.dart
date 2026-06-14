@@ -175,6 +175,7 @@ class DashboardRepository {
               )
               .toList(),
         );
+    await _decrementInventoryStock(items);
     await _insertNotification(
       userId: userId,
       title: 'Pengajuan tersimpan',
@@ -262,6 +263,7 @@ class DashboardRepository {
                 )
                 .toList(),
           );
+      await _decrementInventoryStock(items);
     }
     await _insertNotification(
       userId: userId,
@@ -558,6 +560,16 @@ class DashboardRepository {
       targetType: 'feedback',
       targetId: userId,
     );
+  }
+
+  Future<void> _decrementInventoryStock(List<BookingItemDraft> items) async {
+    for (final item in items) {
+      final remaining = item.inventory.stokTersedia - item.quantity;
+      await _supabase
+          .from('inventories')
+          .update({'stok_tersedia': remaining < 0 ? 0 : remaining})
+          .eq('id', item.inventory.id);
+    }
   }
 
   DateTime _combineDateAndTime(DateTime date, String time) {

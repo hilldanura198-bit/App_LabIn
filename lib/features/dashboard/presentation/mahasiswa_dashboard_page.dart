@@ -328,7 +328,15 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                       child: ElevatedButton.icon(
-                        onPressed: state.cart.isEmpty || state.isLoading
+                        onPressed:
+                            state.cart.isEmpty ||
+                                state.isLoading ||
+                                state.cart.values.any(
+                                  (item) =>
+                                      item.inventory.stokTersedia -
+                                          item.quantity <=
+                                      0,
+                                )
                             ? null
                             : () {
                                 context.read<DashboardBloc>().add(
@@ -931,8 +939,8 @@ class _StockCalendarState extends State<_StockCalendar> {
                     Text(
                       _monthLabel(_visibleMonth),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     IconButton(
                       onPressed: _goToNextMonth,
@@ -954,9 +962,9 @@ class _StockCalendarState extends State<_StockCalendar> {
                     totalLabel,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -975,10 +983,16 @@ class _StockCalendarState extends State<_StockCalendar> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
                         child: TableCalendar<void>(
-                          firstDay: DateTime(month.year, month.month, 1)
-                              .subtract(const Duration(days: 7)),
-                          lastDay: DateTime(month.year, month.month + 1, 0)
-                              .add(const Duration(days: 7)),
+                          firstDay: DateTime(
+                            month.year,
+                            month.month,
+                            1,
+                          ).subtract(const Duration(days: 7)),
+                          lastDay: DateTime(
+                            month.year,
+                            month.month + 1,
+                            0,
+                          ).add(const Duration(days: 7)),
                           focusedDay: month,
                           selectedDayPredicate: (day) =>
                               isSameDay(day, widget.state.selectedDate),
@@ -1035,9 +1049,12 @@ class _StockCalendarState extends State<_StockCalendar> {
                                 ),
                           ),
                           daysOfWeekStyle: const DaysOfWeekStyle(
-                            weekdayStyle:
-                                TextStyle(fontWeight: FontWeight.w700),
-                            weekendStyle: TextStyle(fontWeight: FontWeight.w700),
+                            weekdayStyle: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            weekendStyle: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           calendarBuilders: CalendarBuilders(
                             markerBuilder: (context, date, events) {
@@ -1194,7 +1211,7 @@ class _InventoryGrid extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    available ? 'Sisa $remaining' : 'Stok Habis',
+                    available ? 'Sisa $remaining' : 'Stok Sudah Habis',
                     style: TextStyle(
                       color: available ? AppTheme.deepTeal : Colors.redAccent,
                       fontWeight: FontWeight.w800,
@@ -1217,7 +1234,7 @@ class _InventoryGrid extends StatelessWidget {
                         )
                       : null,
                   icon: const Icon(Icons.add_rounded),
-                  label: Text(available ? 'Tambah' : 'Stok Habis'),
+                  label: Text(available ? 'Tambah' : 'Stok Sudah Habis'),
                 ),
               ],
             ),

@@ -184,8 +184,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                 : () => setState(() => _step--),
                             controlsBuilder: (context, details) {
                               final isLast = _step == 3;
-                              final canProceed = _canProceedCurrentStep &&
-                                  !_submitting;
+                              final canProceed =
+                                  _canProceedCurrentStep && !_submitting;
                               return Padding(
                                 padding: const EdgeInsets.only(top: 16),
                                 child: Row(
@@ -239,9 +239,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                             controller: _nameController,
                                             textInputAction:
                                                 TextInputAction.next,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
@@ -262,9 +261,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _waController,
                                             keyboardType: TextInputType.phone,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
@@ -290,9 +288,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _requestDateController,
                                             readOnly: true,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (_requestDate == null) {
                                                 return _invalidMessage;
@@ -329,9 +326,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _borrowDateController,
                                             readOnly: true,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (_borrowDate == null) {
                                                 return _invalidMessage;
@@ -376,9 +372,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _startTimeController,
                                             readOnly: true,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (_startTime == null) {
                                                 return _invalidMessage;
@@ -418,9 +413,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _endTimeController,
                                             readOnly: true,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (_endTime == null) {
                                                 return _invalidMessage;
@@ -467,9 +461,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           child: TextFormField(
                                             controller: _purposeController,
                                             maxLines: 3,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             validator: (value) {
                                               if (value == null ||
                                                   value.trim().isEmpty) {
@@ -512,9 +505,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           context: context,
                                           child: DropdownButtonFormField<String>(
                                             initialValue: _selectedFacultyCode,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             items: AppLabCatalog.faculties
                                                 .map(
                                                   (faculty) => DropdownMenuItem(
@@ -560,9 +552,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                           context: context,
                                           child: DropdownButtonFormField<String>(
                                             initialValue: _selectedLabId,
-                                            autovalidateMode:
-                                                AutovalidateMode
-                                                    .onUserInteraction,
+                                            autovalidateMode: AutovalidateMode
+                                                .onUserInteraction,
                                             items: _availableLabs
                                                 .map(
                                                   (lab) => DropdownMenuItem(

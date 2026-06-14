@@ -93,28 +93,27 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                     const Center(
                                       child: CircularProgressIndicator(),
                                     )
-                                else if (selectedBookings.isEmpty)
+                                  else if (selectedBookings.isEmpty)
                                     _EmptyScheduleCard(date: _selectedDay)
                                   else
-                                    ...selectedBookings.asMap().entries.map(
-                                      (entry) {
-                                        final index = entry.key;
-                                        final booking = entry.value;
-                                        return Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 12,
-                                          ),
-                                          child: _ScheduleCard(
-                                            booking: booking,
-                                            roomName:
-                                                roomNames[booking.labId] ??
-                                                'Ruang Laboratorium',
-                                            accentColor:
-                                                _accentForIndex(index),
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                    ...selectedBookings.asMap().entries.map((
+                                      entry,
+                                    ) {
+                                      final index = entry.key;
+                                      final booking = entry.value;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        child: _ScheduleCard(
+                                          booking: booking,
+                                          roomName:
+                                              roomNames[booking.labId] ??
+                                              'Ruang Laboratorium',
+                                          accentColor: _accentForIndex(index),
+                                        ),
+                                      );
+                                    }),
                                 ],
                               ),
                             ),

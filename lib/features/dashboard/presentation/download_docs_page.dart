@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/booking_pdf_service.dart';
@@ -48,9 +52,15 @@ class DownloadDocsPage extends StatelessWidget {
                       final bytes = await BookingPdfService.buildBookingLetter(
                         booking,
                       );
-                      await Printing.sharePdf(
-                        bytes: bytes,
-                        filename: 'LabIn-${booking.reservationNo}.pdf',
+                      final file = await _savePdfToDevice(
+                        bytes,
+                        'LabIn-${booking.reservationNo}.pdf',
+                      );
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('PDF tersimpan di ${file.path}'),
+                        ),
                       );
                     } catch (error) {
                       if (!context.mounted) return;
@@ -67,6 +77,24 @@ class DownloadDocsPage extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<File> _savePdfToDevice(Uint8List bytes, String filename) async {
+  if (Platform.isAndroid) {
+    await Permission.storage.request();
+  }
+
+  final baseDirectory =
+      await getDownloadsDirectory() ??
+      await getExternalStorageDirectory() ??
+      await getApplicationDocumentsDirectory();
+  final labInDirectory = Directory(
+    '${baseDirectory.path}${Platform.pathSeparator}LabIn',
+  );
+  await labInDirectory.create(recursive: true);
+  final file = File('${labInDirectory.path}${Platform.pathSeparator}$filename');
+  await file.writeAsBytes(bytes, flush: true);
+  return file;
 }
 
 class _BookingPdfCard extends StatelessWidget {

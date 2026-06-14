@@ -16,7 +16,7 @@ class NotificationCenterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const GlassAppBar(title: 'Notifikasi Real-Time'),
+      appBar: const GlassAppBar(title: 'Notifikasi'),
       body: SafeArea(
         child: StreamBuilder<List<AppNotification>>(
           stream: repository.watchNotifications(),
@@ -30,24 +30,25 @@ class NotificationCenterPage extends StatelessWidget {
 
             final notifications = snapshot.data!;
             if (notifications.isEmpty) {
-              return const Center(
-                child: Text('Belum ada notifikasi realtime.'),
-              );
+              return const Center(child: Text('Belum ada notifikasi.'));
             }
 
-            return ListView.separated(
+            return ListView.builder(
               padding: const EdgeInsets.all(18),
               itemCount: notifications.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final notification = notifications[index];
-                return _NotificationCard(
-                  notification: notification,
-                  onTap: () async {
-                    await repository.markNotificationRead(notification.id);
-                    if (!context.mounted) return;
-                    _openTarget(context, notification);
-                  },
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _NotificationCard(
+                    notification: notification,
+                    zebraIndex: index,
+                    onTap: () async {
+                      await repository.markNotificationRead(notification.id);
+                      if (!context.mounted) return;
+                      _openTarget(context, notification);
+                    },
+                  ),
                 );
               },
             );
@@ -84,75 +85,94 @@ class NotificationCenterPage extends StatelessWidget {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.notification, required this.onTap});
+  const _NotificationCard({
+    required this.notification,
+    required this.zebraIndex,
+    required this.onTap,
+  });
 
   final AppNotification notification;
+  final int zebraIndex;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = _kindColor(notification.kind);
+    final backgroundColor = zebraIndex.isOdd
+        ? const Color(0xFF1C1330).withValues(alpha: 0.88)
+        : const Color(0xFF1A2432).withValues(alpha: 0.90);
     return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(16),
+      color: backgroundColor,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: zebraIndex.isOdd
+                ? AppTheme.vibrantPurple.withValues(alpha: 0.20)
+                : AppTheme.electricBlue.withValues(alpha: 0.18),
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(_kindIcon(notification.kind), color: color),
                 ),
-                child: Icon(_kindIcon(notification.kind), color: color),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            notification.title,
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                        ),
-                        if (!notification.isRead)
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: AppTheme.electricBlue,
-                              shape: BoxShape.circle,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.title,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w900),
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      notification.message,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _formatTime(notification.createdAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-                    ),
-                  ],
+                          if (!notification.isRead)
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.electricBlue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        notification.message,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatTime(notification.createdAt),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -72,6 +72,7 @@ class _FacilityList extends StatelessWidget {
                 final item = items[index];
                 final code = _assetCode(index);
                 final booking = _latestBookingForLab(bookings, item.labId);
+                final imageUrl = _facilityImageUrl(item.namaAlat, index);
                 final odd = index.isOdd;
                 return Container(
                   decoration: BoxDecoration(
@@ -91,7 +92,7 @@ class _FacilityList extends StatelessWidget {
                       builder: (context, constraints) {
                         final compact = constraints.maxWidth < 620;
                         final image = _FacilityImage(
-                          imageUrl: _facilityImageUrl(item.namaAlat),
+                          imageUrl: imageUrl,
                           height: compact ? 150 : 112,
                         );
                         final detail = _FacilityDetail(
@@ -114,6 +115,7 @@ class _FacilityList extends StatelessWidget {
                                     context,
                                     item,
                                     booking,
+                                    imageUrl,
                                   ),
                                 ),
                               ),
@@ -127,8 +129,12 @@ class _FacilityList extends StatelessWidget {
                             Expanded(child: detail),
                             const SizedBox(width: 12),
                             _DetailButton(
-                              onPressed: () =>
-                                  _showFacilityImage(context, item, booking),
+                              onPressed: () => _showFacilityImage(
+                                context,
+                                item,
+                                booking,
+                                imageUrl,
+                              ),
                             ),
                           ],
                         );
@@ -166,20 +172,21 @@ class _FacilityList extends StatelessWidget {
     BuildContext context,
     LabInventory item,
     LabBooking? booking,
+    String imageUrl,
   ) {
     showDialog<void>(
       context: context,
       builder: (_) => _ImageDialog(
         title: item.namaAlat,
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
-        imageUrl: _facilityImageUrl(item.namaAlat),
+        imageUrl: imageUrl,
         booking: booking,
         icon: Icons.precision_manufacturing_outlined,
       ),
     );
   }
 
-  String _facilityImageUrl(String name) {
+  String _facilityImageUrl(String name, int index) {
     final lowerName = name.toLowerCase();
     if (lowerName.contains('proyektor')) {
       return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=900&q=80';
@@ -193,7 +200,25 @@ class _FacilityList extends StatelessWidget {
     if (lowerName.contains('mikro') || lowerName.contains('alat')) {
       return 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=900&q=80';
     }
-    return 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=900&q=80';
+    const pool = [
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1485988412941-77a35537dae4?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1498050108023-3f8b6c6d2f3e?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1498050108023-5c1f4f18b7e3?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=900&q=80',
+    ];
+    return pool[index % pool.length];
   }
 }
 
@@ -433,21 +458,54 @@ class _InfrastructureList extends StatelessWidget {
       stream: repository.watchLaboratories(),
       builder: (context, snapshot) {
         final rooms = snapshot.data ?? const <LabRoom>[];
-        final displayRooms = [
-          ...rooms,
+        final displayRooms = <LabRoom>[...rooms];
+        void addRoom(LabRoom room) {
+          if (displayRooms.any((item) => item.name == room.name)) {
+            return;
+          }
+          displayRooms.add(room);
+        }
+
+        addRoom(
           const LabRoom(
             id: 'area-luar',
             name: 'Area Luar Ruangan',
             location: 'Kampus 1',
             status: 'aktif',
           ),
+        );
+        addRoom(
           const LabRoom(
             id: 'rektor',
             name: 'Ruang Rektor',
             location: 'Gedung A',
             status: 'aktif',
           ),
-        ];
+        );
+        addRoom(
+          const LabRoom(
+            id: 'fik-rpl-hall',
+            name: 'Lab RPL',
+            location: 'Gedung Teknologi Lt. 2',
+            status: 'aktif',
+          ),
+        );
+        addRoom(
+          const LabRoom(
+            id: 'fik-jaringan',
+            name: 'Lab Jaringan',
+            location: 'Gedung Teknologi Lt. 3',
+            status: 'aktif',
+          ),
+        );
+        addRoom(
+          const LabRoom(
+            id: 'fik-iot-hall',
+            name: 'Lab IoT',
+            location: 'Gedung Teknologi Lt. 3',
+            status: 'aktif',
+          ),
+        );
         return GridView.builder(
           padding: const EdgeInsets.all(18),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -529,6 +587,15 @@ class _InfrastructureList extends StatelessWidget {
     if (lowerName.contains('rektor')) {
       return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80';
     }
+    if (lowerName.contains('rpl')) {
+      return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('jaringan')) {
+      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80';
+    }
+    if (lowerName.contains('iot')) {
+      return 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80';
+    }
     if (lowerName.contains('convention')) {
       return 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=80';
     }
@@ -549,35 +616,72 @@ class _CampusMapTabs extends StatelessWidget {
     _CampusMapData(
       title: 'Kampus Rektorat',
       address: 'Jl. Ki Mangun Sarkoro No.20, Nusukan, Banjarsari, Surakarta',
-      subtitle: 'Pusat administrasi, rektorat, dan layanan utama kampus.',
+      subtitle: 'Pusat administrasi dan layanan akademik utama.',
       layout: _CampusLayout.rektorat,
-      rooms: ['Lobby', 'Ruang Rektor', 'Biro Akademik', 'Ruang Rapat', 'Aula'],
+      bannerImageUrl:
+          'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+      rooms: [
+        'Lobby Utama',
+        'Ruang Rektor',
+        'Biro Akademik',
+        'Ruang Rapat',
+        'Aula',
+        'Front Office',
+      ],
     ),
     _CampusMapData(
       title: 'Kampus 1',
       address: 'Jl. Bhayangkara No.55, Tipes, Serengan, Surakarta',
-      subtitle: 'Rumah bagi laboratorium inti dan ruang kelas intensif.',
-      layout: _CampusLayout.academic,
-      rooms: ['Lab RPL', 'Lab IoT', 'Perpustakaan', 'Kelas', 'Kantin'],
+      subtitle: 'Ruang kelas utama dan pusat aktivitas praktikum FIK.',
+      layout: _CampusLayout.campus1,
+      bannerImageUrl:
+          'https://images.unsplash.com/photo-1497366412874-3415097a27e7?auto=format&fit=crop&w=1200&q=80',
+      rooms: [
+        'Lab RPL',
+        'Lab IoT',
+        'Perpustakaan',
+        'Kelas',
+        'Kantin',
+        'Studio',
+      ],
     ),
     _CampusMapData(
-      title: 'Kampus Kesehatan Sondakan',
+      title: 'Kampus 2',
       address: 'Jl. KH Samanhudi No.93, Sondakan, Laweyan, Surakarta',
-      subtitle: 'Fokus pada praktikum kesehatan, klinik, dan layanan akademik.',
-      layout: _CampusLayout.health,
+      subtitle: 'Fokus pada klinik, simulasi, dan layanan kesehatan.',
+      layout: _CampusLayout.campus2,
+      bannerImageUrl:
+          'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80',
       rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
     ),
     _CampusMapData(
-      title: 'Kampus Cemani',
+      title: 'Kampus 3',
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
-      layout: _CampusLayout.cemani,
+      layout: _CampusLayout.campus3,
+      bannerImageUrl:
+          'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80',
       rooms: [
         'Lab Legal Tech',
         'Lab Mediasi',
         'Auditorium',
         'Seminar',
         'Parkir',
+      ],
+    ),
+    _CampusMapData(
+      title: 'Kampus 4',
+      address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
+      subtitle: 'Blok lanjutan untuk praktikum, diskusi, dan kegiatan modern.',
+      layout: _CampusLayout.campus4,
+      bannerImageUrl:
+          'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+      rooms: [
+        'Ruang Diskusi',
+        'Lab Presentasi',
+        'Studio Multimedia',
+        'Co-Working',
+        'Rooftop',
       ],
     ),
   ];
@@ -591,10 +695,11 @@ class _CampusMapTabs extends StatelessWidget {
           const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Rektorat'),
+              Tab(text: 'Kampus Rektorat'),
               Tab(text: 'Kampus 1'),
-              Tab(text: 'Sondakan'),
-              Tab(text: 'Cemani'),
+              Tab(text: 'Kampus 2'),
+              Tab(text: 'Kampus 3'),
+              Tab(text: 'Kampus 4'),
             ],
           ),
           Expanded(
@@ -617,61 +722,55 @@ class _CampusMapPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(18),
-      children: [
-        Text(
-          campus.title,
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          campus.subtitle,
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
-        ),
-        const SizedBox(height: 14),
-        _CampusDenahPreview(campus: campus),
-        const SizedBox(height: 14),
-        FilledButton.icon(
-          onPressed: () async {
-            final uri = Uri.parse(campus.mapUrl);
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          },
-          icon: const Icon(Icons.map_outlined),
-          label: const Text('Buka Google Maps'),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: campus.rooms
-              .map(
-                (room) => Chip(
-                  label: Text(room),
-                  backgroundColor: campus.accent.withValues(alpha: 0.12),
-                  side: BorderSide(
-                    color: campus.accent.withValues(alpha: 0.28),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
+        final denah = _CampusDenahPreview(campus: campus);
+        final info = _CampusInfoCard(campus: campus);
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(18),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    campus.title,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          campus.address,
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-        ),
-      ],
+                  const SizedBox(height: 6),
+                  Text(
+                    campus.subtitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                  ),
+                  const SizedBox(height: 16),
+                  if (isWide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 2, child: denah),
+                        const SizedBox(width: 16),
+                        Expanded(flex: 1, child: info),
+                      ],
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [denah, const SizedBox(height: 16), info],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -683,62 +782,90 @@ class _CampusDenahPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.55,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              campus.accent.withValues(alpha: 0.16),
-              AppTheme.vibrantPurple.withValues(alpha: 0.10),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: campus.accent.withValues(alpha: 0.28)),
+    final rooms = campus.rooms;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            campus.accent.withValues(alpha: 0.16),
+            AppTheme.vibrantPurple.withValues(alpha: 0.10),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Stack(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: campus.accent.withValues(alpha: 0.28)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Positioned(
-              left: 10,
-              right: 10,
-              top: 10,
-              bottom: 10,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  borderRadius: BorderRadius.circular(18),
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.network(
+                campus.bannerImageUrl,
+                height: 180,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 180,
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.cyberGradient,
+                    ),
+                    child: const Icon(
+                      Icons.map_outlined,
+                      color: Colors.white,
+                      size: 42,
+                    ),
+                  );
+                },
               ),
             ),
-            ..._campusRooms(campus).map(
-              (room) => Positioned(
-                left: room.left,
-                top: room.top,
-                child: _RoomBlock(room: room, accent: campus.accent),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.84),
+                borderRadius: BorderRadius.circular(18),
               ),
-            ),
-            Positioned(
-              right: 18,
-              bottom: 18,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cyberGradient,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  'LabIn Campus Map',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Denah ${campus.title}',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      const Icon(Icons.grid_view_rounded, size: 18),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 520 ? 3 : 2;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: rooms.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.15,
+                        ),
+                        itemBuilder: (context, index) {
+                          final room = rooms[index];
+                          return _RoomBlock(label: room, accent: campus.accent);
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -746,52 +873,85 @@ class _CampusDenahPreview extends StatelessWidget {
       ),
     );
   }
+}
 
-  List<_RoomPin> _campusRooms(_CampusMapData campus) {
-    return switch (campus.layout) {
-      _CampusLayout.rektorat => [
-        _RoomPin('Lobby', 18, 24, 96, 56),
-        _RoomPin('Ruang Rektor', 132, 18, 118, 62),
-        _RoomPin('Biro Akademik', 266, 26, 116, 56),
-        _RoomPin('Ruang Rapat', 48, 108, 126, 56),
-        _RoomPin('Aula', 210, 112, 146, 72),
-      ],
-      _CampusLayout.academic => [
-        _RoomPin('Lab RPL', 18, 24, 126, 70),
-        _RoomPin('Lab IoT', 170, 18, 126, 70),
-        _RoomPin('Perpustakaan', 302, 22, 120, 70),
-        _RoomPin('Kelas', 70, 122, 120, 60),
-        _RoomPin('Kantin', 232, 122, 120, 60),
-      ],
-      _CampusLayout.health => [
-        _RoomPin('Klinik', 20, 24, 110, 70),
-        _RoomPin('Lab Simulasi', 156, 20, 134, 70),
-        _RoomPin('Farmasi', 308, 24, 110, 70),
-        _RoomPin('Ruang Dosen', 58, 124, 132, 60),
-        _RoomPin('Admin', 220, 124, 120, 60),
-      ],
-      _CampusLayout.cemani => [
-        _RoomPin('Lab Legal Tech', 18, 26, 134, 66),
-        _RoomPin('Lab Mediasi', 170, 22, 126, 66),
-        _RoomPin('Auditorium', 310, 28, 116, 66),
-        _RoomPin('Seminar', 62, 124, 120, 60),
-        _RoomPin('Parkir', 236, 124, 112, 60),
-      ],
-    };
+class _CampusInfoCard extends StatelessWidget {
+  const _CampusInfoCard({required this.campus});
+
+  final _CampusMapData campus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: campus.accent.withValues(alpha: 0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: campus.accent.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Informasi ${campus.title}',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            campus.address,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: () async {
+              final uri = Uri.parse(campus.mapUrl);
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+            icon: const Icon(Icons.map_outlined),
+            label: const Text('Buka Google Maps'),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: campus.rooms
+                .map(
+                  (room) => Chip(
+                    label: Text(room),
+                    backgroundColor: campus.accent.withValues(alpha: 0.12),
+                    side: BorderSide(
+                      color: campus.accent.withValues(alpha: 0.24),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
   }
 }
 
 class _RoomBlock extends StatelessWidget {
-  const _RoomBlock({required this.room, required this.accent});
+  const _RoomBlock({required this.label, required this.accent});
 
-  final _RoomPin room;
+  final String label;
   final Color accent;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: room.width,
-      height: room.height,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -807,7 +967,7 @@ class _RoomBlock extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          room.label,
+          label,
           textAlign: TextAlign.center,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
         ),
@@ -828,7 +988,7 @@ class _SatisfactionAnalytics extends StatefulWidget {
 class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
   final _feedbackController = TextEditingController();
   int _rating = 5;
-  String _period = 'Semester Genap 2026';
+  String _period = 'Semester Genap 2025/2026';
   bool _submitting = false;
 
   @override
@@ -843,7 +1003,11 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
       stream: widget.repository.watchSatisfactionScores(),
       builder: (context, snapshot) {
         final scores = snapshot.data ?? const <SatisfactionScore>[];
-        final periods = scores.map((score) => score.period).toSet().toList();
+        final periods = <String>{
+          'Semester Genap 2025/2026',
+          'Awal Tahun 2026',
+          ...scores.map((score) => score.period),
+        }.toList();
         final filtered = scores
             .where((score) => score.period == _period)
             .toList();
@@ -1126,7 +1290,7 @@ class _ImageDialog extends StatelessWidget {
   }
 }
 
-enum _CampusLayout { rektorat, academic, health, cemani }
+enum _CampusLayout { rektorat, campus1, campus2, campus3, campus4 }
 
 class _CampusMapData {
   const _CampusMapData({
@@ -1134,6 +1298,7 @@ class _CampusMapData {
     required this.address,
     required this.subtitle,
     required this.layout,
+    required this.bannerImageUrl,
     required this.rooms,
   });
 
@@ -1141,6 +1306,7 @@ class _CampusMapData {
   final String address;
   final String subtitle;
   final _CampusLayout layout;
+  final String bannerImageUrl;
   final List<String> rooms;
 
   String get mapUrl =>
@@ -1149,19 +1315,10 @@ class _CampusMapData {
   Color get accent {
     return switch (layout) {
       _CampusLayout.rektorat => AppTheme.electricBlue,
-      _CampusLayout.academic => AppTheme.vibrantPurple,
-      _CampusLayout.health => AppTheme.emerald,
-      _CampusLayout.cemani => AppTheme.deepTeal,
+      _CampusLayout.campus1 => AppTheme.vibrantPurple,
+      _CampusLayout.campus2 => AppTheme.emerald,
+      _CampusLayout.campus3 => AppTheme.deepTeal,
+      _CampusLayout.campus4 => AppTheme.richBronze,
     };
   }
-}
-
-class _RoomPin {
-  const _RoomPin(this.label, this.left, this.top, this.width, this.height);
-
-  final String label;
-  final double left;
-  final double top;
-  final double width;
-  final double height;
 }
