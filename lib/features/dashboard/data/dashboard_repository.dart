@@ -180,8 +180,9 @@ class DashboardRepository {
     await _decrementInventoryStock(items);
     await _insertNotification(
       userId: userId,
-      title: 'Pengajuan tersimpan',
-      message: 'Pengajuan reservasi berhasil dikirim dan menunggu verifikasi.',
+      title: 'Checkout berhasil',
+      message:
+          'Pengajuan reservasi berhasil terkirim dan menunggu verifikasi lab.',
       kind: 'booking_created',
       targetType: 'booking',
       targetId: bookingId,
