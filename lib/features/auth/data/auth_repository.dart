@@ -33,10 +33,26 @@ class AuthRepository {
     );
   }
 
+  Stream<Session?> authStateChanges() {
+    if (_client == null) {
+      return Stream<Session?>.value(null);
+    }
+    return _supabase.auth.onAuthStateChange.map((state) => state.session);
+  }
+
   Future<void> signInWithCampusSso() async {
     await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'io.supabase.labin://login-callback',
+    );
+  }
+
+  Future<bool> signInWithGoogle() {
+    return _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: 'io.supabase.labin://login-callback',
+      authScreenLaunchMode: LaunchMode.externalApplication,
+      queryParams: const {'prompt': 'select_account'},
     );
   }
 
@@ -69,6 +85,8 @@ class AuthRepository {
       'role': 'mahasiswa',
       'ktm_url': ktmUrl,
     });
+
+    await _supabase.auth.signOut();
 
     return userId;
   }

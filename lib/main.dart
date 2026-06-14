@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import 'core/brand.dart';
@@ -13,6 +14,7 @@ import 'features/auth/presentation/login_page.dart';
 import 'features/dashboard/presentation/aslab_dashboard_page.dart';
 import 'features/dashboard/presentation/kalab_dashboard_page.dart';
 import 'features/dashboard/presentation/mahasiswa_dashboard_page.dart';
+import 'features/auth/presentation/terms_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,15 +97,78 @@ class AuthGate extends StatelessWidget {
         }
 
         if (state is Authenticated) {
-          return switch (state.role) {
+          final dashboard = switch (state.role) {
             UserRole.mahasiswa => const MahasiswaDashboardPage(),
             UserRole.aslab => const AslabDashboardPage(),
             UserRole.kalab => const KalabDashboardPage(),
           };
+          return TermsGate(userId: state.userId, child: dashboard);
         }
 
         final message = state is AuthFailure ? state.message : null;
         return LoginPage(message: message);
+      },
+    );
+  }
+}
+
+class TermsGate extends StatefulWidget {
+  const TermsGate({super.key, required this.userId, required this.child});
+
+  final String userId;
+  final Widget child;
+
+  @override
+  State<TermsGate> createState() => _TermsGateState();
+}
+
+class _TermsGateState extends State<TermsGate> {
+  late Future<bool> _acceptedFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _acceptedFuture = _readAcceptance();
+  }
+
+  @override
+  void didUpdateWidget(covariant TermsGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId) {
+      _acceptedFuture = _readAcceptance();
+    }
+  }
+
+  Future<bool> _readAcceptance() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_termsKey(widget.userId)) ?? false;
+  }
+
+  String _termsKey(String userId) => 'terms_accepted_$userId';
+
+  Future<void> _acceptTerms() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_termsKey(widget.userId), true);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _acceptedFuture = Future<bool>.value(true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _acceptedFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const _SplashPage();
+        }
+        if (snapshot.data == true) {
+          return widget.child;
+        }
+        return TermsPage(onAccepted: _acceptTerms);
       },
     );
   }

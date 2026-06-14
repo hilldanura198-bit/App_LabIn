@@ -44,8 +44,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is Authenticated && mounted) {
-          Navigator.of(context).pop();
+        if (state is AuthRegisterSuccess && mounted) {
+          Navigator.of(context).pop(state.message);
         }
         if (state is AuthFailure) {
           ScaffoldMessenger.of(

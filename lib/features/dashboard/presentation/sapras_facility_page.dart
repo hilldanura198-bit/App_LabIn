@@ -549,7 +549,7 @@ class _CampusMapTabs extends StatelessWidget {
     _CampusMapData(
       title: 'Kampus Rektorat',
       address: 'Jl. Ki Mangun Sarkoro No.20, Nusukan, Banjarsari, Surakarta',
-      subtitle: 'Pusat administrasi, rektorat, dan layanan utama UDB.',
+      subtitle: 'Pusat administrasi, rektorat, dan layanan utama kampus.',
       layout: _CampusLayout.rektorat,
       rooms: ['Lobby', 'Ruang Rektor', 'Biro Akademik', 'Ruang Rapat', 'Aula'],
     ),

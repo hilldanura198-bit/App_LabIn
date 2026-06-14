@@ -26,7 +26,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     _OnboardingSlideData(
       title: 'LabIn Terpadu',
       description:
-          'Kelola aktivitas multi-fasilitas, inventaris lintas fakultas, dan reservasi ruangan dalam satu pengalaman mobile yang cepat.',
+          'Kelola peminjaman ruang, alat, dan layanan kampus dalam satu pengalaman mobile yang cepat, luas, dan fleksibel.',
       icon: Icons.hub_outlined,
     ),
     _OnboardingSlideData(

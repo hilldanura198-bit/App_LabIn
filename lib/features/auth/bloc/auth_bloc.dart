@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_repository.dart';
 
@@ -18,6 +21,10 @@ class AuthLoginRequested extends AuthEvent {
 
   final String email;
   final String password;
+}
+
+class AuthGoogleLoginRequested extends AuthEvent {
+  const AuthGoogleLoginRequested();
 }
 
 class AuthRegisterMahasiswaRequested extends AuthEvent {
@@ -42,12 +49,14 @@ class AuthBiometricLoginRequested extends AuthEvent {
   const AuthBiometricLoginRequested();
 }
 
-class AuthCampusSsoRequested extends AuthEvent {
-  const AuthCampusSsoRequested();
-}
-
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
+}
+
+class _AuthSessionChanged extends AuthEvent {
+  const _AuthSessionChanged(this.session);
+
+  final Session? session;
 }
 
 sealed class AuthState {
@@ -79,17 +88,33 @@ class AuthFailure extends AuthState {
   final String message;
 }
 
+class AuthRegisterSuccess extends AuthState {
+  const AuthRegisterSuccess({required this.message});
+
+  final String message;
+}
+
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc(this._repository) : super(const AuthInitial()) {
+    _authSubscription = _repository.authStateChanges().listen((session) {
+      if (_suppressAuthSync) {
+        return;
+      }
+      add(_AuthSessionChanged(session));
+    });
+
     on<AuthStarted>(_onStarted);
     on<AuthLoginRequested>(_onLoginRequested);
+    on<AuthGoogleLoginRequested>(_onGoogleLoginRequested);
     on<AuthRegisterMahasiswaRequested>(_onRegisterMahasiswaRequested);
     on<AuthBiometricLoginRequested>(_onBiometricLoginRequested);
-    on<AuthCampusSsoRequested>(_onCampusSsoRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
+    on<_AuthSessionChanged>(_onAuthSessionChanged);
   }
 
   final AuthRepository _repository;
+  StreamSubscription<Session?>? _authSubscription;
+  bool _suppressAuthSync = false;
 
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
     final userId = _repository.currentUserId;
@@ -127,13 +152,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  Future<void> _onGoogleLoginRequested(
+    AuthGoogleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      final launched = await _repository.signInWithGoogle();
+      if (!launched) {
+        emit(const Unauthenticated());
+      }
+    } on Object catch (error) {
+      emit(AuthFailure(_friendlyMessage(error)));
+    }
+  }
+
   Future<void> _onRegisterMahasiswaRequested(
     AuthRegisterMahasiswaRequested event,
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
     try {
-      final userId = await _repository.registerMahasiswa(
+      _suppressAuthSync = true;
+      await _repository.registerMahasiswa(
         nama: event.nama,
         nim: event.nim,
         email: event.email,
@@ -141,9 +182,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         ktmImage: event.ktmImage,
         programStudi: event.programStudi,
       );
-      emit(Authenticated(userId: userId, role: UserRole.mahasiswa));
+      emit(
+        const AuthRegisterSuccess(
+          message: 'Registrasi berhasil! Silakan login menggunakan akun baru.',
+        ),
+      );
     } on Object catch (error) {
       emit(AuthFailure(_friendlyMessage(error)));
+    } finally {
+      _suppressAuthSync = false;
     }
   }
 
@@ -169,15 +216,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const Unauthenticated());
   }
 
-  Future<void> _onCampusSsoRequested(
-    AuthCampusSsoRequested event,
+  Future<void> _onAuthSessionChanged(
+    _AuthSessionChanged event,
     Emitter<AuthState> emit,
   ) async {
-    emit(
-      const AuthFailure(
-        'Tombol SSO Kampus sudah dipindahkan ke alur webview simulasi pada halaman login.',
-      ),
-    );
+    final session = event.session;
+    if (session == null) {
+      emit(const Unauthenticated());
+      return;
+    }
+    try {
+      final role = await _repository.fetchUserRole(session.user.id);
+      emit(Authenticated(userId: session.user.id, role: role));
+    } on Object catch (error) {
+      emit(AuthFailure(_friendlyMessage(error)));
+    }
   }
 
   String _friendlyMessage(Object error) {
@@ -186,5 +239,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return 'Supabase belum dikonfigurasi. Jalankan app dengan SUPABASE_URL dan SUPABASE_ANON_KEY.';
     }
     return raw;
+  }
+
+  @override
+  Future<void> close() async {
+    await _authSubscription?.cancel();
+    return super.close();
   }
 }

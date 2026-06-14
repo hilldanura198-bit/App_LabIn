@@ -5,7 +5,6 @@ import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validation.dart';
 import '../bloc/auth_bloc.dart';
-import 'campus_sso_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -171,15 +170,15 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                         _AuthOptionButton(
-                                          icon: Icons.account_balance_rounded,
-                                          label: 'Masuk dengan SSO Kampus',
+                                          icon: Icons.g_mobiledata_rounded,
+                                          label: 'Masuk dengan Google',
                                           onPressed: isLoading
                                               ? null
-                                              : _startCampusSso,
+                                              : _startGoogleSso,
                                         ),
                                         _AuthOptionButton(
                                           icon: Icons.fingerprint_rounded,
-                                          label: 'Biometric Button',
+                                          label: 'Masuk dengan Biometrik',
                                           onPressed: isLoading
                                               ? null
                                               : () => context.read<AuthBloc>().add(
@@ -197,16 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 18),
                       TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: context.read<AuthBloc>(),
-                                child: const RegisterPage(),
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: _openRegisterPage,
                         child: const Text('Daftar sebagai mahasiswa'),
                       ),
                     ],
@@ -232,20 +222,67 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _startCampusSso() async {
-    final identity = await Navigator.of(context).push<CampusIdentity>(
-      MaterialPageRoute(builder: (_) => const CampusSsoPage()),
-    );
-    if (!mounted || identity == null) {
-      return;
-    }
-    _emailController.text = identity.email;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'SSO UDB membaca NIM ${identity.nim} dan email ${identity.email}.',
-        ),
-      ),
+  void _openRegisterPage() {
+    Navigator.of(context)
+        .push<String>(
+          MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<AuthBloc>(),
+              child: const RegisterPage(),
+            ),
+          ),
+        )
+        .then((message) {
+          if (!mounted || message == null) {
+            return;
+          }
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        });
+  }
+
+  Future<void> _startGoogleSso() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Masuk dengan Google',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  sheetContext,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Google akan menampilkan pemilih akun dan mengembalikan profil email yang aktif.',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  sheetContext,
+                ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  context.read<AuthBloc>().add(
+                    const AuthGoogleLoginRequested(),
+                  );
+                },
+                icon: const Icon(Icons.g_mobiledata_rounded),
+                label: const Text('Lanjutkan dengan Google'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
