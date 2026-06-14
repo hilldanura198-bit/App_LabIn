@@ -75,13 +75,14 @@ class _SettingsPageState extends State<SettingsPage> {
               .trim();
       final language = prefs.getString('app_language') ?? 'id';
       final locationEnabled = prefs.getBool('feature_location') ?? true;
-      final deviceSecurityEnabled =
-          prefs.getBool('feature_device_security') ?? biometricSupported;
+      final deviceSecurityEnabled = kIsWeb
+          ? true
+          : prefs.getBool('feature_device_security') ?? biometricSupported;
       setState(() {
         _language = language;
         _locationEnabled = locationEnabled;
         _deviceSecurityEnabled = deviceSecurityEnabled;
-        _biometricSupported = biometricSupported;
+        _biometricSupported = kIsWeb ? true : biometricSupported;
         _nameController.text = profile.name.isNotEmpty
             ? profile.name
             : fallbackName;
@@ -92,10 +93,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ? profile.whatsappNumber
             : fallbackWhatsapp;
         _avatarUrl = profile.avatarUrl;
-        _biometricEnabled =
-            profile.biometricEnabled &&
-            deviceSecurityEnabled &&
-            biometricSupported;
+        _biometricEnabled = kIsWeb
+            ? true
+            : profile.biometricEnabled &&
+                  deviceSecurityEnabled &&
+                  biometricSupported;
         _realtimeNotifications = profile.realtimeNotificationsEnabled;
         _notificationSound = profile.notificationSoundEnabled;
         _role = profile.role;
@@ -248,6 +250,29 @@ class _SettingsPageState extends State<SettingsPage> {
                                       prefixIcon: Icon(Icons.phone_outlined),
                                     ),
                                   ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: AppTheme.cyberGradient,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: ElevatedButton.icon(
+                                      onPressed: _save,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        foregroundColor: Colors.white,
+                                        minimumSize: const Size.fromHeight(52),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.save_outlined),
+                                      label: const Text('Simpan Perubahan'),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -373,14 +398,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                 value: _biometricEnabled,
                                 onChanged:
                                     (_biometricSupported &&
-                                        _deviceSecurityEnabled)
+                                        (_deviceSecurityEnabled || kIsWeb))
                                     ? (value) => setState(
                                         () => _biometricEnabled = value,
                                       )
                                     : null,
                                 title: const Text('Biometric Login'),
-                                subtitle: const Text(
-                                  'Aktifkan preferensi biometric login untuk perangkat lokal.',
+                                subtitle: Text(
+                                  kIsWeb
+                                      ? 'Fitur biometrik diaktifkan otomatis via browser session'
+                                      : 'Aktifkan preferensi biometric login untuk perangkat lokal.',
                                 ),
                               ),
                               SwitchListTile(
@@ -406,12 +433,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: _save,
-                          icon: const Icon(Icons.save_outlined),
-                          label: const Text('Simpan Pengaturan'),
-                        ),
-                        const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () {
                             Navigator.of(context).pop();

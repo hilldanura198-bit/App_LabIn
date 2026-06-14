@@ -912,34 +912,17 @@ class _StockCalendarState extends State<_StockCalendar> {
               children: [
                 Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Smart Horizontal Calendar',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Geser untuk melihat minggu lain',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: AppTheme.muted),
-                          ),
-                        ],
-                      ),
-                    ),
                     IconButton(
                       onPressed: _goToPreviousWeek,
                       icon: const Icon(Icons.chevron_left_rounded),
                     ),
-                    Text(
-                      _weekLabel(_visibleWeekStart),
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Text(
+                        _weekLabel(_visibleWeekStart),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -1170,7 +1153,7 @@ class _InventoryGrid extends StatelessWidget {
         crossAxisCount: columns,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: columns == 3 ? 1.08 : 0.86,
+        childAspectRatio: 0.63,
       ),
       itemBuilder: (context, index) {
         final inventory = inventories[index];
@@ -1237,14 +1220,29 @@ class _InventoryGrid extends StatelessWidget {
                   ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
                 ),
                 const SizedBox(height: 10),
-                FilledButton.tonalIcon(
+                FilledButton.icon(
                   onPressed: available
                       ? () => context.read<DashboardBloc>().add(
                           DashboardCartItemAdded(inventory),
                         )
                       : null,
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(available ? 'Tambah' : 'Stok Sudah Habis'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: available
+                        ? AppTheme.vibrantPurple
+                        : Colors.grey.shade500,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade500,
+                    disabledForegroundColor: Colors.white70,
+                    minimumSize: const Size.fromHeight(42),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: Icon(
+                    available ? Icons.add_rounded : Icons.block_outlined,
+                  ),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(available ? 'Tambah' : 'Stok Habis'),
+                  ),
                 ),
               ],
             ),

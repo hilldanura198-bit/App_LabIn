@@ -803,23 +803,10 @@ class _CampusDenahPreview extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Image.network(
-                campus.bannerImageUrl,
+              child: _BlueprintImage(
+                imageUrl: campus.bannerImageUrl,
                 height: 180,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 180,
-                    decoration: const BoxDecoration(
-                      gradient: AppTheme.cyberGradient,
-                    ),
-                    child: const Icon(
-                      Icons.map_outlined,
-                      color: Colors.white,
-                      size: 42,
-                    ),
-                  );
-                },
+                fallbackIcon: Icons.map_outlined,
               ),
             ),
             const SizedBox(height: 14),
@@ -968,6 +955,8 @@ class _RoomBlock extends StatelessWidget {
           Image.network(
             imageUrl,
             fit: BoxFit.cover,
+            color: Colors.white.withValues(alpha: 0.10),
+            colorBlendMode: BlendMode.modulate,
             errorBuilder: (context, error, stackTrace) {
               return Container(
                 decoration: const BoxDecoration(
@@ -1020,6 +1009,88 @@ class _RoomBlock extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BlueprintImage extends StatelessWidget {
+  const _BlueprintImage({
+    required this.imageUrl,
+    required this.height,
+    required this.fallbackIcon,
+  });
+
+  final String imageUrl;
+  final double height;
+  final IconData fallbackIcon;
+
+  static const _grayscaleMatrix = <double>[
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColorFiltered(
+            colorFilter: const ColorFilter.matrix(_grayscaleMatrix),
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    gradient: AppTheme.cyberGradient,
+                  ),
+                  child: Icon(fallbackIcon, color: Colors.white, size: 42),
+                );
+              },
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.10),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withValues(alpha: 0.04),
+                  Colors.black.withValues(alpha: 0.12),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
+              borderRadius: BorderRadius.circular(18),
             ),
           ),
         ],

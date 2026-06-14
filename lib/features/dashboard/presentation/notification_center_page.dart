@@ -166,11 +166,21 @@ class _NotificationCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        _formatTime(notification.createdAt),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade300,
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _StatusChip(
+                            label: _kindLabel(notification.kind),
+                            color: color,
+                          ),
+                          Text(
+                            _formatTime(notification.createdAt),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey.shade300),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -212,5 +222,43 @@ class _NotificationCard extends StatelessWidget {
       'feedback' => Icons.star_outline_rounded,
       _ => Icons.notifications_outlined,
     };
+  }
+
+  static String _kindLabel(String kind) {
+    return switch (kind) {
+      'booking_status' => 'Status Booking',
+      'booking_created' => 'Pengajuan Baru',
+      'profile_update' => 'Profil Diperbarui',
+      'maintenance_report' => 'Laporan Maintenance',
+      'feedback' => 'Feedback',
+      _ => 'Notifikasi',
+    };
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
   }
 }
