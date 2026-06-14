@@ -209,6 +209,42 @@ alter column reservation_no set not null;
 
 create unique index if not exists bookings_reservation_no_unique_idx on public.bookings(reservation_no);
 
+alter table public.bookings enable row level security;
+alter table public.booking_items enable row level security;
+
+drop policy if exists bookings_select_owner_or_staff on public.bookings;
+create policy bookings_select_owner_or_staff on public.bookings
+for select
+using (
+  auth.uid() = user_id
+  or exists (
+    select 1
+    from public.profiles staff
+    where staff.id = auth.uid()
+      and staff.role in ('aslab', 'kalab', 'pengurus', 'admin')
+  )
+);
+
+drop policy if exists booking_items_select_owner_or_staff on public.booking_items;
+create policy booking_items_select_owner_or_staff on public.booking_items
+for select
+using (
+  exists (
+    select 1
+    from public.bookings booking
+    where booking.id = booking_items.booking_id
+      and (
+        booking.user_id = auth.uid()
+        or exists (
+          select 1
+          from public.profiles staff
+          where staff.id = auth.uid()
+            and staff.role in ('aslab', 'kalab', 'pengurus', 'admin')
+        )
+      )
+  )
+);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql

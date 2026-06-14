@@ -65,15 +65,21 @@ class DashboardRepository {
   }
 
   Stream<List<LabBooking>> watchReservation(String reservationNo) {
+    final userId = currentUserId;
     final normalized = reservationNo.trim().toUpperCase();
-    if (normalized.isEmpty) {
+    if (userId == null || normalized.isEmpty) {
       return Stream.value(const []);
     }
     return _supabase
         .from('bookings')
         .stream(primaryKey: ['id'])
-        .eq('reservation_no', normalized)
-        .map((rows) => rows.map(LabBooking.fromMap).toList());
+        .eq('user_id', userId)
+        .map(
+          (rows) => rows
+              .where((row) => row['reservation_no'] == normalized)
+              .map(LabBooking.fromMap)
+              .toList(),
+        );
   }
 
   Future<List<LabRoom>> fetchLaboratories() async {
