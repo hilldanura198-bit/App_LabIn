@@ -860,7 +860,11 @@ class _CampusDenahPreview extends StatelessWidget {
                         ),
                         itemBuilder: (context, index) {
                           final room = rooms[index];
-                          return _RoomBlock(label: room, accent: campus.accent);
+                          return _RoomBlock(
+                            label: room,
+                            imageUrl: _campusRoomImageUrl(campus.layout, room),
+                            accent: campus.accent,
+                          );
                         },
                       );
                     },
@@ -944,36 +948,150 @@ class _CampusInfoCard extends StatelessWidget {
 }
 
 class _RoomBlock extends StatelessWidget {
-  const _RoomBlock({required this.label, required this.accent});
+  const _RoomBlock({
+    required this.label,
+    required this.imageUrl,
+    required this.accent,
+  });
 
   final String label;
+  final String imageUrl;
   final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withValues(alpha: 0.28)),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.10),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.cyberGradient,
+                ),
+                child: const Icon(
+                  Icons.meeting_room_outlined,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              );
+            },
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withValues(alpha: 0.05),
+                  Colors.black.withValues(alpha: 0.55),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: accent.withValues(alpha: 0.22)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-        ),
-      ),
     );
   }
+}
+
+String _campusRoomImageUrl(_CampusLayout layout, String room) {
+  final lowerRoom = room.toLowerCase();
+  if (lowerRoom.contains('ruang rektor') ||
+      lowerRoom.contains('front office')) {
+    return 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('biro') || lowerRoom.contains('admin')) {
+    return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('lobby')) {
+    return 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('aula') || lowerRoom.contains('auditorium')) {
+    return 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('rapat') || lowerRoom.contains('seminar')) {
+    return 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('kelas')) {
+    return 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('perpustakaan')) {
+    return 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('kantin')) {
+    return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('studio') || lowerRoom.contains('multimedia')) {
+    return 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('rpl')) {
+    return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('jaringan')) {
+    return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('iot')) {
+    return 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('klinik')) {
+    return 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('simulasi')) {
+    return 'https://images.unsplash.com/photo-1580281657521-47d7f5f1ab02?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('farmasi')) {
+    return 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('dosen')) {
+    return 'https://images.unsplash.com/photo-1497366412874-3415097a27e7?auto=format&fit=crop&w=900&q=80';
+  }
+  if (lowerRoom.contains('diskusi') || lowerRoom.contains('co-working')) {
+    return 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=80';
+  }
+  if (layout == _CampusLayout.campus2) {
+    return 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=900&q=80';
+  }
+  if (layout == _CampusLayout.campus3) {
+    return 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=900&q=80';
+  }
+  if (layout == _CampusLayout.campus4) {
+    return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80';
 }
 
 class _SatisfactionAnalytics extends StatefulWidget {
