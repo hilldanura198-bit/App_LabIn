@@ -55,7 +55,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _CleanOnboardingBackground(),
+          const _BlurredOnboardingBackground(),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -153,26 +153,29 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 }
 
-class _CleanOnboardingBackground extends StatelessWidget {
-  const _CleanOnboardingBackground();
+class _BlurredOnboardingBackground extends StatelessWidget {
+  const _BlurredOnboardingBackground();
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          _OnboardingPageState._backgroundImage,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return const DecoratedBox(
-              decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
-            );
-          },
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Image.network(
+            _OnboardingPageState._backgroundImage,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return const DecoratedBox(
+                decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
+              );
+            },
+          ),
         ),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: AppTheme.deepSpace.withValues(alpha: 0.32),
+            color: AppTheme.deepSpace.withValues(alpha: 0.28),
           ),
         ),
       ],
@@ -189,10 +192,13 @@ class _BrandLockup extends StatelessWidget {
       children: [
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 240, maxHeight: 120),
-          child: Image.asset(
-            'assets/images/labin.jpg',
-            fit: BoxFit.contain,
-            alignment: Alignment.center,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.asset(
+              'assets/images/labin.jpg',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
           ),
         ),
         const SizedBox(height: 14),
