@@ -12,10 +12,12 @@ class CheckReservationPage extends StatefulWidget {
     super.key,
     required this.repository,
     this.initialQuery = '',
+    this.showAppBar = true,
   });
 
   final DashboardRepository repository;
   final String initialQuery;
+  final bool showAppBar;
 
   @override
   State<CheckReservationPage> createState() => _CheckReservationPageState();
@@ -41,7 +43,9 @@ class _CheckReservationPageState extends State<CheckReservationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const GlassAppBar(title: 'Pencarian Pintar'),
+      appBar: widget.showAppBar
+          ? const GlassAppBar(title: 'Pencarian Pintar')
+          : null,
       body: SafeArea(
         child: StreamBuilder<List<LabBooking>>(
           stream: widget.repository.watchCurrentUserBookings(),

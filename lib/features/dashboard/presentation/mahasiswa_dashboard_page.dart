@@ -170,13 +170,13 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   Widget _buildTab(BuildContext context, DashboardState state) {
     final repository = _repository(context);
     return switch (_selectedIndex) {
-      1 => CheckReservationPage(repository: repository),
-      2 => NotificationCenterPage(repository: repository),
+      1 => CheckReservationPage(repository: repository, showAppBar: false),
+      2 => NotificationCenterPage(repository: repository, showAppBar: false),
       3 => RepositoryProvider.value(
         value: context.read<AuthRepository>(),
         child: BlocProvider.value(
           value: context.read<AuthBloc>(),
-          child: SettingsPage(repository: repository),
+          child: SettingsPage(repository: repository, showAppBar: false),
         ),
       ),
       _ => _HomeScrollContent(state: state, repository: repository),

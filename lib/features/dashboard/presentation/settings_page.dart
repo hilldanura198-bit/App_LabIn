@@ -14,9 +14,14 @@ import '../data/dashboard_repository.dart';
 import 'widgets/glass_app_bar.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key, required this.repository});
+  const SettingsPage({
+    super.key,
+    required this.repository,
+    this.showAppBar = true,
+  });
 
   final DashboardRepository repository;
+  final bool showAppBar;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -128,7 +133,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const GlassAppBar(title: 'Pengaturan Aplikasi'),
+      appBar: widget.showAppBar
+          ? const GlassAppBar(title: 'Pengaturan Aplikasi')
+          : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(

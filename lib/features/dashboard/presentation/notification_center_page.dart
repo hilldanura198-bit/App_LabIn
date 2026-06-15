@@ -9,14 +9,19 @@ import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 
 class NotificationCenterPage extends StatelessWidget {
-  const NotificationCenterPage({super.key, required this.repository});
+  const NotificationCenterPage({
+    super.key,
+    required this.repository,
+    this.showAppBar = true,
+  });
 
   final DashboardRepository repository;
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const GlassAppBar(title: 'Notifikasi'),
+      appBar: showAppBar ? const GlassAppBar(title: 'Notifikasi') : null,
       body: SafeArea(
         child: StreamBuilder<List<AppNotification>>(
           stream: repository.watchNotifications(),
