@@ -21,7 +21,7 @@ create table if not exists public.profiles (
   denda_terakumulasi integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint profiles_role_check check (role in ('mahasiswa', 'aslab', 'kalab', 'pengurus', 'admin')),
+  constraint profiles_role_check check (role in ('mahasiswa', 'aslab', 'kalab')),
   constraint profiles_compliance_score_check check (compliance_score between 0 and 100),
   constraint profiles_denda_terakumulasi_check check (denda_terakumulasi >= 0)
 );
@@ -63,6 +63,7 @@ create table if not exists public.bookings (
   reservation_no text not null unique default ('PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))),
   qr_token text not null unique default encode(gen_random_bytes(32), 'hex'),
   signature_url text,
+  rating_review jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint bookings_status_check check (
@@ -162,6 +163,16 @@ add column if not exists biometric_enabled boolean not null default false,
 add column if not exists realtime_notifications_enabled boolean not null default true,
 add column if not exists notification_sound_enabled boolean not null default true;
 
+update public.profiles
+set role = 'kalab'
+where role not in ('mahasiswa', 'aslab', 'kalab');
+
+alter table public.profiles
+drop constraint if exists profiles_role_check;
+
+alter table public.profiles
+add constraint profiles_role_check check (role in ('mahasiswa', 'aslab', 'kalab'));
+
 do $$
 begin
   if exists (
@@ -200,6 +211,9 @@ add column if not exists items_snapshot jsonb not null default '[]'::jsonb,
 add column if not exists other_items text,
 add column if not exists lab_name_snapshot text;
 
+alter table public.bookings
+add column if not exists rating_review jsonb;
+
 update public.bookings
 set reservation_no = 'PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))
 where reservation_no is null;
@@ -221,7 +235,7 @@ using (
     select 1
     from public.profiles staff
     where staff.id = auth.uid()
-      and staff.role in ('aslab', 'kalab', 'pengurus', 'admin')
+      and staff.role in ('aslab', 'kalab')
   )
 );
 
@@ -239,7 +253,7 @@ using (
           select 1
           from public.profiles staff
           where staff.id = auth.uid()
-            and staff.role in ('aslab', 'kalab', 'pengurus', 'admin')
+            and staff.role in ('aslab', 'kalab')
         )
       )
   )

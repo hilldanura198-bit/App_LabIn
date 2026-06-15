@@ -1086,7 +1086,7 @@ class _StockCalendarState extends State<_StockCalendar> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Text(
-                    '$totalAvailable stok tersedia saat ini',
+                    '$totalAvailable stok ruang tersedia saat ini',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
@@ -1386,7 +1386,7 @@ class _InventoryGrid extends StatelessWidget {
                   ),
                   label: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(available ? 'Tambah' : 'Stok Habis'),
+                    child: Text(available ? 'Pinjam' : 'Stok Habis'),
                   ),
                 ),
               ],

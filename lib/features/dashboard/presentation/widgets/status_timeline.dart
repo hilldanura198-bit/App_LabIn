@@ -45,7 +45,7 @@ class StatusTimeline extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Status mengikuti perubahan real-time dari dashboard admin.',
+              'Status mengikuti perubahan real-time dari dashboard laboratorium.',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),

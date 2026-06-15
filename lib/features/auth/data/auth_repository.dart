@@ -104,7 +104,6 @@ class AuthRepository {
       'mahasiswa' => UserRole.mahasiswa,
       'aslab' => UserRole.aslab,
       'kalab' => UserRole.kalab,
-      'admin' || 'pengurus' => UserRole.admin,
       _ => throw Exception('Role user tidak dikenali: $role'),
     };
   }

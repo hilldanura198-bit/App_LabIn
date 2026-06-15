@@ -183,7 +183,6 @@ class DashboardRepository {
               )
               .toList(),
         );
-    await _decrementInventoryStock(items);
     await _insertNotification(
       userId: userId,
       title: 'Checkout berhasil',
@@ -253,7 +252,7 @@ class DashboardRepository {
           'other_items': otherItems?.trim(),
         })
         .select(
-          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,desk_no',
+          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no',
         )
         .single();
 
@@ -272,7 +271,6 @@ class DashboardRepository {
                 )
                 .toList(),
           );
-      await _decrementInventoryStock(items);
     }
     await _insertNotification(
       userId: userId,
@@ -441,7 +439,7 @@ class DashboardRepository {
   Future<void> approveAslab(String bookingId) async {
     final booking = await _supabase
         .from('bookings')
-        .select('user_id,reservation_no')
+        .select('user_id,reservation_no,status')
         .eq('id', bookingId)
         .single();
     await _supabase
@@ -488,6 +486,9 @@ class DashboardRepository {
         .from('bookings')
         .update({'status': 'approved_kalab', 'signature_url': signatureUrl})
         .eq('id', bookingId);
+    if (booking['status'] != 'approved_kalab') {
+      await _decrementInventoryStockForBooking(bookingId);
+    }
     await _insertNotification(
       userId: booking['user_id'] as String,
       title: 'Reservasi disetujui Kalab',
@@ -541,6 +542,44 @@ class DashboardRepository {
     );
   }
 
+  Future<LabBooking> fetchBookingForQr(String rawCode) async {
+    final bookingId = _bookingIdFromQr(rawCode);
+    final booking = await _supabase
+        .from('bookings')
+        .select(
+          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,profiles(nim_nip)',
+        )
+        .eq('id', bookingId)
+        .single();
+    return LabBooking.fromMap(booking);
+  }
+
+  Future<void> confirmItemHandover(String bookingId) async {
+    final booking = await _supabase
+        .from('bookings')
+        .select('user_id,reservation_no,status')
+        .eq('id', bookingId)
+        .single();
+    final status = booking['status'] as String? ?? 'pending';
+    if (status != 'approved_kalab') {
+      throw Exception('Status booking belum siap serah terima: $status');
+    }
+
+    await _supabase
+        .from('bookings')
+        .update({'status': 'active'})
+        .eq('id', bookingId);
+    await _insertNotification(
+      userId: booking['user_id'] as String,
+      title: 'Barang diserahterimakan',
+      message:
+          'Reservasi ${booking['reservation_no'] as String? ?? bookingId} sudah aktif.',
+      kind: 'booking_status',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
+  }
+
   Future<void> markAssetAudited(String barcode) async {
     await _supabase
         .from('inventories')
@@ -574,14 +613,67 @@ class DashboardRepository {
     );
   }
 
-  Future<void> _decrementInventoryStock(List<BookingItemDraft> items) async {
-    for (final item in items) {
-      final remaining = item.inventory.stokTersedia - item.quantity;
+  Future<void> submitBookingReview({
+    required String bookingId,
+    required int rating,
+    required String review,
+  }) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw Exception('User belum login.');
+    }
+    if (rating < 1 || rating > 5) {
+      throw Exception('Rating harus antara 1 sampai 5.');
+    }
+    final booking = await _supabase
+        .from('bookings')
+        .select('user_id,status')
+        .eq('id', bookingId)
+        .single();
+    if (booking['user_id'] != userId) {
+      throw Exception('Anda tidak memiliki akses ke reservasi ini.');
+    }
+    if (booking['status'] != 'returned') {
+      throw Exception('Rating hanya dapat dikirim setelah peminjaman selesai.');
+    }
+    await _supabase
+        .from('bookings')
+        .update({
+          'rating_review': {
+            'rating': rating,
+            'review': review.trim(),
+            'submitted_at': DateTime.now().toIso8601String(),
+          },
+        })
+        .eq('id', bookingId);
+  }
+
+  Future<void> _decrementInventoryStockForBooking(String bookingId) async {
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id,jumlah,inventories(stok_tersedia)')
+        .eq('booking_id', bookingId);
+    for (final row in rows) {
+      final inventoryId = row['inventory_id'] as String;
+      final quantity = row['jumlah'] as int? ?? 0;
+      final inventory = row['inventories'];
+      final currentStock = inventory is Map
+          ? inventory['stok_tersedia'] as int? ?? 0
+          : 0;
+      final nextStock = currentStock - quantity;
       await _supabase
           .from('inventories')
-          .update({'stok_tersedia': remaining < 0 ? 0 : remaining})
-          .eq('id', item.inventory.id);
+          .update({'stok_tersedia': nextStock < 0 ? 0 : nextStock})
+          .eq('id', inventoryId);
     }
+  }
+
+  String _bookingIdFromQr(String rawCode) {
+    final trimmed = rawCode.trim();
+    if (trimmed.isEmpty) {
+      throw Exception('QR tidak valid.');
+    }
+    return trimmed.split('|').first;
   }
 
   DateTime _combineDateAndTime(DateTime date, String time) {

@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_repository.dart';
 
-enum UserRole { mahasiswa, aslab, kalab, admin }
+enum UserRole { mahasiswa, aslab, kalab }
 
 sealed class AuthEvent {
   const AuthEvent();

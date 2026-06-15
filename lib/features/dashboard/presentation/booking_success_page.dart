@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
@@ -65,7 +66,7 @@ class BookingSuccessPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   ElevatedButton.icon(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => _showQrTicket(context),
                     icon: const Icon(Icons.qr_code_2_rounded),
                     label: const Text('Lihat Tiket QR'),
                   ),
@@ -83,6 +84,48 @@ class BookingSuccessPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showQrTicket(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Tiket QR Peminjaman',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 16),
+              QrImageView(
+                data: booking.id,
+                version: QrVersions.auto,
+                size: 220,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                booking.reservationNo,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Tunjukkan QR ini ke Aslab saat pengambilan barang.',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

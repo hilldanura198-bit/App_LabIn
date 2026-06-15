@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -43,6 +44,7 @@ class DownloadDocsPage extends StatelessWidget {
                 final booking = bookings[index];
                 return _BookingPdfCard(
                   booking: booking,
+                  repository: repository,
                   onDownload: () async {
                     try {
                       final bytes = await BookingPdfService.buildBookingLetter(
@@ -74,9 +76,14 @@ class DownloadDocsPage extends StatelessWidget {
 }
 
 class _BookingPdfCard extends StatelessWidget {
-  const _BookingPdfCard({required this.booking, required this.onDownload});
+  const _BookingPdfCard({
+    required this.booking,
+    required this.repository,
+    required this.onDownload,
+  });
 
   final LabBooking booking;
+  final DashboardRepository repository;
   final VoidCallback onDownload;
 
   @override
@@ -116,9 +123,36 @@ class _BookingPdfCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        booking.reservationNo,
-                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              booking.reservationNo,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Salin nomor reservasi',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: booking.reservationNo),
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Nomor reservasi berhasil disalin! ✅',
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.copy_rounded, size: 20),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -176,9 +210,173 @@ class _BookingPdfCard extends StatelessWidget {
                 child: const Text('Unduh PDF'),
               ),
             ),
+            if (booking.status == 'returned') ...[
+              const SizedBox(height: 14),
+              _ReturnedBookingReviewCard(
+                booking: booking,
+                repository: repository,
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ReturnedBookingReviewCard extends StatefulWidget {
+  const _ReturnedBookingReviewCard({
+    required this.booking,
+    required this.repository,
+  });
+
+  final LabBooking booking;
+  final DashboardRepository repository;
+
+  @override
+  State<_ReturnedBookingReviewCard> createState() =>
+      _ReturnedBookingReviewCardState();
+}
+
+class _ReturnedBookingReviewCardState
+    extends State<_ReturnedBookingReviewCard> {
+  final _controller = TextEditingController();
+  int _rating = 5;
+  bool _submitting = false;
+  bool _submitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rating = widget.booking.ratingValue ?? 5;
+    _controller.text = widget.booking.reviewMessage;
+    _submitted = widget.booking.ratingReview != null;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_submitted) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.cleanCyan.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.cleanCyan.withValues(alpha: 0.35)),
+        ),
+        child: Text(
+          'Rating terkirim: $_rating/5${_controller.text.trim().isEmpty ? '' : ' - ${_controller.text.trim()}'}',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.richBronze.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.richBronze.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Nilai sesi peminjaman selesai',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          _StarRatingSelector(
+            rating: _rating,
+            onChanged: (value) => setState(() => _rating = value),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Ulasan peminjaman',
+              hintText: 'Tulis pengalaman penggunaan alat/ruangan...',
+            ),
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: _submitting ? null : _submit,
+            icon: _submitting
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.send_rounded),
+            label: const Text('Kirim Rating'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    final review = _controller.text.trim();
+    if (review.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Ulasan wajib diisi.')));
+      return;
+    }
+    try {
+      setState(() => _submitting = true);
+      await widget.repository.submitBookingReview(
+        bookingId: widget.booking.id,
+        rating: _rating,
+        review: review,
+      );
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitted = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating peminjaman berhasil dikirim.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+}
+
+class _StarRatingSelector extends StatelessWidget {
+  const _StarRatingSelector({required this.rating, required this.onChanged});
+
+  final int rating;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        final value = index + 1;
+        final active = value <= rating;
+        return IconButton(
+          onPressed: () => onChanged(value),
+          icon: Icon(
+            active ? Icons.star_rounded : Icons.star_border_rounded,
+            color: active ? Colors.amber : AppTheme.muted,
+          ),
+        );
+      }),
     );
   }
 }

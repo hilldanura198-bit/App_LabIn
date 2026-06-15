@@ -126,7 +126,42 @@ class _AslabDashboardView extends StatelessWidget {
     if (result == null || !context.mounted) {
       return;
     }
-    context.read<DashboardBloc>().add(DashboardQrValidationRequested(result));
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    try {
+      final booking = await repository.fetchBookingForQr(result);
+      if (!context.mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (_) => _QrHandoverSheet(
+          booking: booking,
+          onConfirm: () async {
+            await repository.confirmItemHandover(booking.id);
+            if (!context.mounted) return;
+            context.read<DashboardBloc>().add(
+              const DashboardStarted(
+                inventoryStream: false,
+                bookingStream: true,
+              ),
+            );
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Serah terima barang berhasil dikonfirmasi.'),
+              ),
+            );
+          },
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   void _openSettings(BuildContext context) {
@@ -142,6 +177,146 @@ class _AslabDashboardView extends StatelessWidget {
             child: SettingsPage(repository: repository),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _QrHandoverSheet extends StatefulWidget {
+  const _QrHandoverSheet({required this.booking, required this.onConfirm});
+
+  final LabBooking booking;
+  final Future<void> Function() onConfirm;
+
+  @override
+  State<_QrHandoverSheet> createState() => _QrHandoverSheetState();
+}
+
+class _QrHandoverSheetState extends State<_QrHandoverSheet> {
+  bool _submitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final booking = widget.booking;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          20 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Bukti Pengambilan Barang',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 14),
+              _SheetInfoRow(
+                label: 'Nama Peminjam',
+                value: booking.borrowerName,
+              ),
+              _SheetInfoRow(
+                label: 'NIM',
+                value: booking.borrowerIdentity?.trim().isNotEmpty == true
+                    ? booking.borrowerIdentity!
+                    : '-',
+              ),
+              _SheetInfoRow(
+                label: 'Nomor Reservasi',
+                value: booking.reservationNo,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Daftar Item',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 8),
+              if (booking.itemsSnapshot.isEmpty)
+                const Text('Tidak ada item tercatat.')
+              else
+                ...booking.itemsSnapshot.map(
+                  (item) => ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.inventory_2_outlined),
+                    title: Text(item.name),
+                    trailing: Text(
+                      'x${item.quantity}',
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _submitting ? null : _confirm,
+                icon: _submitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.handshake_outlined),
+                label: const Text('Konfirmasi Serah Terima Barang'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirm() async {
+    try {
+      setState(() => _submitting = true);
+      await widget.onConfirm();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+}
+
+class _SheetInfoRow extends StatelessWidget {
+  const _SheetInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 132,
+            child: Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
       ),
     );
   }

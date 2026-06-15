@@ -96,6 +96,8 @@ class LabBooking {
     this.signatureUrl,
     this.otherItems,
     this.labNameSnapshot,
+    this.ratingReview,
+    this.borrowerIdentity,
   });
 
   final String id;
@@ -118,6 +120,8 @@ class LabBooking {
   final String? signatureUrl;
   final String? otherItems;
   final String? labNameSnapshot;
+  final Map<String, dynamic>? ratingReview;
+  final String? borrowerIdentity;
 
   factory LabBooking.fromMap(Map<String, dynamic> map) {
     final rawItems = map['items_snapshot'];
@@ -162,6 +166,8 @@ class LabBooking {
       signatureUrl: map['signature_url'] as String?,
       otherItems: map['other_items'] as String?,
       labNameSnapshot: map['lab_name_snapshot'] as String?,
+      ratingReview: _ratingReviewFromMap(map['rating_review']),
+      borrowerIdentity: _borrowerIdentityFromMap(map['profiles']),
     );
   }
 
@@ -201,6 +207,27 @@ class LabBooking {
 
   List<String> get itemNames =>
       itemsSnapshot.map((item) => '${item.name} x${item.quantity}').toList();
+
+  int? get ratingValue {
+    final value = ratingReview?['rating'];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
+  }
+
+  String get reviewMessage => (ratingReview?['review'] as String? ?? '').trim();
+
+  static Map<String, dynamic>? _ratingReviewFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  static String? _borrowerIdentityFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['nim_nip'] as String?;
+    if (value is Map) return value['nim_nip'] as String?;
+    return null;
+  }
 }
 
 class LabRoom {

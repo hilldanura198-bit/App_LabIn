@@ -1106,7 +1106,7 @@ String _campusRoomImageUrl(_CampusLayout layout, String room) {
       lowerRoom.contains('front office')) {
     return 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=80';
   }
-  if (lowerRoom.contains('biro') || lowerRoom.contains('admin')) {
+  if (lowerRoom.contains('biro') || lowerRoom.contains('administrasi')) {
     return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80';
   }
   if (lowerRoom.contains('lobby')) {
@@ -1176,16 +1176,7 @@ class _SatisfactionAnalytics extends StatefulWidget {
 }
 
 class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
-  final _feedbackController = TextEditingController();
-  int _rating = 5;
   String _period = 'Semester Genap 2025/2026';
-  bool _submitting = false;
-
-  @override
-  void dispose() {
-    _feedbackController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1211,81 +1202,13 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Analisis Kepuasan & Feedback',
+                      'Analisis Kepuasan Pengguna',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _StarRatingSelector(
-                      rating: _rating,
-                      onChanged: (value) => setState(() => _rating = value),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _feedbackController,
-                      minLines: 4,
-                      maxLines: 6,
-                      decoration: const InputDecoration(
-                        labelText:
-                            'Kritik, Saran, dan Masukan Mengenai Peminjaman Ruangan/Alat',
-                        hintText:
-                            'Tulis masukan yang ingin Anda sampaikan kepada LabIn.',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    CyberGradientButton(
-                      onPressed: _submitting
-                          ? null
-                          : () async {
-                              final message = _feedbackController.text.trim();
-                              if (message.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Masukan feedback wajib diisi.',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-                              try {
-                                setState(() => _submitting = true);
-                                await widget.repository.submitFeedback(
-                                  rating: _rating,
-                                  message: message,
-                                );
-                                if (!context.mounted) return;
-                                setState(() {
-                                  _submitting = false;
-                                  _feedbackController.clear();
-                                  _rating = 5;
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Feedback berhasil dikirim.'),
-                                  ),
-                                );
-                              } catch (error) {
-                                if (!context.mounted) return;
-                                setState(() => _submitting = false);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(error.toString())),
-                                );
-                              }
-                            },
-                      child: _submitting
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Kirim Feedback'),
-                    ),
-                    const SizedBox(height: 18),
                     DropdownButtonFormField<String>(
                       initialValue: periods.contains(_period)
                           ? _period
@@ -1316,45 +1239,6 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
           ],
         );
       },
-    );
-  }
-}
-
-class _StarRatingSelector extends StatelessWidget {
-  const _StarRatingSelector({required this.rating, required this.onChanged});
-
-  final int rating;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Rating: $rating / 5',
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(5, (index) {
-            final value = index + 1;
-            final active = value <= rating;
-            return IconButton(
-              onPressed: () => onChanged(value),
-              icon: Icon(
-                active ? Icons.star_rounded : Icons.star_border_rounded,
-                color: active ? Colors.amber : AppTheme.muted,
-                size: 30,
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 }

@@ -166,7 +166,7 @@ class _TermsPageState extends State<TermsPage> {
                               const _TermsParagraph(
                                 title: '4. Validasi dan Persetujuan',
                                 body:
-                                    'Setiap pengajuan dapat melalui proses verifikasi oleh petugas atau admin. Status peminjaman dapat berubah menjadi pending, disetujui, atau ditolak berdasarkan ketersediaan, kesesuaian jadwal, dan kebijakan operasional kampus.',
+                                    'Setiap pengajuan dapat melalui proses verifikasi oleh asisten laboratorium atau kepala laboratorium. Status peminjaman dapat berubah menjadi pending, disetujui, atau ditolak berdasarkan ketersediaan, kesesuaian jadwal, dan kebijakan operasional kampus.',
                               ),
                               const _TermsParagraph(
                                 title: '5. Privasi dan Keamanan',

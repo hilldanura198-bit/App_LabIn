@@ -164,7 +164,7 @@ class _KalabHero extends StatelessWidget {
       child: Row(
         children: [
           const Icon(
-            Icons.admin_panel_settings_outlined,
+            Icons.verified_user_outlined,
             color: Colors.white,
             size: 44,
           ),
