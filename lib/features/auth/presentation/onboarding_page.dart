@@ -15,10 +15,6 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  static const _backgroundImage =
-      'https://images.unsplash.com/photo-1581093588401-fbb62a02f120'
-      '?auto=format&fit=crop&w=1400&q=80';
-
   final _controller = PageController();
   int _index = 0;
 
@@ -56,7 +52,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _BlurredLaboratoryBackground(imageUrl: _backgroundImage),
+          const _BlurredLaboratoryBackground(),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -155,9 +151,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 class _BlurredLaboratoryBackground extends StatelessWidget {
-  const _BlurredLaboratoryBackground({required this.imageUrl});
-
-  final String imageUrl;
+  const _BlurredLaboratoryBackground();
 
   @override
   Widget build(BuildContext context) {
@@ -166,15 +160,7 @@ class _BlurredLaboratoryBackground extends StatelessWidget {
       children: [
         ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return const DecoratedBox(
-                decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
-              );
-            },
-          ),
+          child: Image.asset('assets/images/labin.jpg', fit: BoxFit.cover),
         ),
         DecoratedBox(
           decoration: BoxDecoration(
@@ -202,11 +188,13 @@ class _BrandLockup extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 62,
-          height: 62,
+          width: 92,
+          height: 92,
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            gradient: AppTheme.cyberGradient,
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.34)),
             boxShadow: [
               BoxShadow(
                 color: AppTheme.electricBlue.withValues(alpha: 0.36),
@@ -215,10 +203,9 @@ class _BrandLockup extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.science_outlined,
-            color: Colors.white,
-            size: 34,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset('assets/images/labin.jpg', fit: BoxFit.cover),
           ),
         ),
         const SizedBox(height: 14),

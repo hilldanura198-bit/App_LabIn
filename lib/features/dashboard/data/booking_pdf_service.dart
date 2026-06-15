@@ -59,15 +59,6 @@ class _Header extends pw.StatelessWidget {
         crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
           pw.Text(
-            'KOP SURAT ${AppBrand.name.toUpperCase()}',
-            style: pw.TextStyle(
-              color: PdfColors.white,
-              fontSize: 10,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 4),
-          pw.Text(
             AppBrand.name,
             style: pw.TextStyle(
               color: PdfColors.white,
@@ -271,10 +262,28 @@ class _SignatureBlock extends pw.StatelessWidget {
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-              pw.SizedBox(height: 54),
+              pw.SizedBox(height: 12),
+              pw.Container(
+                height: 72,
+                width: double.infinity,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Center(
+                  child: pw.Text(
+                    'Space Tanda Tangan',
+                    style: const pw.TextStyle(
+                      fontSize: 8,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 10),
               pw.Container(height: 1, color: PdfColors.black),
               pw.SizedBox(height: 4),
-              pw.Text('Nama & Paraf', style: pw.TextStyle(fontSize: 9)),
+              pw.Text('Ketua Sarprasss', style: pw.TextStyle(fontSize: 9)),
             ],
           ),
         ),

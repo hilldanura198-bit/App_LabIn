@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io' show File;
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_cubit.dart';
@@ -40,7 +39,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
-  String? _logoPath;
   String _language = 'id';
 
   @override
@@ -76,7 +74,6 @@ class _SettingsPageState extends State<SettingsPage> {
               .toString()
               .trim();
       final language = prefs.getString('app_language') ?? 'id';
-      final logoPath = prefs.getString('app_logo_path');
       final locationEnabled = prefs.getBool('feature_location') ?? true;
       final deviceSecurityEnabled = kIsWeb
           ? true
@@ -96,7 +93,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ? profile.whatsappNumber
             : fallbackWhatsapp;
         _avatarUrl = profile.avatarUrl;
-        _logoPath = logoPath;
         _biometricEnabled = kIsWeb
             ? true
             : profile.biometricEnabled &&
@@ -304,14 +300,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.titleLarge
                                       ?.copyWith(fontWeight: FontWeight.w900),
-                                ),
-                                const SizedBox(height: 12),
-                                Center(child: _LogoPreview(path: _logoPath)),
-                                const SizedBox(height: 12),
-                                OutlinedButton.icon(
-                                  onPressed: _pickLogo,
-                                  icon: const Icon(Icons.image_outlined),
-                                  label: const Text('Edit Logo'),
                                 ),
                               ],
                             ),
@@ -564,34 +552,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _pickLogo() async {
-    try {
-      final image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 82,
-        maxWidth: 512,
-      );
-      if (image == null) {
-        return;
-      }
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('app_logo_path', image.path);
-      if (!mounted) {
-        return;
-      }
-      setState(() => _logoPath = image.path);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logo aplikasi berhasil diperbarui.')),
-      );
-    } on Object catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
-      }
-    }
-  }
-
   Future<void> _changePassword() async {
     try {
       await widget.repository.updatePassword(_passwordController.text);
@@ -608,53 +568,5 @@ class _SettingsPageState extends State<SettingsPage> {
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
-  }
-}
-
-class _LogoPreview extends StatelessWidget {
-  const _LogoPreview({required this.path});
-
-  final String? path;
-
-  @override
-  Widget build(BuildContext context) {
-    final logoPath = path;
-    return Container(
-      width: 82,
-      height: 82,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: AppTheme.cyberGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.electricBlue.withValues(alpha: 0.24),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: logoPath == null || logoPath.isEmpty
-          ? const Icon(Icons.science_outlined, color: Colors.white, size: 42)
-          : kIsWeb
-          ? Image.network(
-              logoPath,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const Icon(
-                Icons.science_outlined,
-                color: Colors.white,
-                size: 42,
-              ),
-            )
-          : Image.file(
-              File(logoPath),
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const Icon(
-                Icons.science_outlined,
-                color: Colors.white,
-                size: 42,
-              ),
-            ),
-    );
   }
 }

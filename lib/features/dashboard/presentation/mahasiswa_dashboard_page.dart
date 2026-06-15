@@ -1399,6 +1399,7 @@ class _CartCheckout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canCheckout = state.cart.isNotEmpty && !state.isLoading;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1430,11 +1431,11 @@ class _CartCheckout extends StatelessWidget {
               ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
-              onPressed: state.cart.isEmpty || state.isLoading
-                  ? null
-                  : () => context.read<DashboardBloc>().add(
+              onPressed: canCheckout
+                  ? () => context.read<DashboardBloc>().add(
                       const DashboardCheckoutRequested(),
-                    ),
+                    )
+                  : null,
               icon: const Icon(Icons.task_alt_rounded),
               label: const Text('Checkout Pengajuan'),
             ),
