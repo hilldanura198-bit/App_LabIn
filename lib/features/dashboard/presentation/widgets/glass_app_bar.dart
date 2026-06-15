@@ -48,68 +48,67 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: foreground,
         fontWeight: FontWeight.w800,
       ),
-      actions: hasTrailingControls
-          ? [
-              SizedBox(
-                width: MediaQuery.sizeOf(context).width,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 5,
+      flexibleSpace: hasTrailingControls
+          ? SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.92),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.78),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.92),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 14,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ...actions,
-                        if (showProfileAvatar)
-                          IconButton(
-                            tooltip: 'Profil',
-                            onPressed: onProfilePressed,
-                            icon: Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: AppTheme.cyberGradient,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.vibrantPurple.withValues(
-                                      alpha: 0.18,
-                                    ),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 5),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ...actions,
+                      if (showProfileAvatar)
+                        IconButton(
+                          tooltip: 'Profil',
+                          onPressed: onProfilePressed,
+                          icon: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: AppTheme.cyberGradient,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.vibrantPurple.withValues(
+                                    alpha: 0.18,
                                   ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: Colors.white,
+                              size: 20,
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-            ]
+            )
           : null,
       bottom: bottom,
     );

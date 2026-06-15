@@ -72,12 +72,7 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       },
       child: Scaffold(
         appBar: GlassAppBar(
-          title: [
-            'Beranda',
-            'Pencarian Pintar',
-            'Notifikasi',
-            'Pengaturan',
-          ][_selectedIndex],
+          title: '',
           showProfileAvatar: true,
           onProfilePressed: () => _openSettings(context),
           actions: [
