@@ -1,8 +1,5 @@
 class FacultyCatalog {
-  const FacultyCatalog({
-    required this.code,
-    required this.name,
-  });
+  const FacultyCatalog({required this.code, required this.name});
 
   final String code;
   final String name;

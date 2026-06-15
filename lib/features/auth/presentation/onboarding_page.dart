@@ -17,6 +17,9 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final _controller = PageController();
   int _index = 0;
+  static const _backgroundImage =
+      'https://images.unsplash.com/photo-1581093588401-fbb62a02f120'
+      '?auto=format&fit=crop&w=1400&q=80';
 
   static const _slides = [
     _OnboardingSlideData(
@@ -52,7 +55,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _BlurredLaboratoryBackground(),
+          const _CleanOnboardingBackground(),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -150,29 +153,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 }
 
-class _BlurredLaboratoryBackground extends StatelessWidget {
-  const _BlurredLaboratoryBackground();
+class _CleanOnboardingBackground extends StatelessWidget {
+  const _CleanOnboardingBackground();
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-          child: Image.asset('assets/images/labin.jpg', fit: BoxFit.cover),
+        Image.network(
+          _OnboardingPageState._backgroundImage,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const DecoratedBox(
+              decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
+            );
+          },
         ),
         DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.deepSpace.withValues(alpha: 0.72),
-                AppTheme.electricBlue.withValues(alpha: 0.32),
-                AppTheme.vibrantPurple.withValues(alpha: 0.48),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppTheme.deepSpace.withValues(alpha: 0.32),
           ),
         ),
       ],
@@ -187,25 +187,22 @@ class _BrandLockup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          width: 92,
-          height: 92,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.34)),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.electricBlue.withValues(alpha: 0.36),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240, maxHeight: 120),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Image.asset(
+                'assets/images/labin.jpg',
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset('assets/images/labin.jpg', fit: BoxFit.cover),
+            ),
           ),
         ),
         const SizedBox(height: 14),

@@ -92,6 +92,7 @@ class LabBooking {
     required this.startTime,
     required this.endTime,
     required this.itemsSnapshot,
+    required this.createdAt,
     this.signatureUrl,
     this.otherItems,
     this.labNameSnapshot,
@@ -113,6 +114,7 @@ class LabBooking {
   final String startTime;
   final String endTime;
   final List<BookingSnapshotItem> itemsSnapshot;
+  final DateTime createdAt;
   final String? signatureUrl;
   final String? otherItems;
   final String? labNameSnapshot;
@@ -154,6 +156,9 @@ class LabBooking {
       startTime: map['start_time'] as String? ?? '',
       endTime: map['end_time'] as String? ?? '',
       itemsSnapshot: itemsSnapshot,
+      createdAt: map['created_at'] == null
+          ? DateTime.parse(map['tanggal_pinjam'] as String).toLocal()
+          : DateTime.parse(map['created_at'] as String).toLocal(),
       signatureUrl: map['signature_url'] as String?,
       otherItems: map['other_items'] as String?,
       labNameSnapshot: map['lab_name_snapshot'] as String?,

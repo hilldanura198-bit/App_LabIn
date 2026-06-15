@@ -81,10 +81,14 @@ class _BookingPdfCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final createdTime = DateFormat('HH:mm').format(booking.createdAt);
+    final endTime = booking.endTime.isNotEmpty
+        ? booking.endTime
+        : DateFormat('HH:mm').format(booking.tanggalKembali);
     final schedule = [
       DateFormat('dd/MM/yyyy').format(booking.tanggalPinjam),
-      DateFormat.Hm().format(booking.tanggalPinjam),
-      DateFormat.Hm().format(booking.tanggalKembali),
+      booking.startTime.isNotEmpty ? booking.startTime : createdTime,
+      endTime,
     ].join(' - ');
 
     return Card(

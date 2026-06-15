@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -8,6 +6,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   const GlassAppBar({
     super.key,
     required this.title,
+    this.titleWidget,
     this.actions = const [],
     this.bottom,
     this.leading,
@@ -16,6 +15,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   final String title;
+  final Widget? titleWidget;
   final List<Widget> actions;
   final PreferredSizeWidget? bottom;
   final Widget? leading;
@@ -34,7 +34,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
     final foreground = Theme.of(context).colorScheme.onSurface;
     return AppBar(
       leading: leading,
-      title: const SizedBox.shrink(),
+      title: titleWidget ?? Text(title),
       centerTitle: true,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -44,24 +44,27 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: foreground,
         fontWeight: FontWeight.w800,
       ),
-      flexibleSpace: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).scaffoldBackgroundColor.withValues(alpha: 0.76),
-                border: Border.all(
-                  color: AppTheme.electricBlue.withValues(alpha: 0.10),
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.deepSpace.withValues(alpha: 0.98),
+              const Color(0xFF0E2748),
+              AppTheme.electricBlue.withValues(alpha: 0.92),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
+          border: Border(
+            bottom: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.deepSpace.withValues(alpha: 0.18),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
       ),
       actions: [

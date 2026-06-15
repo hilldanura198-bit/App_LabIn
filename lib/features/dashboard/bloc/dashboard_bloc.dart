@@ -309,8 +309,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         state.copyWith(
           cart: const {},
           isLoading: false,
-          message:
-              'Checkout berhasil. Pengajuan peminjaman terkirim dan notifikasi dibuat.',
+          message: 'Checkout berhasil dikirim!',
         ),
       );
     } on Object catch (error) {

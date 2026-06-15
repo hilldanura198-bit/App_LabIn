@@ -14,7 +14,7 @@ class BookingPdfService {
   static Future<Uint8List> buildBookingLetter(LabBooking booking) async {
     final document = pw.Document();
     final formatter = DateFormat('dd/MM/yyyy');
-    final timeFormatter = DateFormat.Hm();
+    final timeFormatter = DateFormat('HH:mm');
 
     document.addPage(
       pw.MultiPage(

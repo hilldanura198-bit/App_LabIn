@@ -25,6 +25,23 @@ class DashboardShell extends StatelessWidget {
     return Scaffold(
       appBar: GlassAppBar(
         title: AppBrand.name,
+        titleWidget: RichText(
+          text: TextSpan(
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            children: const [
+              TextSpan(
+                text: 'Lab',
+                style: TextStyle(color: AppTheme.deepSpace),
+              ),
+              TextSpan(
+                text: 'In',
+                style: TextStyle(color: AppTheme.electricBlue),
+              ),
+            ],
+          ),
+        ),
         showProfileAvatar: true,
         onProfilePressed: () {},
         actions: [

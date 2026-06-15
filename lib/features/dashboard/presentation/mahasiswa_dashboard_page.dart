@@ -60,9 +60,14 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       listener: (context, state) {
         final message = state.message;
         if (message != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: message.contains('Checkout berhasil')
+                  ? Colors.green.shade600
+                  : null,
+            ),
+          );
         }
       },
       child: Scaffold(
@@ -387,11 +392,22 @@ class _HomeScrollContent extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        AppBrand.name,
+                      RichText(
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w900),
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                          children: const [
+                            TextSpan(
+                              text: 'Lab',
+                              style: TextStyle(color: AppTheme.deepSpace),
+                            ),
+                            TextSpan(
+                              text: 'In',
+                              style: TextStyle(color: AppTheme.electricBlue),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -649,7 +665,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          height: 168,
+          height: 184,
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (value) => setState(() => _page = value),
@@ -659,6 +675,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Container(
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     gradient: card.$1,
                     borderRadius: BorderRadius.circular(24),
@@ -670,29 +687,30 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                       ),
                     ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
-                          width: 52,
-                          height: 52,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.14),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(card.$2, color: Colors.white, size: 28),
+                          child: Icon(card.$2, color: Colors.white, size: 26),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Text(
                           card.$3,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
-                            fontSize: 16,
+                            fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -703,7 +721,8 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.90),
-                            height: 1.35,
+                            height: 1.28,
+                            fontSize: 12.5,
                           ),
                         ),
                       ],
