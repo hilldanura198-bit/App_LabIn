@@ -14,7 +14,7 @@ class DashboardRepository {
   SupabaseClient get _supabase {
     final client = _client;
     if (client == null) {
-      throw Exception('Supabase belum dikonfigurasi.');
+      throw Exception('Sistem backend belum dikonfigurasi.');
     }
     return client;
   }
@@ -277,8 +277,7 @@ class DashboardRepository {
     await _insertNotification(
       userId: userId,
       title: 'Pengajuan multi-step tersimpan',
-      message:
-          'Reservasi untuk ${labNameSnapshot.trim()} sudah masuk ke Supabase.',
+      message: 'Reservasi untuk ${labNameSnapshot.trim()} sudah tercatat.',
       kind: 'booking_created',
       targetType: 'booking',
       targetId: booking['id'] as String,
@@ -352,7 +351,7 @@ class DashboardRepository {
     await _insertNotification(
       userId: userId,
       title: 'Profil diperbarui',
-      message: 'Data profil Anda berhasil disinkronkan ke Supabase.',
+      message: 'Data profil Anda berhasil disinkronkan.',
       kind: 'profile_update',
       targetType: 'profile',
       targetId: userId,
@@ -568,7 +567,7 @@ class DashboardRepository {
     await _insertNotification(
       userId: userId,
       title: 'Feedback tersimpan',
-      message: 'Terima kasih, masukan Anda sudah tercatat di Supabase.',
+      message: 'Terima kasih, masukan Anda sudah tercatat.',
       kind: 'feedback',
       targetType: 'feedback',
       targetId: userId,

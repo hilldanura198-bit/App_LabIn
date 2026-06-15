@@ -144,6 +144,7 @@ class _TermsPageState extends State<TermsPage> {
                               const SizedBox(height: 10),
                               Text(
                                 'Terima kasih atas ketersediaan Anda untuk menggunakan platform peminjaman interdisipliner multi-fasilitas ini. Dokumen ini menjelaskan hak, kewajiban, batasan, dan tanggung jawab pengguna agar peminjaman ruang, alat, dan layanan kampus tetap tertib, aman, dan transparan.',
+                                textAlign: TextAlign.justify,
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                               const SizedBox(height: 18),
@@ -241,7 +242,11 @@ class _TermsParagraph extends StatelessWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
-          Text(body, style: Theme.of(context).textTheme.bodyLarge),
+          Text(
+            body,
+            textAlign: TextAlign.justify,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
         ],
       ),
     );

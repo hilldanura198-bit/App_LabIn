@@ -805,9 +805,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pengajuan berhasil dikirim ke Supabase.'),
-        ),
+        const SnackBar(content: Text('Pengajuan berhasil dikirim.')),
       );
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => BookingSuccessPage(booking: booking)),
@@ -1274,7 +1272,7 @@ class _ReviewPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
-            'Pastikan semua data sudah benar. Saat tombol Kirim ditekan, booking akan tersimpan ke Supabase dan siap diproses.',
+            'Pastikan semua data sudah benar. Saat tombol Kirim ditekan, booking akan tersimpan ke sistem dan siap diproses.',
             textAlign: TextAlign.center,
             style: Theme.of(
               context,

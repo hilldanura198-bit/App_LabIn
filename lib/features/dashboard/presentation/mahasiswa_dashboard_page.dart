@@ -574,29 +574,164 @@ class _CampusInsights extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Fasilitas Kampus Insights',
+              'Fasilitas Kampus Insight',
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 12),
-            _InsightTile(
-              icon: Icons.auto_awesome_outlined,
-              title: 'Standarisasi Ruang Praktikum',
-              subtitle:
-                  'Setiap ruang lab dikelompokkan berdasarkan fungsi, kapasitas, dan kesiapan alat agar proses belajar lebih presisi.',
+            Text(
+              'Rangkuman singkat pemanfaatan fasilitas kampus yang bergerak dinamis dan relevan dengan kebutuhan mahasiswa.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
             ),
-            const SizedBox(height: 10),
-            _InsightTile(
-              icon: Icons.workspace_premium_outlined,
-              title: 'Modernisasi Sarana Prasarana',
-              subtitle:
-                  'Inventaris digital membantu kampus memantau kebutuhan perawatan, audit aset, dan pemanfaatan ruang secara berkala.',
-            ),
+            const SizedBox(height: 14),
+            const _InsightCarousel(),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _InsightCarousel extends StatefulWidget {
+  const _InsightCarousel();
+
+  @override
+  State<_InsightCarousel> createState() => _InsightCarouselState();
+}
+
+class _InsightCarouselState extends State<_InsightCarousel> {
+  final _pageController = PageController(viewportFraction: 0.84);
+  int _page = 0;
+
+  static const _cards = [
+    (
+      AppTheme.cyberGradient,
+      Icons.auto_awesome_outlined,
+      'Standarisasi Ruang Praktikum',
+      'Setiap ruang lab dikelompokkan berdasarkan fungsi, kapasitas, dan kesiapan alat agar proses belajar lebih presisi.',
+    ),
+    (
+      LinearGradient(
+        colors: [Color(0xFF0F172A), Color(0xFF2F3C7E)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      Icons.workspace_premium_outlined,
+      'Modernisasi Sarana Prasarana',
+      'Inventaris digital membantu kampus memantau kebutuhan perawatan, audit aset, dan pemanfaatan ruang secara berkala.',
+    ),
+    (
+      LinearGradient(
+        colors: [Color(0xFF102A43), Color(0xFF7C3AED)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      Icons.explore_outlined,
+      'Akses Insight Cepat',
+      'Slider ringkas memudahkan mahasiswa membaca pola fasilitas tanpa menghabiskan banyak ruang di layar.',
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 168,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (value) => setState(() => _page = value),
+            itemCount: _cards.length,
+            itemBuilder: (context, index) {
+              final card = _cards[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: card.$1,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(card.$2, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          card.$3,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          card.$4,
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.90),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_cards.length, (index) {
+            final active = index == _page;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: active ? 18 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: active ? AppTheme.vibrantPurple : AppTheme.muted,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }
@@ -1179,7 +1314,8 @@ class _InventoryGrid extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   inventory.namaAlat,
-                  maxLines: 2,
+                  maxLines: 1,
+                  softWrap: false,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: Theme.of(

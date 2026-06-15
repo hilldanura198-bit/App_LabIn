@@ -34,7 +34,7 @@ class BookingPdfService {
             _SignatureBlock(),
             pw.SizedBox(height: 12),
             pw.Text(
-              'Dokumen ini dibuat otomatis oleh ${AppBrand.name} berdasarkan data booking yang tersimpan di Supabase.',
+              'Dokumen ini dibuat otomatis oleh ${AppBrand.name} berdasarkan data booking yang tersimpan di sistem.',
               style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
             ),
           ];

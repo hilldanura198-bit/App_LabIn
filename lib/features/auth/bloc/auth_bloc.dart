@@ -236,7 +236,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   String _friendlyMessage(Object error) {
     final raw = error.toString().replaceFirst('Exception: ', '');
     if (raw.contains('not configured')) {
-      return 'Supabase belum dikonfigurasi. Jalankan app dengan SUPABASE_URL dan SUPABASE_ANON_KEY.';
+      return 'Sistem backend belum dikonfigurasi. Jalankan app dengan env URL dan ANON KEY.';
     }
     return raw;
   }

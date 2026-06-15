@@ -44,18 +44,21 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: foreground,
         fontWeight: FontWeight.w800,
       ),
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).scaffoldBackgroundColor.withValues(alpha: 0.74),
-              border: Border(
-                bottom: BorderSide(
-                  color: AppTheme.electricBlue.withValues(alpha: 0.12),
+      flexibleSpace: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).scaffoldBackgroundColor.withValues(alpha: 0.76),
+                border: Border.all(
+                  color: AppTheme.electricBlue.withValues(alpha: 0.10),
                 ),
+                borderRadius: BorderRadius.circular(24),
               ),
             ),
           ),
