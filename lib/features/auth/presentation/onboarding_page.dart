@@ -189,20 +189,10 @@ class _BrandLockup extends StatelessWidget {
       children: [
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 240, maxHeight: 120),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Image.asset(
-                'assets/images/labin.jpg',
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
-              ),
-            ),
+          child: Image.asset(
+            'assets/images/labin.jpg',
+            fit: BoxFit.contain,
+            alignment: Alignment.center,
           ),
         ),
         const SizedBox(height: 14),

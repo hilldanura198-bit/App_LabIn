@@ -307,18 +307,10 @@ class _LoginHero extends StatelessWidget {
         children: [
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 220, maxHeight: 110),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-              ),
-              child: Image.asset(
-                'assets/images/labin.jpg',
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
-              ),
+            child: Image.asset(
+              'assets/images/labin.jpg',
+              fit: BoxFit.contain,
+              alignment: Alignment.center,
             ),
           ),
           const SizedBox(height: 16),

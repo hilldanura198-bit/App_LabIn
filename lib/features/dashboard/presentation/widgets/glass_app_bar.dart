@@ -39,66 +39,64 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       foregroundColor: foreground,
       titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
         color: foreground,
         fontWeight: FontWeight.w800,
       ),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.deepSpace.withValues(alpha: 0.98),
-              const Color(0xFF0E2748),
-              AppTheme.electricBlue.withValues(alpha: 0.92),
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          border: Border(
-            bottom: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.deepSpace.withValues(alpha: 0.18),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-      ),
       actions: [
-        ...actions,
-        if (showProfileAvatar)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: IconButton(
-              tooltip: 'Profil',
-              onPressed: onProfilePressed,
-              icon: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppTheme.cyberGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.vibrantPurple.withValues(alpha: 0.26),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.78),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
                 ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
+              ],
             ),
-          )
-        else
-          const SizedBox(width: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...actions,
+                if (showProfileAvatar)
+                  IconButton(
+                    tooltip: 'Profil',
+                    onPressed: onProfilePressed,
+                    icon: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: AppTheme.cyberGradient,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.vibrantPurple.withValues(
+                              alpha: 0.18,
+                            ),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ],
       bottom: bottom,
     );
