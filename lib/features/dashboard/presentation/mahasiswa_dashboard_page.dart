@@ -1046,10 +1046,9 @@ class _StockCalendarState extends State<_StockCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    final totalAvailable = widget.state.inventories.fold(
-      0,
-      (sum, item) => sum + item.stokTersedia,
-    );
+    final totalAvailable = widget.state.inventories
+        .where((item) => item.isRoomStock)
+        .fold(0, (sum, item) => sum + item.stokTersedia);
     final stockColor = totalAvailable > 0
         ? AppTheme.vibrantPurple
         : AppTheme.sepia;
@@ -1094,7 +1093,7 @@ class _StockCalendarState extends State<_StockCalendar> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Text(
-                    '$totalAvailable stok ruang tersedia saat ini',
+                    '$totalAvailable stok ruangan tersedia saat ini',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
@@ -1501,7 +1500,7 @@ class _DynamicQrPassState extends State<_DynamicQrPass> {
               SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  'QR Code bukti pengambilan akan muncul setelah ACC Kepala Lab.',
+                  'QR Code muncul setelah di-ACC Kepala Lab',
                   textAlign: TextAlign.center,
                 ),
               ),

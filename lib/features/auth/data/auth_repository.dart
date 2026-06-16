@@ -80,6 +80,7 @@ class AuthRepository {
 
     await _supabase.from('profiles').upsert({
       'id': userId,
+      'email': email.trim(),
       'nama': nama.trim(),
       'nim_nip': nim.trim(),
       'program_studi': programStudi.trim(),

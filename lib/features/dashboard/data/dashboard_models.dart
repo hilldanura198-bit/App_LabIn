@@ -8,6 +8,7 @@ class LabInventory {
     required this.totalStok,
     required this.stokTersedia,
     required this.kondisi,
+    required this.type,
     this.manualUrl,
   });
 
@@ -17,19 +18,31 @@ class LabInventory {
   final int totalStok;
   final int stokTersedia;
   final String kondisi;
+  final String type;
   final String? manualUrl;
 
   bool get isAvailable => stokTersedia > 0 && kondisi == 'bagus';
   bool get isCritical => stokTersedia <= 1 || kondisi == 'rusak';
+  bool get isRoomStock {
+    final normalizedType = type.toLowerCase();
+    final normalizedName = namaAlat.toLowerCase();
+    return normalizedType == 'ruangan' ||
+        normalizedType == 'room' ||
+        normalizedType == 'lab' ||
+        normalizedName.contains('ruang') ||
+        normalizedName.startsWith('lab ');
+  }
 
   factory LabInventory.fromMap(Map<String, dynamic> map) {
     return LabInventory(
       id: map['id'] as String,
       labId: map['lab_id'] as String,
       namaAlat: map['nama_alat'] as String? ?? 'Alat Lab',
-      totalStok: map['total_stok'] as int? ?? 0,
-      stokTersedia: map['stok_tersedia'] as int? ?? 0,
+      totalStok: map['total_stok'] as int? ?? map['total_stock'] as int? ?? 0,
+      stokTersedia:
+          map['stok_tersedia'] as int? ?? map['available_stock'] as int? ?? 0,
       kondisi: map['kondisi'] as String? ?? 'bagus',
+      type: map['type'] as String? ?? map['jenis'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
     );
   }

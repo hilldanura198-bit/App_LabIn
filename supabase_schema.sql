@@ -7,6 +7,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  email text,
   nama text not null,
   nim_nip text not null unique,
   program_studi text,
@@ -156,6 +157,7 @@ create index if not exists notifications_created_at_idx on public.notifications(
 create index if not exists notifications_is_read_idx on public.notifications(is_read);
 
 alter table public.profiles
+add column if not exists email text,
 add column if not exists whatsapp_number text,
 add column if not exists program_studi text,
 add column if not exists avatar_url text,

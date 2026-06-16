@@ -76,7 +76,7 @@ class BookingSuccessPage extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Text(
-                          'QR Code bukti pengambilan akan muncul setelah ACC Kepala Lab.',
+                          'QR Code muncul setelah di-ACC Kepala Lab',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -102,9 +102,7 @@ class BookingSuccessPage extends StatelessWidget {
     if (booking.status != 'approved_kalab') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'QR Code bukti pengambilan akan muncul setelah ACC Kepala Lab.',
-          ),
+          content: Text('QR Code muncul setelah di-ACC Kepala Lab'),
         ),
       );
       return;
