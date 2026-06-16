@@ -31,6 +31,20 @@ class DashboardRepository {
         .map((rows) => rows.map(LabInventory.fromMap).toList());
   }
 
+  Stream<int> watchRoomStockTotal() {
+    return watchInventories().map((inventories) {
+      final roomInventories = inventories.where((item) => item.isRoomStock);
+      if (roomInventories.isNotEmpty) {
+        return roomInventories.fold(0, (sum, item) => sum + item.stokTersedia);
+      }
+      return inventories
+          .where((item) => item.isAvailable)
+          .map((item) => item.labId)
+          .toSet()
+          .length;
+    });
+  }
+
   Stream<List<LabBooking>> watchCurrentUserBookings() {
     final userId = currentUserId;
     if (userId == null) {

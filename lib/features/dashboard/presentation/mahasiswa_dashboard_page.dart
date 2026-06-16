@@ -23,6 +23,7 @@ import 'sapras_facility_page.dart';
 import 'settings_page.dart';
 import 'widgets/busy_meter.dart';
 import 'widgets/glass_app_bar.dart';
+import 'widgets/room_stock_stream_banner.dart';
 import 'widgets/status_timeline.dart';
 
 class MahasiswaDashboardPage extends StatelessWidget {
@@ -421,7 +422,7 @@ class _HomeScrollContent extends StatelessWidget {
                         ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
                       ),
                       const SizedBox(height: 16),
-                      _StockCalendar(state: state),
+                      _StockCalendar(state: state, repository: repository),
                       const SizedBox(height: 16),
                       _QuickModuleGrid(repository: repository),
                       const SizedBox(height: 16),
@@ -1013,9 +1014,10 @@ List<LabInventory> _previewInventories(List<LabInventory> inventories) {
 }
 
 class _StockCalendar extends StatefulWidget {
-  const _StockCalendar({required this.state});
+  const _StockCalendar({required this.state, required this.repository});
 
   final DashboardState state;
+  final DashboardRepository repository;
 
   @override
   State<_StockCalendar> createState() => _StockCalendarState();
@@ -1046,12 +1048,6 @@ class _StockCalendarState extends State<_StockCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    final totalAvailable = widget.state.inventories
-        .where((item) => item.isRoomStock)
-        .fold(0, (sum, item) => sum + item.stokTersedia);
-    final stockColor = totalAvailable > 0
-        ? AppTheme.vibrantPurple
-        : AppTheme.sepia;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
@@ -1083,24 +1079,7 @@ class _StockCalendarState extends State<_StockCalendar> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.cyberGradient,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Text(
-                    '$totalAvailable stok ruangan tersedia saat ini',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                RoomStockStreamBanner(repository: widget.repository),
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 108,
@@ -1188,7 +1167,7 @@ class _StockCalendarState extends State<_StockCalendar> {
                                         width: 7,
                                         height: 7,
                                         decoration: BoxDecoration(
-                                          color: stockColor,
+                                          color: AppTheme.vibrantPurple,
                                           shape: BoxShape.circle,
                                         ),
                                       ),

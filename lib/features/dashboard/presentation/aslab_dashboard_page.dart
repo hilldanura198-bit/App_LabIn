@@ -10,6 +10,7 @@ import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
+import 'widgets/room_stock_stream_banner.dart';
 import 'widgets/scan_page.dart';
 
 class AslabDashboardPage extends StatelessWidget {
@@ -70,6 +71,9 @@ class _AslabDashboardView extends StatelessWidget {
                       booking.status == 'active',
                 )
                 .toList();
+            final repository = DashboardRepository(
+              context.read<AuthRepository>().client,
+            );
 
             return SafeArea(
               child: LayoutBuilder(
@@ -89,6 +93,8 @@ class _AslabDashboardView extends StatelessWidget {
                               pendingCount: pending.length,
                               activeCount: active.length,
                             ),
+                            const SizedBox(height: 16),
+                            RoomStockStreamBanner(repository: repository),
                             const SizedBox(height: 16),
                             Text(
                               'Swipe Right Approval',

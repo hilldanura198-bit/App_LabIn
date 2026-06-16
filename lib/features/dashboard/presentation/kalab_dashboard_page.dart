@@ -12,6 +12,7 @@ import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
+import 'widgets/room_stock_stream_banner.dart';
 import 'widgets/scan_page.dart';
 import 'widgets/signature_pad_dialog.dart';
 
@@ -66,6 +67,9 @@ class _KalabDashboardView extends StatelessWidget {
             final approvals = state.bookings
                 .where((booking) => booking.status == 'approved_aslab')
                 .toList();
+            final repository = DashboardRepository(
+              context.read<AuthRepository>().client,
+            );
             return SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -84,6 +88,8 @@ class _KalabDashboardView extends StatelessWidget {
                               approvalCount: approvals.length,
                               criticalCount: state.criticalInventories.length,
                             ),
+                            const SizedBox(height: 16),
+                            RoomStockStreamBanner(repository: repository),
                             const SizedBox(height: 16),
                             Text(
                               'High-Level Approval',
