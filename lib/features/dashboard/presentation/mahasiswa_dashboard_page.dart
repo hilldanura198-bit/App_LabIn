@@ -52,6 +52,7 @@ class _MahasiswaDashboardView extends StatefulWidget {
 
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   int _selectedIndex = 0;
+  bool _cartSheetOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +61,10 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       listener: (context, state) {
         final message = state.message;
         if (message != null) {
+          if (_cartSheetOpen && message.contains('Checkout berhasil')) {
+            _cartSheetOpen = false;
+            Navigator.of(context).pop();
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
@@ -196,8 +201,9 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
     );
   }
 
-  void _openCart(BuildContext context, DashboardState state) {
-    showModalBottomSheet<void>(
+  Future<void> _openCart(BuildContext context, DashboardState state) async {
+    _cartSheetOpen = true;
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -337,7 +343,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                                 context.read<DashboardBloc>().add(
                                   const DashboardCheckoutRequested(),
                                 );
-                                Navigator.of(context).pop();
                               },
                         icon: const Icon(Icons.send_rounded),
                         label: const Text('Checkout Keranjang'),
@@ -351,6 +356,9 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         );
       },
     );
+    if (mounted) {
+      _cartSheetOpen = false;
+    }
   }
 }
 
@@ -1483,6 +1491,25 @@ class _DynamicQrPassState extends State<_DynamicQrPass> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.booking.status != 'approved_kalab') {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Icon(Icons.lock_clock_rounded, color: AppTheme.muted),
+              SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  'QR Code bukti pengambilan akan muncul setelah ACC Kepala Lab.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return StreamBuilder<int>(
       stream: _ticker,
       builder: (context, snapshot) {

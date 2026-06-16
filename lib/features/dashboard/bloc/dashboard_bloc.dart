@@ -301,15 +301,19 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   ) async {
     emit(state.copyWith(isLoading: true, clearMessage: true));
     try {
-      await _repository.createBooking(
+      final booking = await _repository.createBooking(
         tanggalPinjam: state.selectedDate,
         items: state.cart.values.toList(),
       );
       emit(
         state.copyWith(
+          bookings: [
+            booking,
+            ...state.bookings.where((item) => item.id != booking.id),
+          ],
           cart: const {},
           isLoading: false,
-          message: 'Checkout berhasil dikirim!',
+          message: 'Checkout berhasil dikirim! Menunggu verifikasi lab.',
         ),
       );
     } on Object catch (error) {

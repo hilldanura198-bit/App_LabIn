@@ -142,7 +142,7 @@ class DashboardRepository {
     return busyHours.take(5).toList();
   }
 
-  Future<void> createBooking({
+  Future<LabBooking> createBooking({
     required DateTime tanggalPinjam,
     required List<BookingItemDraft> items,
   }) async {
@@ -154,44 +154,71 @@ class DashboardRepository {
       throw Exception('Keranjang masih kosong.');
     }
 
-    final labId = items.first.inventory.labId;
-    final checkout = await _supabase
-        .from('bookings')
-        .insert({
-          'user_id': userId,
-          'lab_id': labId,
-          'status': 'pending',
-          'tanggal_pinjam': tanggalPinjam.toIso8601String(),
-          'tanggal_kembali': tanggalPinjam
-              .add(const Duration(hours: 3))
-              .toIso8601String(),
-        })
-        .select('id')
-        .single();
+    String? bookingId;
+    try {
+      final labId = items.first.inventory.labId;
+      final itemsSnapshot = items
+          .map(
+            (item) => BookingSnapshotItem(
+              name: item.inventory.namaAlat,
+              quantity: item.quantity,
+              labId: item.inventory.labId,
+            ).toMap(),
+          )
+          .toList();
+      final checkout = await _supabase
+          .from('bookings')
+          .insert({
+            'user_id': userId,
+            'lab_id': labId,
+            'status': 'pending',
+            'tanggal_pinjam': tanggalPinjam.toIso8601String(),
+            'tanggal_kembali': tanggalPinjam
+                .add(const Duration(hours: 3))
+                .toIso8601String(),
+            'items_snapshot': itemsSnapshot,
+          })
+          .select(
+            'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no',
+          )
+          .single();
 
-    final bookingId = checkout['id'] as String;
-    await _supabase
-        .from('booking_items')
-        .insert(
-          items
-              .map(
-                (item) => {
-                  'booking_id': bookingId,
-                  'inventory_id': item.inventory.id,
-                  'jumlah': item.quantity,
-                },
-              )
-              .toList(),
-        );
-    await _insertNotification(
-      userId: userId,
-      title: 'Checkout berhasil',
-      message:
-          'Pengajuan reservasi berhasil terkirim dan menunggu verifikasi lab.',
-      kind: 'booking_created',
-      targetType: 'booking',
-      targetId: bookingId,
-    );
+      bookingId = checkout['id'] as String;
+      await _supabase
+          .from('booking_items')
+          .insert(
+            items
+                .map(
+                  (item) => {
+                    'booking_id': bookingId,
+                    'inventory_id': item.inventory.id,
+                    'jumlah': item.quantity,
+                  },
+                )
+                .toList(),
+          );
+      await _insertNotification(
+        userId: userId,
+        title: 'Checkout berhasil',
+        message:
+            'Pengajuan reservasi berhasil terkirim dan menunggu verifikasi lab.',
+        kind: 'booking_created',
+        targetType: 'booking',
+        targetId: bookingId,
+      );
+      return LabBooking.fromMap(checkout);
+    } on Object catch (error) {
+      if (bookingId != null) {
+        try {
+          await _supabase.from('bookings').delete().eq('id', bookingId);
+        } on Object catch (rollbackError) {
+          throw Exception(
+            'Checkout gagal dikirim: $error. Rollback gagal: $rollbackError',
+          );
+        }
+      }
+      throw Exception('Checkout gagal dikirim: $error');
+    }
   }
 
   Future<LabBooking> createMultiStepBooking({
@@ -463,7 +490,7 @@ class DashboardRepository {
   }) async {
     final booking = await _supabase
         .from('bookings')
-        .select('user_id,reservation_no')
+        .select('user_id,reservation_no,status')
         .eq('id', bookingId)
         .single();
     final path =

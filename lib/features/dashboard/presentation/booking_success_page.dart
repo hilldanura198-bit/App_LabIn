@@ -65,11 +65,22 @@ class BookingSuccessPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  ElevatedButton.icon(
-                    onPressed: () => _showQrTicket(context),
-                    icon: const Icon(Icons.qr_code_2_rounded),
-                    label: const Text('Lihat Tiket QR'),
-                  ),
+                  if (booking.status == 'approved_kalab')
+                    ElevatedButton.icon(
+                      onPressed: () => _showQrTicket(context),
+                      icon: const Icon(Icons.qr_code_2_rounded),
+                      label: const Text('Lihat Tiket QR'),
+                    )
+                  else
+                    const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'QR Code bukti pengambilan akan muncul setelah ACC Kepala Lab.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => Navigator.of(
@@ -88,6 +99,16 @@ class BookingSuccessPage extends StatelessWidget {
   }
 
   void _showQrTicket(BuildContext context) {
+    if (booking.status != 'approved_kalab') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'QR Code bukti pengambilan akan muncul setelah ACC Kepala Lab.',
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
