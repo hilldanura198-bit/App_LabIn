@@ -22,7 +22,6 @@ import 'room_schedule_page.dart';
 import 'sapras_facility_page.dart';
 import 'settings_page.dart';
 import 'widgets/busy_meter.dart';
-import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
 import 'widgets/status_timeline.dart';
 
@@ -94,35 +93,27 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         }
       },
       child: Scaffold(
-        appBar: GlassAppBar(
-          title: '',
-          showProfileAvatar: true,
-          onProfilePressed: () => _openSettings(context),
-          actions: [
-            BlocBuilder<DashboardBloc, DashboardState>(
-              builder: (context, state) {
-                return HeaderActionButton(
-                  tooltip: 'Keranjang',
-                  onPressed: () => _openCart(context, state),
-                  icon: Badge(
-                    isLabelVisible: state.cartCount > 0,
-                    label: Text('${state.cartCount}'),
-                    child: const Icon(Icons.shopping_bag_outlined),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(84),
+          child: BlocBuilder<DashboardBloc, DashboardState>(
+            builder: (context, state) {
+              return _ModernFloatingHeader(
+                cartCount: state.cartCount,
+                onProfilePressed: () => _openSettings(context),
+                onCartPressed: () => _openCart(context, state),
+                onNotifPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => NotificationCenterPage(
+                      repository: _repository(context),
+                    ),
                   ),
-                );
-              },
-            ),
-            HeaderActionButton(
-              tooltip: 'Notifikasi',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      NotificationCenterPage(repository: _repository(context)),
                 ),
-              ),
-              icon: const Icon(Icons.notifications_outlined),
-            ),
-          ],
+                onSearchPressed: () {
+                  setState(() => _selectedIndex = 1);
+                },
+              );
+            },
+          ),
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(
           builder: (context, state) {
@@ -1814,6 +1805,136 @@ class _RatingDialogState extends State<_RatingDialog> {
               : const Text('Kirim Ulasan'),
         ),
       ],
+    );
+  }
+}
+
+class _ModernFloatingHeader extends StatelessWidget {
+  const _ModernFloatingHeader({
+    required this.onProfilePressed,
+    required this.onCartPressed,
+    required this.onNotifPressed,
+    required this.onSearchPressed,
+    required this.cartCount,
+  });
+
+  final VoidCallback onProfilePressed;
+  final VoidCallback onCartPressed;
+  final VoidCallback onNotifPressed;
+  final VoidCallback onSearchPressed;
+  final int cartCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.electricBlue.withValues(alpha: 0.12),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: onSearchPressed,
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.search_rounded,
+                        color: AppTheme.sepia,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Cari fasilitas lab...',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.sepia,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              _IconWrapper(
+                icon: Icons.shopping_bag_outlined,
+                badgeCount: cartCount,
+                onTap: onCartPressed,
+                isPrimary: true,
+              ),
+              const SizedBox(width: 6),
+              _IconWrapper(
+                icon: Icons.notifications_outlined,
+                badgeCount: 0,
+                onTap: onNotifPressed,
+                isPrimary: true,
+              ),
+              const SizedBox(width: 6),
+              _IconWrapper(
+                icon: Icons.person_outline_rounded,
+                badgeCount: 0,
+                onTap: onProfilePressed,
+                isPrimary: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IconWrapper extends StatelessWidget {
+  const _IconWrapper({
+    required this.icon,
+    required this.onTap,
+    required this.isPrimary,
+    this.badgeCount = 0,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isPrimary;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Badge(
+        isLabelVisible: badgeCount > 0,
+        label: Text('$badgeCount'),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: isPrimary ? AppTheme.cyberGradient : null,
+            color: isPrimary
+                ? null
+                : AppTheme.electricBlue.withValues(alpha: 0.1),
+          ),
+          child: Icon(
+            icon,
+            color: isPrimary ? Colors.white : AppTheme.electricBlue,
+            size: 22,
+          ),
+        ),
+      ),
     );
   }
 }
