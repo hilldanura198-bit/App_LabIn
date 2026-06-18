@@ -54,11 +54,14 @@ class _MahasiswaDashboardView extends StatefulWidget {
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   int _selectedIndex = 0;
   bool _cartSheetOpen = false;
+  bool _isRatingDialogOpen = false;
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<DashboardBloc, DashboardState>(
-      listenWhen: (previous, current) => previous.message != current.message,
+      listenWhen: (previous, current) =>
+          previous.message != current.message ||
+          previous.bookings != current.bookings,
       listener: (context, state) {
         final message = state.message;
         if (message != null) {
@@ -74,6 +77,20 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                   : null,
             ),
           );
+        }
+
+        if (!_isRatingDialogOpen && state.bookings.isNotEmpty) {
+          try {
+            final unratedBooking = state.bookings.firstWhere(
+              (b) => b.status == 'returned' && b.ratingReview == null,
+            );
+            _isRatingDialogOpen = true;
+            _showRatingDialog(context, unratedBooking).then((_) {
+              _isRatingDialogOpen = false;
+            });
+          } catch (_) {
+            // Abaikan jika tidak ada peminjaman yang butuh di-rating
+          }
         }
       },
       child: Scaffold(
@@ -337,8 +354,15 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                                 )
                             ? null
                             : () {
+                                final start = state.selectedDate;
+                                final end = start.add(
+                                  const Duration(hours: 2),
+                                ); // Default peminjaman 2 jam
                                 context.read<DashboardBloc>().add(
-                                  const DashboardCheckoutRequested(),
+                                  DashboardCheckoutRequested(
+                                    startDateTime: start,
+                                    endDateTime: end,
+                                  ),
                                 );
                               },
                         icon: const Icon(Icons.send_rounded),
@@ -356,6 +380,19 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
     if (mounted) {
       _cartSheetOpen = false;
     }
+  }
+
+  Future<void> _showRatingDialog(BuildContext context, LabBooking booking) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return _RatingDialog(
+          booking: booking,
+          repository: _repository(context),
+        );
+      },
+    );
   }
 }
 
@@ -1428,9 +1465,18 @@ class _CartCheckout extends StatelessWidget {
             const SizedBox(height: 8),
             ElevatedButton.icon(
               onPressed: canCheckout
-                  ? () => context.read<DashboardBloc>().add(
-                      const DashboardCheckoutRequested(),
-                    )
+                  ? () {
+                      final start = state.selectedDate;
+                      final end = start.add(
+                        const Duration(hours: 2),
+                      ); // Default peminjaman 2 jam
+                      context.read<DashboardBloc>().add(
+                        DashboardCheckoutRequested(
+                          startDateTime: start,
+                          endDateTime: end,
+                        ),
+                      );
+                    }
                   : null,
               icon: const Icon(Icons.task_alt_rounded),
               label: const Text('Checkout Pengajuan'),
@@ -1656,5 +1702,118 @@ extension _StartWith<T> on Stream<T> {
   Stream<T> startWith(T value) async* {
     yield value;
     yield* this;
+  }
+}
+
+class _RatingDialog extends StatefulWidget {
+  const _RatingDialog({required this.booking, required this.repository});
+
+  final LabBooking booking;
+  final DashboardRepository repository;
+
+  @override
+  State<_RatingDialog> createState() => _RatingDialogState();
+}
+
+class _RatingDialogState extends State<_RatingDialog> {
+  int _rating = 0;
+  bool _isLoading = false;
+  final _reviewController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reviewController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_rating < 1) return;
+    setState(() => _isLoading = true);
+    try {
+      await widget.repository.submitBookingReview(
+        bookingId: widget.booking.id,
+        rating: _rating,
+        review: _reviewController.text,
+      );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengirim ulasan: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: const Text(
+        'Peminjaman Selesai! 🎉',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontWeight: FontWeight.w900),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Bagaimana pengalaman Anda menggunakan fasilitas laboratorium kali ini?',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return IconButton(
+                iconSize: 36,
+                padding: EdgeInsets.zero,
+                icon: Icon(
+                  index < _rating
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
+                  color: AppTheme.richBronze,
+                ),
+                onPressed: () => setState(() => _rating = index + 1),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _reviewController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'Tulis ulasan singkat (opsional)...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              contentPadding: const EdgeInsets.all(12),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: _rating > 0 && !_isLoading ? _submit : null,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Kirim Ulasan'),
+        ),
+      ],
+    );
   }
 }
