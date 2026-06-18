@@ -45,14 +45,13 @@ class DashboardShell extends StatelessWidget {
         showProfileAvatar: true,
         onProfilePressed: () {},
         actions: [
-          IconButton(
+          HeaderActionButton(
             tooltip: 'Keluar',
             onPressed: () {
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
             icon: const Icon(Icons.logout_rounded),
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: LayoutBuilder(

@@ -84,21 +84,18 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           actions: [
             BlocBuilder<DashboardBloc, DashboardState>(
               builder: (context, state) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: IconButton(
-                    tooltip: 'Keranjang',
-                    onPressed: () => _openCart(context, state),
-                    icon: Badge(
-                      isLabelVisible: state.cartCount > 0,
-                      label: Text('${state.cartCount}'),
-                      child: const Icon(Icons.shopping_bag_outlined),
-                    ),
+                return HeaderActionButton(
+                  tooltip: 'Keranjang',
+                  onPressed: () => _openCart(context, state),
+                  icon: Badge(
+                    isLabelVisible: state.cartCount > 0,
+                    label: Text('${state.cartCount}'),
+                    child: const Icon(Icons.shopping_bag_outlined),
                   ),
                 );
               },
             ),
-            IconButton(
+            HeaderActionButton(
               tooltip: 'Notifikasi',
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -108,7 +105,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
               ),
               icon: const Icon(Icons.notifications_outlined),
             ),
-            const SizedBox(width: 8),
           ],
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(

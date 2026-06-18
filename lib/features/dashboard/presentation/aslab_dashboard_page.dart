@@ -51,12 +51,11 @@ class _AslabDashboardView extends StatelessWidget {
           showProfileAvatar: true,
           onProfilePressed: () => _openSettings(context),
           actions: [
-            IconButton(
+            HeaderActionButton(
               tooltip: 'Scan QR',
               onPressed: () => _scanQr(context),
               icon: const Icon(Icons.qr_code_scanner_rounded),
             ),
-            const SizedBox(width: 8),
           ],
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(

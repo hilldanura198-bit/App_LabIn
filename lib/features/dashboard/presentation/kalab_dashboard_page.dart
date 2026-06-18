@@ -54,12 +54,11 @@ class _KalabDashboardView extends StatelessWidget {
           showProfileAvatar: true,
           onProfilePressed: () => _openSettings(context),
           actions: [
-            IconButton(
+            HeaderActionButton(
               tooltip: 'Audit barcode',
               onPressed: () => _scanBarcode(context),
               icon: const Icon(Icons.barcode_reader),
             ),
-            const SizedBox(width: 8),
           ],
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(

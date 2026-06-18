@@ -60,7 +60,12 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.78),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.9),
+                        Colors.white.withValues(alpha: 0.68),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.92),
@@ -111,6 +116,56 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : null,
       bottom: bottom,
+    );
+  }
+}
+
+class HeaderActionButton extends StatelessWidget {
+  const HeaderActionButton({
+    super.key,
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final Widget icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16),
+          child: Tooltip(
+            message: tooltip,
+            child: Container(
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: AppTheme.cyberGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.electricBlue.withValues(alpha: 0.18),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: IconTheme(
+                data: const IconThemeData(color: Colors.white, size: 21),
+                child: icon,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
