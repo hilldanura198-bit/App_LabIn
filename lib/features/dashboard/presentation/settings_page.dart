@@ -303,7 +303,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Text(
-                                  'General Preferences',
+                                  'Ubah Bahasa & Preferensi Umum',
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.w900),
                                 ),
@@ -322,7 +322,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   ],
                                   onChanged: (value) {
                                     if (value == null) return;
-                                    setState(() => _language = value);
+                                    _changeLanguage(value);
                                   },
                                   decoration: const InputDecoration(
                                     labelText: 'Pengaturan Bahasa',
@@ -370,7 +370,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Text(
-                                  'Account Security',
+                                  'Ganti Password',
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.w900),
                                 ),
@@ -512,6 +512,23 @@ class _SettingsPageState extends State<SettingsPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
+    }
+  }
+
+  Future<void> _changeLanguage(String value) async {
+    setState(() => _language = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', value);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            value == 'id'
+                ? 'Bahasa diubah ke Bahasa Indonesia.'
+                : 'Language changed to English.',
+          ),
+        ),
+      );
     }
   }
 
