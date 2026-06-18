@@ -157,7 +157,8 @@ class DashboardRepository {
   }
 
   Future<LabBooking> createBooking({
-    required DateTime tanggalPinjam,
+    required DateTime startDateTime,
+    required DateTime endDateTime,
     required List<BookingItemDraft> items,
   }) async {
     final userId = currentUserId;
@@ -171,6 +172,12 @@ class DashboardRepository {
     String? bookingId;
     try {
       final labId = items.first.inventory.labId;
+      _validateBookingRange(startDateTime, endDateTime);
+      await _ensureNoTimeCollision(
+        labId: labId,
+        startDateTime: startDateTime,
+        endDateTime: endDateTime,
+      );
       final itemsSnapshot = items
           .map(
             (item) => BookingSnapshotItem(
@@ -186,10 +193,10 @@ class DashboardRepository {
             'user_id': userId,
             'lab_id': labId,
             'status': 'pending',
-            'tanggal_pinjam': tanggalPinjam.toIso8601String(),
-            'tanggal_kembali': tanggalPinjam
-                .add(const Duration(hours: 3))
-                .toIso8601String(),
+            'tanggal_pinjam': startDateTime.toUtc().toIso8601String(),
+            'tanggal_kembali': endDateTime.toUtc().toIso8601String(),
+            'start_time': DateFormat('HH:mm').format(startDateTime.toLocal()),
+            'end_time': DateFormat('HH:mm').format(endDateTime.toLocal()),
             'items_snapshot': itemsSnapshot,
           })
           .select(
@@ -256,9 +263,12 @@ class DashboardRepository {
     }
     final startDateTime = _combineDateAndTime(borrowDate, startTime);
     final endDateTime = _combineDateAndTime(borrowDate, endTime);
-    if (endDateTime.isBefore(startDateTime)) {
-      throw Exception('Jam selesai harus setelah jam mulai.');
-    }
+    _validateBookingRange(startDateTime, endDateTime);
+    await _ensureNoTimeCollision(
+      labId: labId,
+      startDateTime: startDateTime,
+      endDateTime: endDateTime,
+    );
     await _supabase
         .from('profiles')
         .update({'whatsapp_number': whatsappNumber.trim()})
@@ -278,8 +288,8 @@ class DashboardRepository {
           'start_time': startTime,
           'end_time': endTime,
           'status': 'pending',
-          'tanggal_pinjam': startDateTime.toIso8601String(),
-          'tanggal_kembali': endDateTime.toIso8601String(),
+          'tanggal_pinjam': startDateTime.toUtc().toIso8601String(),
+          'tanggal_kembali': endDateTime.toUtc().toIso8601String(),
           'desk_no': deskNo,
           'items_snapshot': items
               .map(
@@ -715,6 +725,30 @@ class DashboardRepository {
       throw Exception('QR tidak valid.');
     }
     return trimmed.split('|').first;
+  }
+
+  void _validateBookingRange(DateTime startDateTime, DateTime endDateTime) {
+    if (!endDateTime.isAfter(startDateTime)) {
+      throw Exception('Waktu kembali harus setelah waktu pinjam.');
+    }
+  }
+
+  Future<void> _ensureNoTimeCollision({
+    required String labId,
+    required DateTime startDateTime,
+    required DateTime endDateTime,
+  }) async {
+    final rows = await _supabase
+        .from('bookings')
+        .select('id,tanggal_pinjam,tanggal_kembali')
+        .eq('lab_id', labId)
+        .not('status', 'in', '(returned,rejected)')
+        .lt('tanggal_pinjam', endDateTime.toUtc().toIso8601String())
+        .gt('tanggal_kembali', startDateTime.toUtc().toIso8601String())
+        .limit(1);
+    if (rows.isNotEmpty) {
+      throw Exception('Jadwal bentrok dengan peminjaman lain.');
+    }
   }
 
   DateTime _combineDateAndTime(DateTime date, String time) {

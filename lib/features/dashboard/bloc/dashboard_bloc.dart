@@ -40,7 +40,13 @@ class DashboardCartItemRemoved extends DashboardEvent {
 }
 
 class DashboardCheckoutRequested extends DashboardEvent {
-  const DashboardCheckoutRequested();
+  const DashboardCheckoutRequested({
+    required this.startDateTime,
+    required this.endDateTime,
+  });
+
+  final DateTime startDateTime;
+  final DateTime endDateTime;
 }
 
 class DashboardMaintenanceReportSubmitted extends DashboardEvent {
@@ -302,7 +308,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     emit(state.copyWith(isLoading: true, clearMessage: true));
     try {
       final booking = await _repository.createBooking(
-        tanggalPinjam: state.selectedDate,
+        startDateTime: event.startDateTime,
+        endDateTime: event.endDateTime,
         items: state.cart.values.toList(),
       );
       emit(
