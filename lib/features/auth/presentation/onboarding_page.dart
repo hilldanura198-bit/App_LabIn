@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/brand.dart';
@@ -17,27 +15,24 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final _controller = PageController();
   int _index = 0;
-  static const _backgroundImage =
-      'https://images.unsplash.com/photo-1581093588401-fbb62a02f120'
-      '?auto=format&fit=crop&w=1400&q=80';
 
   static const _slides = [
     _OnboardingSlideData(
-      title: 'LabIn Terpadu',
+      headline: 'Inventaris lab dalam satu ruang digital.',
       description:
-          'Kelola peminjaman ruang, alat, dan layanan kampus dalam satu pengalaman mobile yang cepat, luas, dan fleksibel.',
-      icon: Icons.hub_outlined,
+          'Pantau ruang, alat, dan status peminjaman dengan visual yang rapi dan mudah dipahami.',
+      icon: Icons.inventory_2_outlined,
     ),
     _OnboardingSlideData(
-      title: 'Reservasi Lebih Presisi',
+      headline: 'Reservasi cepat, approval lebih jelas.',
       description:
-          'Cek ketersediaan ruang dan alat secara real-time, lalu pantau approval tanpa alur manual yang melelahkan.',
+          'Ajukan kebutuhan lab, cek ketersediaan, dan ikuti progres persetujuan secara real-time.',
       icon: Icons.event_available_outlined,
     ),
     _OnboardingSlideData(
-      title: 'Dokumen & Riwayat Aman',
+      headline: 'Riwayat dan dokumen tertata aman.',
       description:
-          'Simpan bukti peminjaman, timeline penggunaan, dan laporan kondisi aset dengan akses yang rapi.',
+          'Simpan bukti peminjaman, timeline, dan catatan kondisi aset dalam alur yang terhubung.',
       icon: Icons.verified_user_outlined,
     ),
   ];
@@ -51,149 +46,118 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final isLast = _index == _slides.length - 1;
+
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const _BlurredOnboardingBackground(),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth >= 760
-                    ? 520.0
-                    : constraints.maxWidth;
-                return Center(
-                  child: SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: maxWidth,
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const _BrandLockup(),
-                            SizedBox(
-                              height: constraints.maxHeight < 700 ? 18 : 28,
-                            ),
-                            _GlassOnboardingPanel(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    height: constraints.maxHeight < 640
-                                        ? 240
-                                        : 330,
-                                    child: PageView.builder(
-                                      controller: _controller,
-                                      itemCount: _slides.length,
-                                      onPageChanged: (value) =>
-                                          setState(() => _index = value),
-                                      itemBuilder: (context, index) {
-                                        return _OnboardingSlide(
-                                          data: _slides[index],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  _OnboardingDots(
-                                    activeIndex: _index,
-                                    length: _slides.length,
-                                  ),
-                                  SizedBox(
-                                    height: constraints.maxHeight < 700
-                                        ? 16
-                                        : 24,
-                                  ),
-                                  CyberGradientButton(
-                                    onPressed: () {
-                                      if (isLast) {
-                                        widget.onFinished();
-                                        return;
-                                      }
-                                      _controller.nextPage(
-                                        duration: const Duration(
-                                          milliseconds: 320,
-                                        ),
-                                        curve: Curves.easeOutCubic,
-                                      );
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          isLast ? 'Mulai Sekarang' : 'Lanjut',
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Icon(Icons.arrow_forward_rounded),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FBFF), Color(0xFFEAF1FF), Color(0xFFF7F2FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth >= 760
+                  ? 500.0
+                  : constraints.maxWidth;
+              final compact = constraints.maxHeight < 700;
+
+              return Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(22, compact ? 18 : 28, 22, 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: maxWidth,
+                      minHeight: constraints.maxHeight - (compact ? 42 : 52),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _BrandIntro(),
+                        SizedBox(height: compact ? 16 : 26),
+                        SizedBox(
+                          height: compact ? 390 : 460,
+                          child: PageView.builder(
+                            controller: _controller,
+                            itemCount: _slides.length,
+                            onPageChanged: (value) =>
+                                setState(() => _index = value),
+                            itemBuilder: (context, index) {
+                              return _OnboardingSlide(
+                                data: _slides[index],
+                                index: index,
+                              );
+                            },
+                          ),
                         ),
-                      ),
+                        SizedBox(height: compact ? 16 : 24),
+                        _OnboardingDots(
+                          activeIndex: _index,
+                          length: _slides.length,
+                        ),
+                        const SizedBox(height: 22),
+                        CyberGradientButton(
+                          onPressed: () {
+                            if (isLast) {
+                              widget.onFinished();
+                              return;
+                            }
+                            _controller.nextPage(
+                              duration: const Duration(milliseconds: 330),
+                              curve: Curves.easeOutCubic,
+                            );
+                          },
+                          borderRadius: 18,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(isLast ? 'Mulai Sekarang' : 'Lanjut'),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _BlurredOnboardingBackground extends StatelessWidget {
-  const _BlurredOnboardingBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Image.network(
-            _OnboardingPageState._backgroundImage,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return const DecoratedBox(
-                decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
-              );
-            },
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppTheme.deepSpace.withValues(alpha: 0.28),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BrandLockup extends StatelessWidget {
-  const _BrandLockup();
+class _BrandIntro extends StatelessWidget {
+  const _BrandIntro();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 240, maxHeight: 120),
+        Container(
+          width: 86,
+          height: 86,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.electricBlue.withValues(alpha: 0.14),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(22),
             child: Image.asset(
               'assets/images/labin.jpg',
               fit: BoxFit.cover,
@@ -201,28 +165,24 @@ class _BrandLockup extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 18),
         Text(
           AppBrand.name,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: Colors.white,
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            color: AppTheme.ink,
             fontWeight: FontWeight.w900,
-            shadows: const [
-              Shadow(
-                color: Color(0x80000000),
-                blurRadius: 18,
-                offset: Offset(0, 6),
-              ),
-            ],
+            height: 1.05,
           ),
         ),
+        const SizedBox(height: 10),
         Text(
           AppBrand.tagline,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.86),
-            fontWeight: FontWeight.w600,
+            color: AppTheme.muted,
+            fontWeight: FontWeight.w800,
+            height: 1.45,
           ),
         ),
       ],
@@ -230,37 +190,290 @@ class _BrandLockup extends StatelessWidget {
   }
 }
 
-class _GlassOnboardingPanel extends StatelessWidget {
-  const _GlassOnboardingPanel({required this.child});
+class _OnboardingSlideData {
+  const _OnboardingSlideData({
+    required this.headline,
+    required this.description,
+    required this.icon,
+  });
 
-  final Widget child;
+  final String headline;
+  final String description;
+  final IconData icon;
+}
+
+class _OnboardingSlide extends StatelessWidget {
+  const _OnboardingSlide({required this.data, required this.index});
+
+  final _OnboardingSlideData data;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.13),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.30),
-              width: 1.2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 26),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white, width: 1.4),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.electricBlue.withValues(alpha: 0.12),
+              blurRadius: 34,
+              offset: const Offset(0, 20),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.20),
-                blurRadius: 34,
-                offset: const Offset(0, 20),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(child: _InventoryTechIllustration(activeIndex: index)),
+            const SizedBox(height: 18),
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: AppTheme.cyberGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.vibrantPurple.withValues(alpha: 0.20),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: child,
+              child: Icon(data.icon, color: Colors.white, size: 30),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              data.headline,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppTheme.ink,
+                fontWeight: FontWeight.w900,
+                height: 1.18,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              data.description,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.muted,
+                fontWeight: FontWeight.w600,
+                height: 1.48,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _InventoryTechIllustration extends StatelessWidget {
+  const _InventoryTechIllustration({required this.activeIndex});
+
+  final int activeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest.shortestSide.clamp(190.0, 250.0);
+        return Center(
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  bottom: size * 0.04,
+                  child: Container(
+                    width: size * 0.86,
+                    height: size * 0.16,
+                    decoration: BoxDecoration(
+                      color: AppTheme.electricBlue.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: size * 0.18,
+                  left: size * 0.14,
+                  right: size * 0.14,
+                  bottom: size * 0.18,
+                  child: Transform.rotate(
+                    angle: -0.10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFFFFF), Color(0xFFEAF2FF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: const Color(0xFFE1E9FF)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.deepSpace.withValues(alpha: 0.10),
+                            blurRadius: 28,
+                            offset: const Offset(0, 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: size * 0.28,
+                  left: size * 0.25,
+                  right: size * 0.25,
+                  child: Column(
+                    children: List.generate(
+                      3,
+                      (row) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            3,
+                            (col) => _InventoryCube(
+                              color: _cubeColor(row, col, activeIndex),
+                              small: row == 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: size * 0.08,
+                  top: size * 0.20,
+                  child: _FloatingBadge(
+                    icon: Icons.qr_code_2_rounded,
+                    color: AppTheme.vibrantPurple,
+                  ),
+                ),
+                Positioned(
+                  left: size * 0.08,
+                  bottom: size * 0.24,
+                  child: _FloatingBadge(
+                    icon: Icons.wifi_tethering_rounded,
+                    color: AppTheme.electricBlue,
+                  ),
+                ),
+                Positioned(
+                  right: size * 0.18,
+                  bottom: size * 0.18,
+                  child: Container(
+                    width: size * 0.26,
+                    height: size * 0.34,
+                    decoration: BoxDecoration(
+                      color: AppTheme.ink,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.deepSpace.withValues(alpha: 0.20),
+                          blurRadius: 20,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(7),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.cyberGradient,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.analytics_outlined,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _cubeColor(int row, int col, int activeIndex) {
+    final colors = [
+      AppTheme.electricBlue,
+      AppTheme.vibrantPurple,
+      const Color(0xFF22C55E),
+    ];
+    return colors[(row + col + activeIndex) % colors.length];
+  }
+}
+
+class _InventoryCube extends StatelessWidget {
+  const _InventoryCube({required this.color, required this.small});
+
+  final Color color;
+  final bool small;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = small ? 26.0 : 32.0;
+    return Container(
+      width: size,
+      height: size,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withValues(alpha: 0.82), color],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(9),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.24),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FloatingBadge extends StatelessWidget {
+  const _FloatingBadge({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: color, size: 25),
     );
   }
 }
@@ -280,78 +493,14 @@ class _OnboardingDots extends StatelessWidget {
         (index) => AnimatedContainer(
           duration: const Duration(milliseconds: 240),
           curve: Curves.easeOutCubic,
-          width: activeIndex == index ? 30 : 9,
-          height: 9,
+          width: activeIndex == index ? 32 : 10,
+          height: 10,
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: activeIndex == index
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.38),
-            borderRadius: BorderRadius.circular(16),
+            gradient: activeIndex == index ? AppTheme.cyberGradient : null,
+            color: activeIndex == index ? null : const Color(0xFFD6E0F7),
+            borderRadius: BorderRadius.circular(999),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OnboardingSlideData {
-  const _OnboardingSlideData({
-    required this.title,
-    required this.description,
-    required this.icon,
-  });
-
-  final String title;
-  final String description;
-  final IconData icon;
-}
-
-class _OnboardingSlide extends StatelessWidget {
-  const _OnboardingSlide({required this.data});
-
-  final _OnboardingSlideData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 78,
-              height: 78,
-              decoration: BoxDecoration(
-                gradient: AppTheme.cyberGradient,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.34)),
-              ),
-              child: Icon(data.icon, color: Colors.white, size: 38),
-            ),
-            const SizedBox(height: 22),
-            Text(
-              data.title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                height: 1.12,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              data.description,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.90),
-                fontWeight: FontWeight.w500,
-                height: 1.42,
-              ),
-            ),
-          ],
         ),
       ),
     );

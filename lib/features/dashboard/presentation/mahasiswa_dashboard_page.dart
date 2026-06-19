@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
@@ -52,7 +51,6 @@ class _MahasiswaDashboardView extends StatefulWidget {
 
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   int _selectedIndex = 0;
-  bool _cartSheetOpen = false;
   bool _isRatingDialogOpen = false;
 
   @override
@@ -64,10 +62,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       listener: (context, state) {
         final message = state.message;
         if (message != null) {
-          if (_cartSheetOpen && message.contains('Checkout berhasil')) {
-            _cartSheetOpen = false;
-            Navigator.of(context).pop();
-          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
@@ -94,13 +88,11 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(84),
+          preferredSize: const Size.fromHeight(190),
           child: BlocBuilder<DashboardBloc, DashboardState>(
             builder: (context, state) {
               return _ModernFloatingHeader(
-                cartCount: state.cartCount,
                 onProfilePressed: () => _openSettings(context),
-                onCartPressed: () => _openCart(context, state),
                 onNotifPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => NotificationCenterPage(
@@ -108,9 +100,12 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                     ),
                   ),
                 ),
-                onSearchPressed: () {
-                  setState(() => _selectedIndex = 1);
-                },
+                onSearchSubmitted: (query) => _showGlobalSearch(
+                  context,
+                  query: query,
+                  state: state,
+                  repository: _repository(context),
+                ),
               );
             },
           ),
@@ -206,173 +201,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
     );
   }
 
-  Future<void> _openCart(BuildContext context, DashboardState state) async {
-    _cartSheetOpen = true;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.72,
-          minChildSize: 0.42,
-          maxChildSize: 0.94,
-          builder: (context, controller) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Container(
-                        width: 46,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: AppTheme.muted.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.shopping_bag_outlined,
-                            color: AppTheme.deepTeal,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Keranjang ${AppBrand.name}',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.separated(
-                        controller: controller,
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                        itemBuilder: (context, index) {
-                          final item = state.cart.values.elementAt(index);
-                          return Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: AppTheme.cleanCyan.withValues(
-                                  alpha: 0.18,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    gradient: AppTheme.cyberGradient,
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: const Icon(
-                                    Icons.inventory_2_outlined,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.inventory.namaAlat,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Jumlah ${item.quantity} | Sisa ${item.inventory.stokTersedia - item.quantity}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(color: AppTheme.muted),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () =>
-                                      context.read<DashboardBloc>().add(
-                                        DashboardCartItemRemoved(
-                                          item.inventory.id,
-                                        ),
-                                      ),
-                                  icon: const Icon(Icons.remove_circle_outline),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemCount: state.cart.values.length,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            state.cart.isEmpty ||
-                                state.isLoading ||
-                                state.cart.values.any(
-                                  (item) =>
-                                      item.inventory.stokTersedia -
-                                          item.quantity <=
-                                      0,
-                                )
-                            ? null
-                            : () {
-                                final start = state.selectedDate;
-                                final end = start.add(
-                                  const Duration(hours: 2),
-                                ); // Default peminjaman 2 jam
-                                context.read<DashboardBloc>().add(
-                                  DashboardCheckoutRequested(
-                                    startDateTime: start,
-                                    endDateTime: end,
-                                  ),
-                                );
-                              },
-                        icon: const Icon(Icons.send_rounded),
-                        label: const Text('Checkout Keranjang'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-    if (mounted) {
-      _cartSheetOpen = false;
-    }
-  }
-
   Future<void> _showRatingDialog(BuildContext context, LabBooking booking) {
     return showDialog<void>(
       context: context,
@@ -381,6 +209,26 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         return _RatingDialog(
           booking: booking,
           repository: _repository(context),
+        );
+      },
+    );
+  }
+
+  Future<void> _showGlobalSearch(
+    BuildContext context, {
+    required String query,
+    required DashboardState state,
+    required DashboardRepository repository,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return _GlobalSearchSheet(
+          initialQuery: query,
+          inventories: state.inventories,
+          repository: repository,
         );
       },
     );
@@ -423,7 +271,7 @@ class _HomeScrollContent extends StatelessWidget {
                       RichText(
                         textAlign: TextAlign.center,
                         text: TextSpan(
-                          style: Theme.of(context).textTheme.headlineSmall
+                          style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w900),
                           children: const [
                             TextSpan(
@@ -437,15 +285,7 @@ class _HomeScrollContent extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        AppBrand.tagline,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
-                      ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       _StockCalendar(state: state, repository: repository),
                       const SizedBox(height: 16),
                       _QuickModuleGrid(repository: repository),
@@ -1809,132 +1649,604 @@ class _RatingDialogState extends State<_RatingDialog> {
   }
 }
 
-class _ModernFloatingHeader extends StatelessWidget {
+class _ModernFloatingHeader extends StatefulWidget {
   const _ModernFloatingHeader({
     required this.onProfilePressed,
-    required this.onCartPressed,
     required this.onNotifPressed,
-    required this.onSearchPressed,
-    required this.cartCount,
+    required this.onSearchSubmitted,
   });
 
   final VoidCallback onProfilePressed;
-  final VoidCallback onCartPressed;
   final VoidCallback onNotifPressed;
-  final VoidCallback onSearchPressed;
-  final int cartCount;
+  final ValueChanged<String> onSearchSubmitted;
+
+  @override
+  State<_ModernFloatingHeader> createState() => _ModernFloatingHeaderState();
+}
+
+class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
+  final _searchController = TextEditingController();
+
+  static const _quickTags = ['Alat', 'Ruangan', 'Modul', 'Proyektor'];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: Container(
-          height: 64,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.electricBlue.withValues(alpha: 0.12),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF00A3FF), Color(0xFF6C5CE7), Color(0xFFAF52DE)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Row(
-            children: [
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: onSearchPressed,
-                  behavior: HitTestBehavior.opaque,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.search_rounded,
-                        color: AppTheme.sepia,
-                        size: 22,
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.location_on_outlined,
+                          color: Colors.white,
+                          size: 21,
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Cari fasilitas lab...',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.sepia,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Lokasi',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.78),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            Text(
+                              'Kampus LabIn',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
+                _HeaderIconButton(
+                  icon: Icons.notifications_outlined,
+                  onTap: widget.onNotifPressed,
+                ),
+                const SizedBox(width: 8),
+                _HeaderIconButton(
+                  icon: Icons.person_outline_rounded,
+                  onTap: widget.onProfilePressed,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _GlobalSearchField(
+              controller: _searchController,
+              onSubmitted: _submitSearch,
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _quickTags
+                    .map(
+                      (tag) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          onPressed: () {
+                            _searchController.text = tag;
+                            _submitSearch(tag);
+                          },
+                          label: Text(tag),
+                          labelStyle: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          avatar: const Icon(
+                            Icons.bolt_rounded,
+                            color: Colors.white,
+                            size: 17,
+                          ),
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.28),
+                          ),
+                          backgroundColor: Colors.white.withValues(alpha: 0.15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
-              _IconWrapper(
-                icon: Icons.shopping_bag_outlined,
-                badgeCount: cartCount,
-                onTap: onCartPressed,
-                isPrimary: true,
-              ),
-              const SizedBox(width: 6),
-              _IconWrapper(
-                icon: Icons.notifications_outlined,
-                badgeCount: 0,
-                onTap: onNotifPressed,
-                isPrimary: true,
-              ),
-              const SizedBox(width: 6),
-              _IconWrapper(
-                icon: Icons.person_outline_rounded,
-                badgeCount: 0,
-                onTap: onProfilePressed,
-                isPrimary: false,
-              ),
-            ],
-          ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submitSearch(String value) {
+    final query = value.trim();
+    widget.onSearchSubmitted(query.isEmpty ? 'Alat' : query);
+  }
+}
+
+class _GlobalSearchField extends StatelessWidget {
+  const _GlobalSearchField({
+    required this.controller,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      textInputAction: TextInputAction.search,
+      onSubmitted: onSubmitted,
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+      decoration: InputDecoration(
+        hintText: 'Cari alat, ruangan, atau modul...',
+        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppTheme.muted,
+          fontWeight: FontWeight.w600,
+        ),
+        prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.muted),
+        suffixIcon: IconButton(
+          onPressed: () => onSubmitted(controller.text),
+          icon: const Icon(Icons.tune_rounded, color: AppTheme.electricBlue),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 15,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(22),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(22),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(22),
+          borderSide: BorderSide.none,
         ),
       ),
     );
   }
 }
 
-class _IconWrapper extends StatelessWidget {
-  const _IconWrapper({
-    required this.icon,
-    required this.onTap,
-    required this.isPrimary,
-    this.badgeCount = 0,
-  });
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
-  final bool isPrimary;
-  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Badge(
-        isLabelVisible: badgeCount > 0,
-        label: Text('$badgeCount'),
-        child: Container(
-          width: 44,
-          height: 44,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+}
+
+class _GlobalSearchSheet extends StatefulWidget {
+  const _GlobalSearchSheet({
+    required this.initialQuery,
+    required this.inventories,
+    required this.repository,
+  });
+
+  final String initialQuery;
+  final List<LabInventory> inventories;
+  final DashboardRepository repository;
+
+  @override
+  State<_GlobalSearchSheet> createState() => _GlobalSearchSheetState();
+}
+
+class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
+  late final TextEditingController _controller;
+  late String _query;
+  late final Future<List<LabRoom>> _roomsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _query = widget.initialQuery;
+    _controller = TextEditingController(text: _query);
+    _roomsFuture = widget.repository.fetchLaboratories();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.78,
+      minChildSize: 0.44,
+      maxChildSize: 0.94,
+      builder: (context, scrollController) {
+        return Container(
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: isPrimary ? AppTheme.cyberGradient : null,
-            color: isPrimary
-                ? null
-                : AppTheme.electricBlue.withValues(alpha: 0.1),
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           ),
-          child: Icon(
-            icon,
-            color: isPrimary ? Colors.white : AppTheme.electricBlue,
-            size: 22,
+          child: SafeArea(
+            top: false,
+            child: FutureBuilder<List<LabRoom>>(
+              future: _roomsFuture,
+              builder: (context, snapshot) {
+                final rooms = snapshot.data ?? const <LabRoom>[];
+                final results = _buildSearchResults(rooms);
+                return ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 46,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: AppTheme.muted.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Pencarian Global',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _controller,
+                      textInputAction: TextInputAction.search,
+                      onChanged: (value) => setState(() => _query = value),
+                      decoration: InputDecoration(
+                        hintText: 'Cari alat, ruangan, modul...',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() {
+                            _controller.clear();
+                            _query = '';
+                          }),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ['Alat', 'Ruangan', 'Modul', 'Jadwal']
+                          .map(
+                            (tag) => ChoiceChip(
+                              selected:
+                                  _query.toLowerCase() == tag.toLowerCase(),
+                              label: Text(tag),
+                              onSelected: (_) => setState(() {
+                                _query = tag;
+                                _controller.text = tag;
+                              }),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 18),
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      const Center(child: CircularProgressIndicator())
+                    else if (results.isEmpty)
+                      const _EmptyCard(
+                        text:
+                            'Belum ada hasil. Coba cari nama alat, ruang lab, atau modul seperti Jadwal dan Katalog.',
+                      )
+                    else
+                      ...results.map((result) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _GlobalSearchResultTile(result: result),
+                        );
+                      }),
+                  ],
+                );
+              },
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  List<_GlobalSearchResult> _buildSearchResults(List<LabRoom> rooms) {
+    final normalized = _query.trim().toLowerCase();
+    final query = normalized.isEmpty ? 'alat' : normalized;
+    final results = <_GlobalSearchResult>[];
+
+    bool matches(String value) => value.toLowerCase().contains(query);
+    bool wantsTools = query == 'alat' || query == 'inventory';
+    bool wantsRooms = query == 'ruangan' || query == 'room' || query == 'lab';
+    bool wantsModules = query == 'modul' || query == 'module';
+
+    for (final inventory in widget.inventories) {
+      final isRoom = inventory.isRoomStock;
+      final shouldShow =
+          matches(inventory.namaAlat) ||
+          matches(inventory.type) ||
+          matches(inventory.labId) ||
+          (wantsTools && !isRoom) ||
+          (wantsRooms && isRoom);
+      if (!shouldShow) continue;
+      results.add(
+        _GlobalSearchResult(
+          icon: isRoom ? Icons.meeting_room_outlined : Icons.inventory_2,
+          title: inventory.namaAlat,
+          subtitle: isRoom
+              ? 'Ruangan | stok ${inventory.stokTersedia}'
+              : 'Alat | tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
+          tag: isRoom ? 'Ruangan' : 'Alat',
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    SaprasFacilityPage(repository: widget.repository),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    for (final room in rooms) {
+      final shouldShow =
+          matches(room.name) ||
+          matches(room.location) ||
+          matches(room.status) ||
+          wantsRooms;
+      if (!shouldShow) continue;
+      results.add(
+        _GlobalSearchResult(
+          icon: Icons.location_city_outlined,
+          title: room.name,
+          subtitle: '${room.location} | ${room.status}',
+          tag: 'Ruangan',
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => RoomSchedulePage(repository: widget.repository),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    for (final module in _searchableModules(widget.repository)) {
+      final shouldShow =
+          matches(module.title) || matches(module.subtitle) || wantsModules;
+      if (!shouldShow) continue;
+      results.add(
+        _GlobalSearchResult(
+          icon: module.icon,
+          title: module.title,
+          subtitle: module.subtitle,
+          tag: 'Modul',
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => module.page));
+          },
+        ),
+      );
+    }
+
+    return results.take(18).toList();
+  }
+}
+
+class _GlobalSearchResult {
+  const _GlobalSearchResult({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.tag,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String tag;
+  final VoidCallback onTap;
+}
+
+class _GlobalSearchResultTile extends StatelessWidget {
+  const _GlobalSearchResultTile({required this.result});
+
+  final _GlobalSearchResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: result.onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE0E7FF)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: AppTheme.cyberGradient,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(result.icon, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    result.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    result.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.electricBlue.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                result.tag,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppTheme.electricBlue,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _SearchableModule {
+  const _SearchableModule({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.page,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget page;
+}
+
+List<_SearchableModule> _searchableModules(DashboardRepository repository) {
+  return [
+    _SearchableModule(
+      icon: Icons.manage_search_outlined,
+      title: 'Pencarian Pintar',
+      subtitle: 'Cek status dan nomor reservasi',
+      page: CheckReservationPage(repository: repository),
+    ),
+    _SearchableModule(
+      icon: Icons.playlist_add_check_rounded,
+      title: 'Form Peminjaman',
+      subtitle: 'Ajukan peminjaman alat dan ruang',
+      page: BookingFormPage(repository: repository),
+    ),
+    _SearchableModule(
+      icon: Icons.file_download_outlined,
+      title: 'Unduh Berkas',
+      subtitle: 'Dokumen dan bukti peminjaman',
+      page: DownloadDocsPage(repository: repository),
+    ),
+    _SearchableModule(
+      icon: Icons.view_timeline_outlined,
+      title: 'Jadwal Ruangan',
+      subtitle: 'Lihat agenda ruang multi-lab',
+      page: RoomSchedulePage(repository: repository),
+    ),
+    _SearchableModule(
+      icon: Icons.notifications_active_outlined,
+      title: 'Notifikasi',
+      subtitle: 'Pantau update status peminjaman',
+      page: NotificationCenterPage(repository: repository),
+    ),
+    _SearchableModule(
+      icon: Icons.location_city_outlined,
+      title: 'SAPRAS Kampus',
+      subtitle: 'Katalog fasilitas dan inventaris',
+      page: SaprasFacilityPage(repository: repository),
+    ),
+  ];
 }
