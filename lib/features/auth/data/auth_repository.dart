@@ -65,6 +65,17 @@ class AuthRepository {
     required XFile? ktmImage,
     required String programStudi,
   }) async {
+    final existingProfile = await _supabase
+        .from('profiles')
+        .select('id')
+        .eq('nim_nip', nim.trim())
+        .maybeSingle();
+    if (existingProfile != null) {
+      throw Exception(
+        'NIM sudah terdaftar. Silakan gunakan NIM lain atau login dengan akun yang sudah ada.',
+      );
+    }
+
     final response = await _supabase.auth.signUp(
       email: email.trim(),
       password: password,

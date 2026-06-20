@@ -234,7 +234,53 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   String _friendlyMessage(Object error) {
+    if (error is AuthException) {
+      final code = error.code?.toLowerCase();
+      final message = error.message.toLowerCase();
+      if (code == 'user_already_exists' ||
+          message.contains('user already registered')) {
+        return 'Email sudah terdaftar. Silakan login atau gunakan email lain.';
+      }
+      if (message.contains('invalid login credentials')) {
+        return 'Email atau password salah. Periksa kembali data login Anda.';
+      }
+      if (message.contains('email not confirmed')) {
+        return 'Email belum dikonfirmasi. Silakan cek inbox email Anda.';
+      }
+      return error.message;
+    }
+
+    if (error is PostgrestException) {
+      final code = error.code?.toLowerCase();
+      final message = error.message.toLowerCase();
+      final details = error.details?.toString().toLowerCase() ?? '';
+      if (code == '23505' || message.contains('duplicate key')) {
+        if (message.contains('profiles_nim_nip_key') ||
+            details.contains('nim_nip')) {
+          return 'NIM sudah terdaftar. Silakan gunakan NIM lain atau login dengan akun yang sudah ada.';
+        }
+        if (message.contains('profiles_email_key') ||
+            details.contains('email')) {
+          return 'Email sudah terdaftar. Silakan login atau gunakan email lain.';
+        }
+        return 'Data sudah terdaftar. Periksa kembali NIM atau email Anda.';
+      }
+      return error.message;
+    }
+
     final raw = error.toString().replaceFirst('Exception: ', '');
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('profiles_nim_nip_key') ||
+        normalized.contains('nim_nip')) {
+      return 'NIM sudah terdaftar. Silakan gunakan NIM lain atau login dengan akun yang sudah ada.';
+    }
+    if (normalized.contains('user_already_exists') ||
+        normalized.contains('user already registered')) {
+      return 'Email sudah terdaftar. Silakan login atau gunakan email lain.';
+    }
+    if (normalized.contains('invalid login credentials')) {
+      return 'Email atau password salah. Periksa kembali data login Anda.';
+    }
     if (raw.contains('not configured')) {
       return 'Sistem backend belum dikonfigurasi. Jalankan app dengan env URL dan ANON KEY.';
     }
