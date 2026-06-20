@@ -1771,18 +1771,18 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
                           },
                           label: Text(tag),
                           labelStyle: const TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.ink,
                             fontWeight: FontWeight.w800,
                           ),
                           avatar: const Icon(
                             Icons.bolt_rounded,
-                            color: Colors.white,
+                            color: AppTheme.electricBlue,
                             size: 17,
                           ),
                           side: BorderSide(
                             color: Colors.white.withValues(alpha: 0.28),
                           ),
-                          backgroundColor: Colors.white.withValues(alpha: 0.15),
+                          backgroundColor: Colors.white.withValues(alpha: 0.92),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
                           ),

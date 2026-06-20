@@ -452,7 +452,10 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 16),
                         OutlinedButton.icon(
                           onPressed: () {
-                            Navigator.of(context).pop();
+                            if (widget.showAppBar &&
+                                Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop();
+                            }
                             context.read<AuthBloc>().add(
                               const AuthLogoutRequested(),
                             );

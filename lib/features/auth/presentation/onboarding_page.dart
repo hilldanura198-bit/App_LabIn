@@ -427,11 +427,11 @@ class _InventoryCube extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = small ? 26.0 : 32.0;
+    final size = small ? 24.0 : 30.0;
     return Container(
       width: size,
       height: size,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withValues(alpha: 0.82), color],
