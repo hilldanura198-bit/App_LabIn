@@ -53,175 +53,198 @@ class _LoginPageState extends State<LoginPage> {
           final isWide = constraints.maxWidth >= 720;
           final horizontalPadding = isWide ? 48.0 : 20.0;
           final panelWidth = isWide ? 460.0 : constraints.maxWidth;
-          final heroHeight = isWide ? 300.0 : 280.0;
 
-          return Stack(
-            children: [
-              _AuthHero(
-                height: heroHeight,
-                title: 'Selamat Datang',
-                subtitle: 'Masuk ke ${AppBrand.name} dan kelola aktivitas lab.',
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFF8FBFF), Color(0xFFEAF1FF)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      horizontalPadding,
-                      heroHeight - 54,
-                      horizontalPadding,
-                      28,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: panelWidth),
-                      child: _FormCard(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  'Masuk ke ${AppBrand.name}',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        color: AppTheme.ink,
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Kelola aktivitas lab dengan alur yang lebih rapi.',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: AppTheme.muted,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                const SizedBox(height: 26),
-                                TextFormField(
-                                  controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  textInputAction: TextInputAction.next,
-                                  autovalidateMode:
-                                      AutovalidateMode.onUserInteraction,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    prefixIcon: Icon(Icons.mail_outline),
+            ),
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    24,
+                    horizontalPadding,
+                    28,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: panelWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _AuthHero(
+                          title: 'Selamat Datang',
+                          subtitle:
+                              'Masuk ke ${AppBrand.name} dan kelola aktivitas lab.',
+                        ),
+                        const SizedBox(height: 24),
+                        _FormCard(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Masuk ke ${AppBrand.name}',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                          color: AppTheme.ink,
+                                        ),
                                   ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Email wajib diisi';
-                                    }
-                                    if (!AppValidation.isValidEmail(value)) {
-                                      return 'Format email belum valid';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 14),
-                                TextFormField(
-                                  controller: _passwordController,
-                                  obscureText: _obscurePassword,
-                                  textInputAction: TextInputAction.done,
-                                  autovalidateMode:
-                                      AutovalidateMode.onUserInteraction,
-                                  decoration: InputDecoration(
-                                    labelText: 'Password',
-                                    prefixIcon: const Icon(Icons.lock_outline),
-                                    suffixIcon: IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscurePassword = !_obscurePassword;
-                                        });
-                                      },
-                                      icon: Icon(
-                                        _obscurePassword
-                                            ? Icons.visibility_outlined
-                                            : Icons.visibility_off_outlined,
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Kelola aktivitas lab dengan alur yang lebih rapi.',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppTheme.muted,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 26),
+                                  TextFormField(
+                                    controller: _emailController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Email',
+                                      prefixIcon: Icon(Icons.mail_outline),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Email wajib diisi';
+                                      }
+                                      if (!AppValidation.isValidEmail(value)) {
+                                        return 'Format email belum valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    obscureText: _obscurePassword,
+                                    textInputAction: TextInputAction.done,
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
+                                    decoration: InputDecoration(
+                                      labelText: 'Password',
+                                      prefixIcon: const Icon(
+                                        Icons.lock_outline,
+                                      ),
+                                      suffixIcon: IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                        ),
                                       ),
                                     ),
+                                    validator: (value) {
+                                      if (value == null || value.length < 6) {
+                                        return 'Password minimal 6 karakter';
+                                      }
+                                      return null;
+                                    },
                                   ),
-                                  validator: (value) {
-                                    if (value == null || value.length < 6) {
-                                      return 'Password minimal 6 karakter';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 22),
-                                BlocBuilder<AuthBloc, AuthState>(
-                                  builder: (context, state) {
-                                    final isLoading = state is AuthLoading;
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        CyberGradientButton(
-                                          onPressed: isLoading ? null : _submit,
-                                          borderRadius: 18,
-                                          child: isLoading
-                                              ? const SizedBox.square(
-                                                  dimension: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        color: Colors.white,
-                                                      ),
-                                                )
-                                              : const Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(Icons.login_rounded),
-                                                    SizedBox(width: 8),
-                                                    Text('Email Login'),
-                                                  ],
-                                                ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _AuthOptionButton(
-                                          icon: Icons.g_mobiledata_rounded,
-                                          label: 'Masuk dengan Google',
-                                          onPressed: isLoading
-                                              ? null
-                                              : _startGoogleSso,
-                                        ),
-                                        const SizedBox(height: 10),
-                                        _AuthOptionButton(
-                                          icon: Icons.fingerprint_rounded,
-                                          label: 'Masuk dengan Biometrik',
-                                          onPressed: isLoading
-                                              ? null
-                                              : () => context.read<AuthBloc>().add(
-                                                  const AuthBiometricLoginRequested(),
-                                                ),
-                                        ),
-                                        const SizedBox(height: 18),
-                                        TextButton(
-                                          onPressed: _openRegisterPage,
-                                          child: const Text(
-                                            'Daftar sebagai mahasiswa',
+                                  const SizedBox(height: 22),
+                                  BlocBuilder<AuthBloc, AuthState>(
+                                    builder: (context, state) {
+                                      final isLoading = state is AuthLoading;
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          CyberGradientButton(
+                                            onPressed: isLoading
+                                                ? null
+                                                : _submit,
+                                            borderRadius: 18,
+                                            child: isLoading
+                                                ? const SizedBox.square(
+                                                    dimension: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                  )
+                                                : const Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.login_rounded),
+                                                      SizedBox(width: 8),
+                                                      Text('Email Login'),
+                                                    ],
+                                                  ),
                                           ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ],
+                                          const SizedBox(height: 12),
+                                          _AuthOptionButton(
+                                            icon: Icons.g_mobiledata_rounded,
+                                            label: 'Masuk dengan Google',
+                                            onPressed: isLoading
+                                                ? null
+                                                : _startGoogleSso,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          _AuthOptionButton(
+                                            icon: Icons.fingerprint_rounded,
+                                            label: 'Masuk dengan Biometrik',
+                                            onPressed: isLoading
+                                                ? null
+                                                : () => context
+                                                      .read<AuthBloc>()
+                                                      .add(
+                                                        const AuthBiometricLoginRequested(),
+                                                      ),
+                                          ),
+                                          const SizedBox(height: 18),
+                                          TextButton(
+                                            onPressed: _openRegisterPage,
+                                            child: const Text(
+                                              'Daftar sebagai mahasiswa',
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           );
         },
       ),
@@ -306,114 +329,72 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _AuthHero extends StatelessWidget {
-  const _AuthHero({
-    required this.height,
-    required this.title,
-    required this.subtitle,
-  });
+  const _AuthHero({required this.title, required this.subtitle});
 
-  final double height;
   final String title;
   final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
       width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
       decoration: const BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(28)),
         gradient: LinearGradient(
           colors: [Color(0xFF007AFF), Color(0xFF5A67FF), Color(0xFFAF52DE)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Stack(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned(
-            top: -44,
-            right: -34,
-            child: _HeroGlow(size: 150, opacity: 0.18),
-          ),
-          Positioned(
-            left: -46,
-            bottom: 22,
-            child: _HeroGlow(size: 130, opacity: 0.14),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(26, 20, 26, 82),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 88,
-                    height: 88,
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 28,
-                          offset: const Offset(0, 16),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: Image.asset(
-                        'assets/images/labin.jpg',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    subtitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontWeight: FontWeight.w700,
-                      height: 1.42,
-                    ),
-                  ),
-                ],
+          Container(
+            width: 84,
+            height: 84,
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/images/labin.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               ),
             ),
           ),
+          const SizedBox(height: 22),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              height: 1.12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.90),
+              fontWeight: FontWeight.w700,
+              height: 1.45,
+            ),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class _HeroGlow extends StatelessWidget {
-  const _HeroGlow({required this.size, required this.opacity});
-
-  final double size;
-  final double opacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: opacity),
       ),
     );
   }

@@ -62,239 +62,246 @@ class _RegisterPageState extends State<RegisterPage> {
                 : constraints.maxWidth;
             final isWide = constraints.maxWidth >= 720;
             final horizontalPadding = isWide ? 48.0 : 20.0;
-            final heroHeight = isWide ? 310.0 : 292.0;
 
-            return Stack(
-              children: [
-                _RegisterHero(height: heroHeight),
-                SafeArea(
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 14, top: 8),
-                      child: IconButton.filledTonal(
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        color: Colors.white,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.18),
-                        ),
-                      ),
-                    ),
-                  ),
+            return Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF8FBFF), Color(0xFFEAF1FF)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                SafeArea(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        heroHeight - 52,
-                        horizontalPadding,
-                        30,
-                      ),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: panelWidth),
-                        child: _RegisterFormCard(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                    'Buat akun ${AppBrand.name}',
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                          color: AppTheme.ink,
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      18,
+                      horizontalPadding,
+                      30,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: panelWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _RegisterHero(
+                            onBack: () => Navigator.of(context).maybePop(),
+                          ),
+                          const SizedBox(height: 24),
+                          _RegisterFormCard(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                22,
+                                26,
+                                22,
+                                24,
+                              ),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      'Buat akun ${AppBrand.name}',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            color: AppTheme.ink,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Lengkapi data mahasiswa dan unggah KTM.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: AppTheme.muted,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 26),
+                                    if (_ktmQualityWarning != null) ...[
+                                      _KtmWarningBanner(
+                                        message: _ktmQualityWarning!,
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                    TextFormField(
+                                      controller: _nameController,
+                                      textInputAction: TextInputAction.next,
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Nama lengkap',
+                                        prefixIcon: Icon(Icons.badge_outlined),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().length < 3) {
+                                          return 'Nama wajib diisi minimal 3 karakter';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextFormField(
+                                      controller: _nimController,
+                                      keyboardType: TextInputType.number,
+                                      textInputAction: TextInputAction.next,
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      decoration: const InputDecoration(
+                                        labelText: 'NIM',
+                                        prefixIcon: Icon(Icons.numbers_rounded),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            !AppValidation.isValidNim(value)) {
+                                          return 'NIM harus 8-15 digit angka';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextFormField(
+                                      controller: _programStudiController,
+                                      textInputAction: TextInputAction.next,
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Program Studi',
+                                        prefixIcon: Icon(Icons.school_outlined),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().length < 3) {
+                                          return 'Program studi wajib diisi';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      textInputAction: TextInputAction.next,
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Email',
+                                        prefixIcon: Icon(Icons.mail_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
+                                          return 'Email wajib diisi';
+                                        }
+                                        if (!AppValidation.isValidEmail(
+                                          value,
+                                        )) {
+                                          return 'Format email belum valid';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 14),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      decoration: InputDecoration(
+                                        labelText: 'Password',
+                                        prefixIcon: const Icon(
+                                          Icons.lock_outline,
                                         ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Lengkapi data mahasiswa dan unggah KTM.',
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: AppTheme.muted,
-                                          fontWeight: FontWeight.w600,
+                                        suffixIcon: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _obscurePassword =
+                                                  !_obscurePassword;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                          ),
                                         ),
-                                  ),
-                                  const SizedBox(height: 26),
-                                  if (_ktmQualityWarning != null) ...[
-                                    _KtmWarningBanner(
-                                      message: _ktmQualityWarning!,
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.length < 6) {
+                                          return 'Password minimal 6 karakter';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _KtmPickerCard(
+                                      fileName: _ktmImage?.name,
+                                      qualityWarning: _ktmQualityWarning,
+                                      onPick: _pickKtmImage,
                                     ),
                                     const SizedBox(height: 12),
-                                  ],
-                                  TextFormField(
-                                    controller: _nameController,
-                                    textInputAction: TextInputAction.next,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nama lengkap',
-                                      prefixIcon: Icon(Icons.badge_outlined),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().length < 3) {
-                                        return 'Nama wajib diisi minimal 3 karakter';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 14),
-                                  TextFormField(
-                                    controller: _nimController,
-                                    keyboardType: TextInputType.number,
-                                    textInputAction: TextInputAction.next,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    decoration: const InputDecoration(
-                                      labelText: 'NIM',
-                                      prefixIcon: Icon(Icons.numbers_rounded),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null ||
-                                          !AppValidation.isValidNim(value)) {
-                                        return 'NIM harus 8-15 digit angka';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 14),
-                                  TextFormField(
-                                    controller: _programStudiController,
-                                    textInputAction: TextInputAction.next,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Program Studi',
-                                      prefixIcon: Icon(Icons.school_outlined),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().length < 3) {
-                                        return 'Program studi wajib diisi';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 14),
-                                  TextFormField(
-                                    controller: _emailController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    textInputAction: TextInputAction.next,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Email',
-                                      prefixIcon: Icon(Icons.mail_outline),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().isEmpty) {
-                                        return 'Email wajib diisi';
-                                      }
-                                      if (!AppValidation.isValidEmail(value)) {
-                                        return 'Format email belum valid';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 14),
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    obscureText: _obscurePassword,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      prefixIcon: const Icon(
-                                        Icons.lock_outline,
+                                    OutlinedButton.icon(
+                                      onPressed: _scanKtmText,
+                                      icon: const Icon(
+                                        Icons.document_scanner_outlined,
                                       ),
-                                      suffixIcon: IconButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _obscurePassword =
-                                                !_obscurePassword;
-                                          });
-                                        },
-                                        icon: Icon(
-                                          _obscurePassword
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
-                                        ),
+                                      label: const Text(
+                                        'Pindai Teks KTM Otomatis',
                                       ),
                                     ),
-                                    validator: (value) {
-                                      if (value == null || value.length < 6) {
-                                        return 'Password minimal 6 karakter';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  _KtmPickerCard(
-                                    fileName: _ktmImage?.name,
-                                    qualityWarning: _ktmQualityWarning,
-                                    onPick: _pickKtmImage,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    onPressed: _scanKtmText,
-                                    icon: const Icon(
-                                      Icons.document_scanner_outlined,
-                                    ),
-                                    label: const Text(
-                                      'Pindai Teks KTM Otomatis',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  BlocBuilder<AuthBloc, AuthState>(
-                                    builder: (context, state) {
-                                      final isLoading = state is AuthLoading;
-                                      return CyberGradientButton(
-                                        onPressed: isLoading ? null : _submit,
-                                        borderRadius: 18,
-                                        child: isLoading
-                                            ? const SizedBox.square(
-                                                dimension: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      color: Colors.white,
+                                    const SizedBox(height: 20),
+                                    BlocBuilder<AuthBloc, AuthState>(
+                                      builder: (context, state) {
+                                        final isLoading = state is AuthLoading;
+                                        return CyberGradientButton(
+                                          onPressed: isLoading ? null : _submit,
+                                          borderRadius: 18,
+                                          child: isLoading
+                                              ? const SizedBox.square(
+                                                  dimension: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        color: Colors.white,
+                                                      ),
+                                                )
+                                              : const Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.person_add_alt_1,
                                                     ),
-                                              )
-                                            : const Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(Icons.person_add_alt_1),
-                                                  SizedBox(width: 8),
-                                                  Text('Daftar'),
-                                                ],
-                                              ),
-                                      );
-                                    },
-                                  ),
-                                ],
+                                                    SizedBox(width: 8),
+                                                    Text('Daftar'),
+                                                  ],
+                                                ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             );
           },
         ),
@@ -555,108 +562,83 @@ class _RegisterPageState extends State<RegisterPage> {
 }
 
 class _RegisterHero extends StatelessWidget {
-  const _RegisterHero({required this.height});
+  const _RegisterHero({required this.onBack});
 
-  final double height;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
       width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 30),
       decoration: const BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(28)),
         gradient: LinearGradient(
           colors: [Color(0xFF007AFF), Color(0xFF5A67FF), Color(0xFFAF52DE)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Stack(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned(
-            top: -42,
-            right: -36,
-            child: _RegisterGlow(size: 154, opacity: 0.18),
-          ),
-          Positioned(
-            left: -52,
-            bottom: 18,
-            child: _RegisterGlow(size: 136, opacity: 0.14),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 26, 28, 84),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 88,
-                    height: 88,
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 28,
-                          offset: const Offset(0, 16),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: Image.asset(
-                        'assets/images/labin.jpg',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Selamat Datang',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Daftar sebagai mahasiswa untuk mulai memakai ${AppBrand.name}.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontWeight: FontWeight.w700,
-                      height: 1.42,
-                    ),
-                  ),
-                ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton.filledTonal(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+              color: Colors.white,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.18),
               ),
             ),
           ),
+          const SizedBox(height: 2),
+          Container(
+            width: 84,
+            height: 84,
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/images/labin.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            'Selamat Datang',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              height: 1.12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Daftar sebagai mahasiswa untuk mulai memakai ${AppBrand.name}.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.90),
+              fontWeight: FontWeight.w700,
+              height: 1.45,
+            ),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class _RegisterGlow extends StatelessWidget {
-  const _RegisterGlow({required this.size, required this.opacity});
-
-  final double size;
-  final double opacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: opacity),
       ),
     );
   }

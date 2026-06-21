@@ -62,7 +62,7 @@ class AppTheme {
     required Color bodyColor,
     required Color displayColor,
   }) {
-    final base = GoogleFonts.poppinsTextTheme().apply(
+    final base = GoogleFonts.interTextTheme().apply(
       bodyColor: bodyColor,
       displayColor: displayColor,
     );
