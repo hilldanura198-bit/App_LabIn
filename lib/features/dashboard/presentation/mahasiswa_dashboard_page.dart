@@ -92,6 +92,8 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           child: BlocBuilder<DashboardBloc, DashboardState>(
             builder: (context, state) {
               return _ModernFloatingHeader(
+                cartCount: state.cartCount,
+                onCartPressed: () => _openCart(context, state),
                 onProfilePressed: () => _openSettings(context),
                 onNotifPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -198,6 +200,60 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _openCart(BuildContext context, DashboardState state) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.62,
+          minChildSize: 0.34,
+          maxChildSize: 0.90,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(30),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 46,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: AppTheme.muted.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Checkout Keranjang',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _CartCheckout(state: state),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -351,12 +407,6 @@ class _QuickModuleGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       _MenuItem(
-        icon: Icons.manage_search_outlined,
-        title: 'Pencarian Pintar',
-        color: AppTheme.richBronze.withValues(alpha: 0.12),
-        page: CheckReservationPage(repository: repository),
-      ),
-      _MenuItem(
         icon: Icons.playlist_add_check_rounded,
         title: 'Form Peminjaman',
         color: AppTheme.richBronze.withValues(alpha: 0.16),
@@ -373,12 +423,6 @@ class _QuickModuleGrid extends StatelessWidget {
         title: 'Jadwal Ruangan',
         color: AppTheme.richBronze.withValues(alpha: 0.14),
         page: RoomSchedulePage(repository: repository),
-      ),
-      _MenuItem(
-        icon: Icons.notifications_active_outlined,
-        title: 'Notifikasi',
-        color: AppTheme.richBronze.withValues(alpha: 0.18),
-        page: NotificationCenterPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.location_city_outlined,
@@ -419,7 +463,7 @@ class _QuickModuleGrid extends StatelessWidget {
                     return _QuickModuleCard(
                       icon: item.icon,
                       title: item.title,
-                      subtitle: _moduleSubtitle(index),
+                      subtitle: _moduleSubtitle(item.title),
                       onTap: () => Navigator.of(
                         context,
                       ).push(MaterialPageRoute(builder: (_) => item.page)),
@@ -434,13 +478,11 @@ class _QuickModuleGrid extends StatelessWidget {
     );
   }
 
-  String _moduleSubtitle(int index) {
-    return switch (index) {
-      0 => 'Reservasi cepat dan presisi',
-      1 => 'Cari nomor peminjaman instan',
-      2 => 'Dokumen terhubung cloud',
-      3 => 'Jadwal ruang multi-lab',
-      4 => 'Pantau status instan',
+  String _moduleSubtitle(String title) {
+    return switch (title) {
+      'Form Peminjaman' => 'Reservasi cepat dan presisi',
+      'Unduh Berkas' => 'Dokumen terhubung cloud',
+      'Jadwal Ruangan' => 'Jadwal ruang multi-lab',
       _ => 'Katalog fasilitas kampus',
     };
   }
@@ -501,7 +543,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
     ),
     (
       LinearGradient(
-        colors: [Color(0xFF0F172A), Color(0xFF2F3C7E)],
+        colors: [Color(0xFF0EA5E9), Color(0xFF7C3AED)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -511,7 +553,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
     ),
     (
       LinearGradient(
-        colors: [Color(0xFF102A43), Color(0xFF7C3AED)],
+        colors: [Color(0xFF38BDF8), Color(0xFFAF52DE)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -1651,11 +1693,15 @@ class _RatingDialogState extends State<_RatingDialog> {
 
 class _ModernFloatingHeader extends StatefulWidget {
   const _ModernFloatingHeader({
+    required this.cartCount,
+    required this.onCartPressed,
     required this.onProfilePressed,
     required this.onNotifPressed,
     required this.onSearchSubmitted,
   });
 
+  final int cartCount;
+  final VoidCallback onCartPressed;
   final VoidCallback onProfilePressed;
   final VoidCallback onNotifPressed;
   final ValueChanged<String> onSearchSubmitted;
@@ -1741,6 +1787,12 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
                   ),
                 ),
                 _HeaderIconButton(
+                  icon: Icons.shopping_bag_outlined,
+                  badgeCount: widget.cartCount,
+                  onTap: widget.onCartPressed,
+                ),
+                const SizedBox(width: 8),
+                _HeaderIconButton(
                   icon: Icons.notifications_outlined,
                   onTap: widget.onNotifPressed,
                 ),
@@ -1817,6 +1869,8 @@ class _GlobalSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      readOnly: true,
+      onTap: () => onSubmitted(controller.text),
       textInputAction: TextInputAction.search,
       onSubmitted: onSubmitted,
       style: Theme.of(
@@ -1857,10 +1911,15 @@ class _GlobalSearchField extends StatelessWidget {
 }
 
 class _HeaderIconButton extends StatelessWidget {
-  const _HeaderIconButton({required this.icon, required this.onTap});
+  const _HeaderIconButton({
+    required this.icon,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1875,7 +1934,11 @@ class _HeaderIconButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         ),
-        child: Icon(icon, color: Colors.white, size: 22),
+        child: Badge(
+          isLabelVisible: badgeCount > 0,
+          label: Text('$badgeCount'),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
       ),
     );
   }
@@ -2213,12 +2276,6 @@ class _SearchableModule {
 List<_SearchableModule> _searchableModules(DashboardRepository repository) {
   return [
     _SearchableModule(
-      icon: Icons.manage_search_outlined,
-      title: 'Pencarian Pintar',
-      subtitle: 'Cek status dan nomor reservasi',
-      page: CheckReservationPage(repository: repository),
-    ),
-    _SearchableModule(
       icon: Icons.playlist_add_check_rounded,
       title: 'Form Peminjaman',
       subtitle: 'Ajukan peminjaman alat dan ruang',
@@ -2235,12 +2292,6 @@ List<_SearchableModule> _searchableModules(DashboardRepository repository) {
       title: 'Jadwal Ruangan',
       subtitle: 'Lihat agenda ruang multi-lab',
       page: RoomSchedulePage(repository: repository),
-    ),
-    _SearchableModule(
-      icon: Icons.notifications_active_outlined,
-      title: 'Notifikasi',
-      subtitle: 'Pantau update status peminjaman',
-      page: NotificationCenterPage(repository: repository),
     ),
     _SearchableModule(
       icon: Icons.location_city_outlined,
