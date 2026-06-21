@@ -10,6 +10,10 @@ class DashboardRepository {
   DashboardRepository(this._client);
 
   final SupabaseClient? _client;
+  static const _bookingColumns =
+      'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no,created_at,aslab_note,rejection_reason';
+  static const _bookingWithProfileColumns =
+      '$_bookingColumns,profiles(nama,nim_nip,program_studi)';
 
   SupabaseClient get _supabase {
     final client = _client;
@@ -125,12 +129,22 @@ class DashboardRepository {
         .from('bookings')
         .stream(primaryKey: ['id'])
         .order('tanggal_pinjam')
-        .map(
-          (rows) => rows
+        .asyncMap((rows) async {
+          final bookingIds = rows
               .map(LabBooking.fromMap)
               .where((booking) => statuses.contains(booking.status))
-              .toList(),
-        );
+              .map((booking) => booking.id)
+              .toList();
+          if (bookingIds.isEmpty) {
+            return const <LabBooking>[];
+          }
+          final rowsWithProfiles = await _supabase
+              .from('bookings')
+              .select(_bookingWithProfileColumns)
+              .inFilter('id', bookingIds)
+              .order('tanggal_pinjam');
+          return rowsWithProfiles.map(LabBooking.fromMap).toList();
+        });
   }
 
   Future<List<BusyHour>> fetchBusyHours() async {
@@ -487,7 +501,7 @@ class DashboardRepository {
     );
   }
 
-  Future<void> approveAslab(String bookingId) async {
+  Future<void> approveAslab(String bookingId, {String? note}) async {
     final booking = await _supabase
         .from('bookings')
         .select('user_id,reservation_no,status')
@@ -495,7 +509,7 @@ class DashboardRepository {
         .single();
     await _supabase
         .from('bookings')
-        .update({'status': 'approved_aslab'})
+        .update({'status': 'approved_aslab', 'aslab_note': note?.trim()})
         .eq('id', bookingId);
     await _insertNotification(
       userId: booking['user_id'] as String,
@@ -506,6 +520,50 @@ class DashboardRepository {
       targetType: 'booking',
       targetId: bookingId,
     );
+  }
+
+  Future<void> rejectAslab({
+    required String bookingId,
+    required String reason,
+  }) async {
+    if (reason.trim().isEmpty) {
+      throw Exception('Catatan penolakan wajib diisi.');
+    }
+    final booking = await _supabase
+        .from('bookings')
+        .select('user_id,reservation_no')
+        .eq('id', bookingId)
+        .single();
+    await _supabase
+        .from('bookings')
+        .update({
+          'status': 'rejected',
+          'aslab_note': reason.trim(),
+          'rejection_reason': reason.trim(),
+        })
+        .eq('id', bookingId);
+    await _insertNotification(
+      userId: booking['user_id'] as String,
+      title: 'Reservasi ditolak Aslab',
+      message:
+          'Pengajuan ${booking['reservation_no'] as String? ?? bookingId} ditolak: ${reason.trim()}',
+      kind: 'booking_status',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
+  }
+
+  Future<bool> hasScheduleConflict(LabBooking booking) async {
+    final rows = await _supabase
+        .from('bookings')
+        .select('id')
+        .eq('lab_id', booking.labId)
+        .neq('id', booking.id)
+        .not('status', 'in', '(rejected,cancelled)')
+        .lt('tanggal_pinjam', booking.tanggalKembali.toUtc().toIso8601String())
+        .gt('tanggal_kembali', booking.tanggalPinjam.toUtc().toIso8601String())
+        .limit(1);
+    return rows.isNotEmpty;
   }
 
   Future<void> approveKalab({

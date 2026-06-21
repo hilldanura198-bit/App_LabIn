@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
@@ -8,6 +9,7 @@ import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'aslab_detail_pengajuan_page.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
@@ -96,7 +98,7 @@ class _AslabDashboardView extends StatelessWidget {
                             RoomStockStreamBanner(repository: repository),
                             const SizedBox(height: 16),
                             Text(
-                              'Swipe Right Approval',
+                              'Daftar Pengajuan Pending',
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
@@ -105,8 +107,11 @@ class _AslabDashboardView extends StatelessWidget {
                               const _InfoCard('Tidak ada antrean pending.')
                             else
                               ...pending.map(
-                                (booking) =>
-                                    _SwipeApprovalCard(booking: booking),
+                                (booking) => _ApprovalRequestCard(
+                                  booking: booking,
+                                  onTap: () =>
+                                      _openApprovalDetail(context, booking),
+                                ),
                               ),
                             const SizedBox(height: 16),
                             _ScannerPrompt(onScan: () => _scanQr(context)),
@@ -184,6 +189,27 @@ class _AslabDashboardView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openApprovalDetail(
+    BuildContext context,
+    LabBooking booking,
+  ) async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => AslabDetailPengajuanPage(
+          booking: booking,
+          repository: DashboardRepository(
+            context.read<AuthRepository>().client,
+          ),
+        ),
+      ),
+    );
+    if (result != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result)));
+    }
   }
 }
 
@@ -363,42 +389,65 @@ class _AslabHero extends StatelessWidget {
   }
 }
 
-class _SwipeApprovalCard extends StatelessWidget {
-  const _SwipeApprovalCard({required this.booking});
+class _ApprovalRequestCard extends StatelessWidget {
+  const _ApprovalRequestCard({required this.booking, required this.onTap});
 
   final LabBooking booking;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: ValueKey(booking.id),
-      direction: DismissDirection.startToEnd,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 22),
-        alignment: Alignment.centerLeft,
-        decoration: BoxDecoration(
-          color: AppTheme.richBronze,
+    final date = DateFormat('dd MMM yyyy').format(booking.tanggalPinjam);
+    final start = booking.startTime.isNotEmpty
+        ? booking.startTime
+        : DateFormat.Hm().format(booking.tanggalPinjam);
+    final end = booking.endTime.isNotEmpty
+        ? booking.endTime
+        : DateFormat.Hm().format(booking.tanggalKembali);
+    final itemCount = booking.itemsSnapshot.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: InkWell(
           borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.verified_rounded, color: Colors.white),
-      ),
-      confirmDismiss: (_) async {
-        context.read<DashboardBloc>().add(
-          DashboardAslabApprovalRequested(booking.id),
-        );
-        return false;
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Card(
-          child: ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: Text('Booking ${booking.id.substring(0, 8)}'),
-            subtitle: Text(
-              '${booking.tanggalPinjam.hour}:00 - ${booking.tanggalKembali.hour}:00',
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.assignment_outlined),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        booking.borrowerName,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    Chip(
+                      label: const Text('Pending'),
+                      backgroundColor: AppTheme.richBronze.withValues(
+                        alpha: 0.14,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text('NIM: ${booking.borrowerIdentity ?? '-'}'),
+                Text(
+                  'Program Studi: ${booking.borrowerProgramStudi ?? booking.facultyLabel}',
+                ),
+                Text('Ruangan: ${booking.labDisplayName}'),
+                Text('Tanggal & Jam: $date, $start - $end'),
+                Text('Jumlah barang: $itemCount'),
+              ],
             ),
-            trailing: const Icon(Icons.swipe_right_rounded),
           ),
         ),
       ),

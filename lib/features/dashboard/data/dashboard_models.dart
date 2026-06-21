@@ -111,6 +111,9 @@ class LabBooking {
     this.labNameSnapshot,
     this.ratingReview,
     this.borrowerIdentity,
+    this.borrowerProgramStudi,
+    this.aslabNote,
+    this.rejectionReason,
   });
 
   final String id;
@@ -135,6 +138,9 @@ class LabBooking {
   final String? labNameSnapshot;
   final Map<String, dynamic>? ratingReview;
   final String? borrowerIdentity;
+  final String? borrowerProgramStudi;
+  final String? aslabNote;
+  final String? rejectionReason;
 
   factory LabBooking.fromMap(Map<String, dynamic> map) {
     final rawItems = map['items_snapshot'];
@@ -163,7 +169,10 @@ class LabBooking {
           map['reservation_no'] as String? ??
           'PMJ-${map['id'].toString().substring(0, 5).toUpperCase()}',
       qrToken: map['qr_token'] as String? ?? '',
-      borrowerName: map['borrower_name'] as String? ?? 'Mahasiswa',
+      borrowerName:
+          _borrowerNameFromMap(map['profiles']) ??
+          map['borrower_name'] as String? ??
+          'Mahasiswa',
       whatsappNumber: map['whatsapp_number'] as String? ?? '',
       facultyCode: map['faculty_code'] as String? ?? 'FIK',
       purpose: map['purpose'] as String? ?? '',
@@ -181,6 +190,9 @@ class LabBooking {
       labNameSnapshot: map['lab_name_snapshot'] as String?,
       ratingReview: _ratingReviewFromMap(map['rating_review']),
       borrowerIdentity: _borrowerIdentityFromMap(map['profiles']),
+      borrowerProgramStudi: _borrowerProgramStudiFromMap(map['profiles']),
+      aslabNote: map['aslab_note'] as String?,
+      rejectionReason: map['rejection_reason'] as String?,
     );
   }
 
@@ -239,6 +251,18 @@ class LabBooking {
   static String? _borrowerIdentityFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value['nim_nip'] as String?;
     if (value is Map) return value['nim_nip'] as String?;
+    return null;
+  }
+
+  static String? _borrowerNameFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['nama'] as String?;
+    if (value is Map) return value['nama'] as String?;
+    return null;
+  }
+
+  static String? _borrowerProgramStudiFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['program_studi'] as String?;
+    if (value is Map) return value['program_studi'] as String?;
     return null;
   }
 }

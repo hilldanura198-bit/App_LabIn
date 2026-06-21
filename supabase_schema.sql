@@ -64,6 +64,8 @@ create table if not exists public.bookings (
   reservation_no text not null unique default ('PMJ-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 5))),
   qr_token text not null unique default encode(gen_random_bytes(32), 'hex'),
   signature_url text,
+  aslab_note text,
+  rejection_reason text,
   rating_review jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -200,6 +202,10 @@ add column if not exists reservation_no text;
 
 alter table public.bookings
 add column if not exists desk_no text;
+
+alter table public.bookings
+add column if not exists aslab_note text,
+add column if not exists rejection_reason text;
 
 alter table public.bookings
 add column if not exists borrower_name text,
