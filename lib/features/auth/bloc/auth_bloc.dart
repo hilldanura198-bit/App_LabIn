@@ -234,6 +234,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   String _friendlyMessage(Object error) {
+    if (error is BiometricUnavailableException) {
+      return 'Perangkat ini tidak mendukung fitur biometrik.';
+    }
+
     if (error is AuthException) {
       final code = error.code?.toLowerCase();
       final message = error.message.toLowerCase();
@@ -280,6 +284,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
     if (normalized.contains('invalid login credentials')) {
       return 'Email atau password salah. Periksa kembali data login Anda.';
+    }
+    if (normalized.contains('biometrik') || normalized.contains('biometric')) {
+      return 'Perangkat ini tidak mendukung fitur biometrik.';
     }
     if (raw.contains('not configured')) {
       return 'Sistem backend belum dikonfigurasi. Jalankan app dengan env URL dan ANON KEY.';

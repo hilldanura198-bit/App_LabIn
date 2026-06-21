@@ -151,555 +151,717 @@ class _BookingFormPageState extends State<BookingFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.vibrantPurple.withValues(alpha: 0.12),
       appBar: const GlassAppBar(title: 'Formulir Peminjaman'),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth >= 980
-                      ? 920.0
-                      : constraints.maxWidth;
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: Theme.of(context).colorScheme.copyWith(
-                              primary: AppTheme.electricBlue,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.vibrantPurple.withValues(alpha: 0.22),
+              AppTheme.electricBlue.withValues(alpha: 0.10),
+              Colors.white,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = constraints.maxWidth >= 980
+                        ? 920.0
+                        : constraints.maxWidth;
+                    return Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(18, 20, 18, 30),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: maxWidth),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(18, 20, 18, 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: AppTheme.electricBlue.withValues(
+                                  alpha: 0.12,
+                                ),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.vibrantPurple.withValues(
+                                    alpha: 0.16,
+                                  ),
+                                  blurRadius: 32,
+                                  offset: const Offset(0, 18),
+                                ),
+                              ],
                             ),
-                          ),
-                          child: Stepper(
-                            currentStep: _step,
-                            type: StepperType.vertical,
-                            physics: const NeverScrollableScrollPhysics(),
-                            onStepContinue: _submitting
-                                ? null
-                                : _handleStepContinue,
-                            onStepCancel: _submitting || _step == 0
-                                ? null
-                                : () => setState(() => _step--),
-                            controlsBuilder: (context, details) {
-                              final isLast = _step == 3;
-                              final canProceed =
-                                  _canProceedCurrentStep && !_submitting;
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: CyberGradientButton(
-                                        onPressed: canProceed
-                                            ? details.onStepContinue
-                                            : null,
-                                        child: _submitting && isLast
-                                            ? const SizedBox.square(
-                                                dimension: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      color: Colors.white,
-                                                    ),
-                                              )
-                                            : Text(isLast ? 'Kirim' : 'Lanjut'),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Detail Peminjaman',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w900),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Lengkapi data reservasi, pilih laboratorium, lalu cek ulang sebelum dikirim.',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: AppTheme.muted,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                    ),
-                                    if (_step > 0) ...[
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: OutlinedButton(
-                                          onPressed: details.onStepCancel,
-                                          child: const Text('Kembali'),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
                                 ),
-                              );
-                            },
-                            steps: [
-                              Step(
-                                title: const Text('Identitas & Jadwal'),
-                                isActive: _step >= 0,
-                                content: Form(
-                                  key: _stepOneKey,
-                                  autovalidateMode:
-                                      AutovalidateMode.onUserInteraction,
-                                  child: _StepShell(
-                                    child: Wrap(
-                                      spacing: 14,
-                                      runSpacing: 14,
-                                      children: [
-                                        _fieldBox(
-                                          context: context,
-                                          child: TextFormField(
-                                            controller: _nameController,
-                                            textInputAction:
-                                                TextInputAction.next,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            decoration: const InputDecoration(
-                                              labelText: 'Nama Peminjam',
-                                              prefixIcon: Icon(
-                                                Icons.person_outline,
-                                              ),
-                                            ),
-                                          ),
+                                const SizedBox(height: 8),
+                                Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: Theme.of(context).colorScheme
+                                        .copyWith(
+                                          primary: AppTheme.electricBlue,
                                         ),
-                                        _fieldBox(
-                                          context: context,
-                                          child: TextFormField(
-                                            controller: _waController,
-                                            keyboardType: TextInputType.phone,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return _invalidMessage;
-                                              }
-                                              if (!AppValidation.isValidWhatsappNumber(
-                                                value,
-                                              )) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            decoration: const InputDecoration(
-                                              labelText: 'Nomor WhatsApp',
-                                              prefixIcon: Icon(
-                                                Icons.phone_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _fieldBox(
-                                          context: context,
-                                          child: TextFormField(
-                                            controller: _requestDateController,
-                                            readOnly: true,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (_requestDate == null) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            onTap: () => _pickDate(
-                                              context: context,
-                                              title: 'Pilih Tanggal Pengajuan',
-                                              initial:
-                                                  _requestDate ??
-                                                  DateTime.now(),
-                                              onSelected: (date) {
-                                                setState(() {
-                                                  _requestDate = date;
-                                                  _requestDateController.text =
-                                                      _formatDate(date);
-                                                });
-                                              },
-                                            ),
-                                            decoration: const InputDecoration(
-                                              labelText: 'Tanggal Pengajuan',
-                                              prefixIcon: Icon(
-                                                Icons.event_note_outlined,
-                                              ),
-                                              suffixIcon: Icon(
-                                                Icons.calendar_month_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _fieldBox(
-                                          context: context,
-                                          child: TextFormField(
-                                            controller: _borrowDateController,
-                                            readOnly: true,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (_borrowDate == null) {
-                                                return _invalidMessage;
-                                              }
-                                              if (_requestDate != null &&
-                                                  _borrowDate!.isBefore(
-                                                    _requestDate!,
-                                                  )) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            onTap: () => _pickDate(
-                                              context: context,
-                                              title: 'Pilih Tanggal Peminjaman',
-                                              initial:
-                                                  _borrowDate ??
-                                                  DateTime.now().add(
-                                                    const Duration(days: 1),
-                                                  ),
-                                              onSelected: (date) {
-                                                setState(() {
-                                                  _borrowDate = date;
-                                                  _borrowDateController.text =
-                                                      _formatDate(date);
-                                                });
-                                              },
-                                            ),
-                                            decoration: const InputDecoration(
-                                              labelText: 'Tanggal Peminjaman',
-                                              prefixIcon: Icon(
-                                                Icons.date_range_outlined,
-                                              ),
-                                              suffixIcon: Icon(
-                                                Icons.calendar_today_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _fieldBox(
-                                          context: context,
-                                          child: TextFormField(
-                                            controller: _startTimeController,
-                                            readOnly: true,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (_startTime == null) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            onTap: () => _pickTime(
-                                              context: context,
-                                              title: 'Pilih Jam Mulai',
-                                              initial:
-                                                  _startTime ??
-                                                  const TimeOfDay(
-                                                    hour: 8,
-                                                    minute: 0,
-                                                  ),
-                                              onSelected: (time) {
-                                                setState(() {
-                                                  _startTime = time;
-                                                  _startTimeController.text =
-                                                      _formatTime(time);
-                                                });
-                                              },
-                                            ),
-                                            decoration: const InputDecoration(
-                                              labelText: 'Jam Mulai',
-                                              prefixIcon: Icon(
-                                                Icons.schedule_outlined,
-                                              ),
-                                              suffixIcon: Icon(
-                                                Icons.access_time_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _fieldBox(
-                                          context: context,
-                                          child: TextFormField(
-                                            controller: _endTimeController,
-                                            readOnly: true,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (_endTime == null) {
-                                                return _invalidMessage;
-                                              }
-                                              if (_startTime != null &&
-                                                  !_isEndAfterStart()) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            onTap: () => _pickTime(
-                                              context: context,
-                                              title: 'Pilih Jam Selesai',
-                                              initial:
-                                                  _endTime ??
-                                                  const TimeOfDay(
-                                                    hour: 11,
-                                                    minute: 0,
-                                                  ),
-                                              onSelected: (time) {
-                                                setState(() {
-                                                  _endTime = time;
-                                                  _endTimeController.text =
-                                                      _formatTime(time);
-                                                });
-                                              },
-                                            ),
-                                            decoration: const InputDecoration(
-                                              labelText: 'Jam Selesai',
-                                              prefixIcon: Icon(
-                                                Icons.alarm_on_outlined,
-                                              ),
-                                              suffixIcon: Icon(
-                                                Icons
-                                                    .access_time_filled_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: constraints.maxWidth >= 720
-                                              ? constraints.maxWidth
-                                              : double.infinity,
-                                          child: TextFormField(
-                                            controller: _purposeController,
-                                            maxLines: 3,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return _invalidMessage;
-                                              }
-                                              if (value.trim().length < 8) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                            decoration: const InputDecoration(
-                                              labelText:
-                                                  'Keperluan / Tujuan Peminjaman',
-                                              hintText:
-                                                  'Contoh: praktikum, penelitian, seminar, atau tugas akhir',
-                                              prefixIcon: Icon(
-                                                Icons.description_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ),
-                                ),
-                              ),
-                              Step(
-                                title: const Text('Fakultas & Laboratorium'),
-                                isActive: _step >= 1,
-                                content: Form(
-                                  key: _stepTwoKey,
-                                  autovalidateMode:
-                                      AutovalidateMode.onUserInteraction,
-                                  child: _StepShell(
-                                    child: Wrap(
-                                      spacing: 14,
-                                      runSpacing: 14,
-                                      children: [
-                                        _fieldBox(
-                                          context: context,
-                                          child: DropdownButtonFormField<String>(
-                                            initialValue: _selectedFacultyCode,
-                                            isExpanded: true,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            items: AppLabCatalog.faculties
-                                                .map(
-                                                  (faculty) => DropdownMenuItem(
-                                                    value: faculty.code,
-                                                    child: Text(
-                                                      '${faculty.code} - ${faculty.name}',
-                                                      maxLines: 2,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
-                                            onChanged: (value) {
-                                              if (value == null) return;
-                                              final labs =
-                                                  AppLabCatalog.labsForFaculty(
-                                                    value,
-                                                  );
-                                              setState(() {
-                                                _selectedFacultyCode = value;
-                                                _selectedLabId = labs.isNotEmpty
-                                                    ? labs.first.id
-                                                    : AppLabCatalog
-                                                          .labs
-                                                          .first
-                                                          .id;
-                                              });
-                                            },
-                                            decoration: const InputDecoration(
-                                              labelText: 'Fakultas',
-                                              prefixIcon: Icon(
-                                                Icons.account_balance_outlined,
-                                              ),
-                                            ),
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                          ),
-                                        ),
-                                        _fieldBox(
-                                          context: context,
-                                          child: DropdownButtonFormField<String>(
-                                            initialValue: _selectedLabId,
-                                            isExpanded: true,
-                                            autovalidateMode: AutovalidateMode
-                                                .onUserInteraction,
-                                            items: _availableLabs
-                                                .map(
-                                                  (lab) => DropdownMenuItem(
-                                                    value: lab.id,
-                                                    child: Text(
-                                                      '${lab.name} · ${lab.location}',
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _selectedLabId = value;
-                                              });
-                                            },
-                                            decoration: const InputDecoration(
-                                              labelText: 'Laboratorium',
-                                              prefixIcon: Icon(
-                                                Icons.science_outlined,
-                                              ),
-                                            ),
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return _invalidMessage;
-                                              }
-                                              return null;
-                                            },
-                                          ),
-                                        ),
-                                        if (_selectedLab != null)
-                                          _LabPreviewCard(lab: _selectedLab!),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Step(
-                                title: const Text('Barang & Opsi Lainnya'),
-                                isActive: _step >= 2,
-                                content: _StepShell(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      FormField<bool>(
-                                        autovalidateMode:
-                                            AutovalidateMode.onUserInteraction,
-                                        initialValue: _hasSelectedItems,
-                                        validator: (_) {
-                                          if (_hasSelectedItems) {
-                                            return null;
-                                          }
-                                          return _invalidMessage;
-                                        },
-                                        builder: (field) => Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
+                                  child: Stepper(
+                                    currentStep: _step,
+                                    type: StepperType.vertical,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    margin: EdgeInsets.zero,
+                                    onStepContinue: _submitting
+                                        ? null
+                                        : _handleStepContinue,
+                                    onStepCancel: _submitting || _step == 0
+                                        ? null
+                                        : () => setState(() => _step--),
+                                    controlsBuilder: (context, details) {
+                                      final isLast = _step == 3;
+                                      final canProceed =
+                                          _canProceedCurrentStep &&
+                                          !_submitting;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 16),
+                                        child: Row(
                                           children: [
-                                            _InventoryChecklist(
-                                              inventories:
-                                                  _selectedLabInventories,
-                                              selectedItems: _selectedItems,
-                                              onToggle: _toggleItem,
-                                              onQuantityChanged:
-                                                  _updateItemQuantity,
-                                              onRemoveItem: _removeItem,
+                                            Expanded(
+                                              child: CyberGradientButton(
+                                                onPressed: canProceed
+                                                    ? details.onStepContinue
+                                                    : null,
+                                                child: _submitting && isLast
+                                                    ? const SizedBox.square(
+                                                        dimension: 18,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                      )
+                                                    : Text(
+                                                        isLast
+                                                            ? 'Kirim'
+                                                            : 'Lanjut',
+                                                      ),
+                                              ),
                                             ),
-                                            if (field.errorText != null) ...[
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                field.errorText!,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.copyWith(
-                                                      color: Colors.redAccent,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
+                                            if (_step > 0) ...[
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: OutlinedButton(
+                                                  onPressed:
+                                                      details.onStepCancel,
+                                                  child: const Text('Kembali'),
+                                                ),
                                               ),
                                             ],
                                           ],
                                         ),
-                                      ),
-                                      const SizedBox(height: 14),
-                                      TextFormField(
-                                        controller: _otherItemsController,
-                                        minLines: 3,
-                                        maxLines: 5,
-                                        autovalidateMode:
-                                            AutovalidateMode.onUserInteraction,
-                                        onChanged: (_) => setState(() {}),
-                                        validator: (value) {
-                                          if (_selectedItems.isNotEmpty ||
-                                              (value != null &&
-                                                  value.trim().isNotEmpty)) {
-                                            return null;
-                                          }
-                                          return _invalidMessage;
-                                        },
-                                        decoration: const InputDecoration(
-                                          labelText: 'Opsi Lainnya',
-                                          hintText:
-                                              'Tulis request alat tambahan atau kebutuhan khusus lainnya',
-                                          prefixIcon: Icon(
-                                            Icons.pending_actions_outlined,
+                                      );
+                                    },
+                                    steps: [
+                                      Step(
+                                        title: const Text('Identitas & Jadwal'),
+                                        isActive: _step >= 0,
+                                        content: Form(
+                                          key: _stepOneKey,
+                                          autovalidateMode: AutovalidateMode
+                                              .onUserInteraction,
+                                          child: _StepShell(
+                                            child: Wrap(
+                                              spacing: 14,
+                                              runSpacing: 14,
+                                              children: [
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller: _nameController,
+                                                    textInputAction:
+                                                        TextInputAction.next,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    decoration:
+                                                        const InputDecoration(
+                                                          labelText:
+                                                              'Nama Peminjam',
+                                                          prefixIcon: Icon(
+                                                            Icons
+                                                                .person_outline,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller: _waController,
+                                                    keyboardType:
+                                                        TextInputType.phone,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      if (!AppValidation.isValidWhatsappNumber(
+                                                        value,
+                                                      )) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    decoration:
+                                                        const InputDecoration(
+                                                          labelText:
+                                                              'Nomor WhatsApp',
+                                                          prefixIcon: Icon(
+                                                            Icons
+                                                                .phone_outlined,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _requestDateController,
+                                                    readOnly: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (_requestDate ==
+                                                          null) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    onTap: () => _pickDate(
+                                                      context: context,
+                                                      title:
+                                                          'Pilih Tanggal Pengajuan',
+                                                      initial:
+                                                          _requestDate ??
+                                                          DateTime.now(),
+                                                      onSelected: (date) {
+                                                        setState(() {
+                                                          _requestDate = date;
+                                                          _requestDateController
+                                                                  .text =
+                                                              _formatDate(date);
+                                                        });
+                                                      },
+                                                    ),
+                                                    decoration: const InputDecoration(
+                                                      labelText:
+                                                          'Tanggal Pengajuan',
+                                                      prefixIcon: Icon(
+                                                        Icons
+                                                            .event_note_outlined,
+                                                      ),
+                                                      suffixIcon: Icon(
+                                                        Icons
+                                                            .calendar_month_outlined,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _borrowDateController,
+                                                    readOnly: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (_borrowDate == null) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      if (_requestDate !=
+                                                              null &&
+                                                          _borrowDate!.isBefore(
+                                                            _requestDate!,
+                                                          )) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    onTap: () => _pickDate(
+                                                      context: context,
+                                                      title:
+                                                          'Pilih Tanggal Peminjaman',
+                                                      initial:
+                                                          _borrowDate ??
+                                                          DateTime.now().add(
+                                                            const Duration(
+                                                              days: 1,
+                                                            ),
+                                                          ),
+                                                      onSelected: (date) {
+                                                        setState(() {
+                                                          _borrowDate = date;
+                                                          _borrowDateController
+                                                                  .text =
+                                                              _formatDate(date);
+                                                        });
+                                                      },
+                                                    ),
+                                                    decoration: const InputDecoration(
+                                                      labelText:
+                                                          'Tanggal Peminjaman',
+                                                      prefixIcon: Icon(
+                                                        Icons
+                                                            .date_range_outlined,
+                                                      ),
+                                                      suffixIcon: Icon(
+                                                        Icons
+                                                            .calendar_today_outlined,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _startTimeController,
+                                                    readOnly: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (_startTime == null) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    onTap: () => _pickTime(
+                                                      context: context,
+                                                      title: 'Pilih Jam Mulai',
+                                                      initial:
+                                                          _startTime ??
+                                                          const TimeOfDay(
+                                                            hour: 8,
+                                                            minute: 0,
+                                                          ),
+                                                      onSelected: (time) {
+                                                        setState(() {
+                                                          _startTime = time;
+                                                          _startTimeController
+                                                                  .text =
+                                                              _formatTime(time);
+                                                        });
+                                                      },
+                                                    ),
+                                                    decoration: const InputDecoration(
+                                                      labelText: 'Jam Mulai',
+                                                      prefixIcon: Icon(
+                                                        Icons.schedule_outlined,
+                                                      ),
+                                                      suffixIcon: Icon(
+                                                        Icons
+                                                            .access_time_outlined,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _endTimeController,
+                                                    readOnly: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (_endTime == null) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      if (_startTime != null &&
+                                                          !_isEndAfterStart()) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    onTap: () => _pickTime(
+                                                      context: context,
+                                                      title:
+                                                          'Pilih Jam Selesai',
+                                                      initial:
+                                                          _endTime ??
+                                                          const TimeOfDay(
+                                                            hour: 11,
+                                                            minute: 0,
+                                                          ),
+                                                      onSelected: (time) {
+                                                        setState(() {
+                                                          _endTime = time;
+                                                          _endTimeController
+                                                                  .text =
+                                                              _formatTime(time);
+                                                        });
+                                                      },
+                                                    ),
+                                                    decoration: const InputDecoration(
+                                                      labelText: 'Jam Selesai',
+                                                      prefixIcon: Icon(
+                                                        Icons.alarm_on_outlined,
+                                                      ),
+                                                      suffixIcon: Icon(
+                                                        Icons
+                                                            .access_time_filled_outlined,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  width:
+                                                      constraints.maxWidth >=
+                                                          720
+                                                      ? constraints.maxWidth
+                                                      : double.infinity,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _purposeController,
+                                                    maxLines: 3,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      if (value.trim().length <
+                                                          8) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    decoration: const InputDecoration(
+                                                      labelText:
+                                                          'Keperluan / Tujuan Peminjaman',
+                                                      hintText:
+                                                          'Contoh: praktikum, penelitian, seminar, atau tugas akhir',
+                                                      prefixIcon: Icon(
+                                                        Icons
+                                                            .description_outlined,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
+                                        ),
+                                      ),
+                                      Step(
+                                        title: const Text(
+                                          'Fakultas & Laboratorium',
+                                        ),
+                                        isActive: _step >= 1,
+                                        content: Form(
+                                          key: _stepTwoKey,
+                                          autovalidateMode: AutovalidateMode
+                                              .onUserInteraction,
+                                          child: _StepShell(
+                                            child: Wrap(
+                                              spacing: 14,
+                                              runSpacing: 14,
+                                              children: [
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: DropdownButtonFormField<String>(
+                                                    initialValue:
+                                                        _selectedFacultyCode,
+                                                    isExpanded: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    items: AppLabCatalog
+                                                        .faculties
+                                                        .map(
+                                                          (
+                                                            faculty,
+                                                          ) => DropdownMenuItem(
+                                                            value: faculty.code,
+                                                            child: Text(
+                                                              '${faculty.code} - ${faculty.name}',
+                                                              maxLines: 2,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                    onChanged: (value) {
+                                                      if (value == null) return;
+                                                      final labs =
+                                                          AppLabCatalog.labsForFaculty(
+                                                            value,
+                                                          );
+                                                      setState(() {
+                                                        _selectedFacultyCode =
+                                                            value;
+                                                        _selectedLabId =
+                                                            labs.isNotEmpty
+                                                            ? labs.first.id
+                                                            : AppLabCatalog
+                                                                  .labs
+                                                                  .first
+                                                                  .id;
+                                                      });
+                                                    },
+                                                    decoration:
+                                                        const InputDecoration(
+                                                          labelText: 'Fakultas',
+                                                          prefixIcon: Icon(
+                                                            Icons
+                                                                .account_balance_outlined,
+                                                          ),
+                                                        ),
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: DropdownButtonFormField<String>(
+                                                    initialValue:
+                                                        _selectedLabId,
+                                                    isExpanded: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    items: _availableLabs
+                                                        .map(
+                                                          (
+                                                            lab,
+                                                          ) => DropdownMenuItem(
+                                                            value: lab.id,
+                                                            child: Text(
+                                                              '${lab.name} · ${lab.location}',
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                    onChanged: (value) {
+                                                      setState(() {
+                                                        _selectedLabId = value;
+                                                      });
+                                                    },
+                                                    decoration:
+                                                        const InputDecoration(
+                                                          labelText:
+                                                              'Laboratorium',
+                                                          prefixIcon: Icon(
+                                                            Icons
+                                                                .science_outlined,
+                                                          ),
+                                                        ),
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                  ),
+                                                ),
+                                                if (_selectedLab != null)
+                                                  _LabPreviewCard(
+                                                    lab: _selectedLab!,
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Step(
+                                        title: const Text(
+                                          'Barang & Opsi Lainnya',
+                                        ),
+                                        isActive: _step >= 2,
+                                        content: _StepShell(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              FormField<bool>(
+                                                autovalidateMode:
+                                                    AutovalidateMode
+                                                        .onUserInteraction,
+                                                initialValue: _hasSelectedItems,
+                                                validator: (_) {
+                                                  if (_hasSelectedItems) {
+                                                    return null;
+                                                  }
+                                                  return _invalidMessage;
+                                                },
+                                                builder: (field) => Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  children: [
+                                                    _InventoryChecklist(
+                                                      inventories:
+                                                          _selectedLabInventories,
+                                                      selectedItems:
+                                                          _selectedItems,
+                                                      onToggle: _toggleItem,
+                                                      onQuantityChanged:
+                                                          _updateItemQuantity,
+                                                      onRemoveItem: _removeItem,
+                                                    ),
+                                                    if (field.errorText !=
+                                                        null) ...[
+                                                      const SizedBox(height: 8),
+                                                      Text(
+                                                        field.errorText!,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                              color: Colors
+                                                                  .redAccent,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 14),
+                                              TextFormField(
+                                                controller:
+                                                    _otherItemsController,
+                                                minLines: 3,
+                                                maxLines: 5,
+                                                autovalidateMode:
+                                                    AutovalidateMode
+                                                        .onUserInteraction,
+                                                onChanged: (_) =>
+                                                    setState(() {}),
+                                                validator: (value) {
+                                                  if (_selectedItems
+                                                          .isNotEmpty ||
+                                                      (value != null &&
+                                                          value
+                                                              .trim()
+                                                              .isNotEmpty)) {
+                                                    return null;
+                                                  }
+                                                  return _invalidMessage;
+                                                },
+                                                decoration: const InputDecoration(
+                                                  labelText: 'Opsi Lainnya',
+                                                  hintText:
+                                                      'Tulis request alat tambahan atau kebutuhan khusus lainnya',
+                                                  prefixIcon: Icon(
+                                                    Icons
+                                                        .pending_actions_outlined,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Step(
+                                        title: const Text('Review & Kirim'),
+                                        isActive: _step >= 3,
+                                        content: _ReviewPanel(
+                                          requestDate: _requestDate,
+                                          borrowDate: _borrowDate,
+                                          startTime: _startTime,
+                                          endTime: _endTime,
+                                          selectedFacultyCode:
+                                              _selectedFacultyCode,
+                                          selectedLab: _selectedLab,
+                                          borrowerName: _nameController.text
+                                              .trim(),
+                                          whatsappNumber: _waController.text
+                                              .trim(),
+                                          purpose: _purposeController.text
+                                              .trim(),
+                                          selectedItems: _selectedItems.values
+                                              .toList(),
+                                          otherItems: _otherItemsController.text
+                                              .trim(),
+                                          onEditData: () =>
+                                              setState(() => _step = 0),
+                                          onAddItem: () =>
+                                              setState(() => _step = 2),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                              Step(
-                                title: const Text('Review & Kirim'),
-                                isActive: _step >= 3,
-                                content: _ReviewPanel(
-                                  requestDate: _requestDate,
-                                  borrowDate: _borrowDate,
-                                  startTime: _startTime,
-                                  endTime: _endTime,
-                                  selectedFacultyCode: _selectedFacultyCode,
-                                  selectedLab: _selectedLab,
-                                  borrowerName: _nameController.text.trim(),
-                                  whatsappNumber: _waController.text.trim(),
-                                  purpose: _purposeController.text.trim(),
-                                  selectedItems: _selectedItems.values.toList(),
-                                  otherItems: _otherItemsController.text.trim(),
-                                  onEditData: () => setState(() => _step = 0),
-                                  onAddItem: () => setState(() => _step = 2),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
+      ),
     );
   }
 

@@ -507,10 +507,14 @@ class DashboardRepository {
         .select('user_id,reservation_no,status')
         .eq('id', bookingId)
         .single();
+    final previousStatus = booking['status'] as String? ?? 'pending';
     await _supabase
         .from('bookings')
         .update({'status': 'approved_aslab', 'aslab_note': note?.trim()})
         .eq('id', bookingId);
+    if (_shouldDecrementStockOnApproval(previousStatus)) {
+      await _decrementInventoryStockForBooking(bookingId);
+    }
     await _insertNotification(
       userId: booking['user_id'] as String,
       title: 'Reservasi disetujui Aslab',
@@ -595,7 +599,8 @@ class DashboardRepository {
         .from('bookings')
         .update({'status': 'approved_kalab', 'signature_url': signatureUrl})
         .eq('id', bookingId);
-    if (booking['status'] != 'approved_kalab') {
+    final previousStatus = booking['status'] as String? ?? 'pending';
+    if (_shouldDecrementStockOnApproval(previousStatus)) {
       await _decrementInventoryStockForBooking(bookingId);
     }
     await _insertNotification(
@@ -775,6 +780,14 @@ class DashboardRepository {
           .update({'stok_tersedia': nextStock < 0 ? 0 : nextStock})
           .eq('id', inventoryId);
     }
+  }
+
+  bool _shouldDecrementStockOnApproval(String previousStatus) {
+    return previousStatus != 'approved_aslab' &&
+        previousStatus != 'approved_kalab' &&
+        previousStatus != 'active' &&
+        previousStatus != 'returned' &&
+        previousStatus != 'rejected';
   }
 
   String _bookingIdFromQr(String rawCode) {

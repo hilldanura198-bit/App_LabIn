@@ -407,17 +407,80 @@ class _EmptyScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
         child: Column(
           children: [
-            const Icon(
-              Icons.event_available_outlined,
-              color: AppTheme.electricBlue,
-              size: 42,
+            Container(
+              width: 150,
+              height: 118,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.electricBlue.withValues(alpha: 0.16),
+                    AppTheme.vibrantPurple.withValues(alpha: 0.14),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    top: 18,
+                    child: Container(
+                      width: 86,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: AppTheme.electricBlue.withValues(alpha: 0.28),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.electricBlue.withValues(
+                              alpha: 0.14,
+                            ),
+                            blurRadius: 18,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Positioned(
+                    top: 8,
+                    child: Icon(
+                      Icons.event_note_rounded,
+                      color: AppTheme.electricBlue,
+                      size: 62,
+                    ),
+                  ),
+                  const Positioned(
+                    bottom: 18,
+                    right: 34,
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      color: AppTheme.vibrantPurple,
+                      size: 30,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 18),
             Text(
-              'Belum ada jadwal pada ${DateFormat('d MMMM y').format(date)}.',
+              'Belum ada jadwal hari ini',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tidak ada pemakaian ruangan pada ${DateFormat('d MMMM y').format(date)}.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.muted,

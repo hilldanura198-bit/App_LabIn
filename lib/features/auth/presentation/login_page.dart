@@ -23,6 +23,19 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.message != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _showAuthMessage(widget.message!);
+      });
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant LoginPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.message != null && widget.message != oldWidget.message) {
@@ -30,9 +43,7 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) {
           return;
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(widget.message!)));
+        _showAuthMessage(widget.message!);
       });
     }
   }
@@ -281,6 +292,59 @@ class _LoginPageState extends State<LoginPage> {
             context,
           ).showSnackBar(SnackBar(content: Text(message)));
         });
+  }
+
+  void _showAuthMessage(String message) {
+    final isBiometricMessage =
+        message == 'Perangkat ini tidak mendukung fitur biometrik.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: isBiometricMessage
+                ? AppTheme.cyberGradient
+                : LinearGradient(
+                    colors: [
+                      AppTheme.ink,
+                      AppTheme.ink.withValues(alpha: 0.88),
+                    ],
+                  ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.vibrantPurple.withValues(alpha: 0.22),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isBiometricMessage
+                    ? Icons.fingerprint_rounded
+                    : Icons.info_outline_rounded,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _startGoogleSso() async {

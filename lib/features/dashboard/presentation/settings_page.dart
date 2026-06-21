@@ -133,344 +133,163 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: widget.showAppBar
-          ? const GlassAppBar(title: 'Pengaturan Aplikasi')
-          : null,
+      appBar: widget.showAppBar ? const GlassAppBar(title: 'Profil') : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(22),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 620),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Form(
-                          key: _formKey,
-                          child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  GestureDetector(
-                                    onTap: _pickAvatar,
-                                    child: Center(
-                                      child: Stack(
-                                        clipBehavior: Clip.none,
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 48,
-                                            backgroundColor: AppTheme.deepTeal,
-                                            backgroundImage: _avatarUrl == null
-                                                ? null
-                                                : NetworkImage(_avatarUrl!),
-                                            child: _avatarUrl == null
-                                                ? const Icon(
-                                                    Icons.person,
-                                                    color: Colors.white,
-                                                    size: 44,
-                                                  )
-                                                : null,
-                                          ),
-                                          Positioned(
-                                            right: -4,
-                                            bottom: -4,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: const BoxDecoration(
-                                                color: AppTheme.cleanCyan,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.camera_alt_rounded,
-                                                size: 18,
-                                                color: AppTheme.midnightNavy,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Center(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _pickAvatar,
-                                      icon: const Icon(
-                                        Icons.photo_camera_outlined,
-                                      ),
-                                      label: const Text('Edit Foto Profil'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Text(
-                                    'Edit Profil',
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(fontWeight: FontWeight.w900),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    controller: _nameController,
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().isEmpty) {
-                                        return 'Nama wajib diisi';
-                                      }
-                                      return null;
-                                    },
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nama',
-                                      prefixIcon: Icon(Icons.person_outline),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: _nimController,
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().isEmpty) {
-                                        return 'NIM/NIP wajib diisi';
-                                      }
-                                      if (!AppValidation.isValidNim(value)) {
-                                        return 'Format NIM/NIP tidak valid';
-                                      }
-                                      return null;
-                                    },
-                                    decoration: const InputDecoration(
-                                      labelText: 'NIM/NIP',
-                                      prefixIcon: Icon(Icons.badge_outlined),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextFormField(
-                                    controller: _waController,
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.trim().isEmpty) {
-                                        return 'Nomor WhatsApp wajib diisi';
-                                      }
-                                      if (!AppValidation.isValidWhatsappNumber(
-                                        value,
-                                      )) {
-                                        return 'Format WhatsApp tidak valid';
-                                      }
-                                      return null;
-                                    },
-                                    decoration: const InputDecoration(
-                                      labelText: 'No WhatsApp',
-                                      prefixIcon: Icon(Icons.phone_outlined),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      gradient: AppTheme.cyberGradient,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: ElevatedButton.icon(
-                                      onPressed: _save,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        shadowColor: Colors.transparent,
-                                        foregroundColor: Colors.white,
-                                        minimumSize: const Size.fromHeight(52),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                      ),
-                                      icon: const Icon(Icons.save_outlined),
-                                      label: const Text('Simpan Perubahan'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  'Ubah Bahasa & Preferensi Umum',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w900),
-                                ),
-                                const SizedBox(height: 12),
-                                DropdownButtonFormField<String>(
-                                  initialValue: _language,
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 'id',
-                                      child: Text('Bahasa Indonesia'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'en',
-                                      child: Text('English'),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    if (value == null) return;
-                                    _changeLanguage(value);
-                                  },
-                                  decoration: const InputDecoration(
-                                    labelText: 'Pengaturan Bahasa',
-                                    prefixIcon: Icon(Icons.language_rounded),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                SwitchListTile(
-                                  value: _locationEnabled,
-                                  onChanged: (value) =>
-                                      setState(() => _locationEnabled = value),
-                                  title: const Text('Fitur Lokasi'),
-                                  subtitle: const Text(
-                                    'Izinkan penggunaan lokasi untuk cek reservasi dan verifikasi akses.',
-                                  ),
-                                ),
-                                SwitchListTile(
-                                  value: _deviceSecurityEnabled,
-                                  onChanged: _biometricSupported
-                                      ? (value) {
-                                          setState(() {
-                                            _deviceSecurityEnabled = value;
-                                            if (!value) {
-                                              _biometricEnabled = false;
-                                            }
-                                          });
-                                        }
-                                      : null,
-                                  title: const Text('Keamanan Perangkat'),
-                                  subtitle: Text(
-                                    _biometricSupported
-                                        ? 'Sinkronkan perlindungan perangkat dan biometrik lokal.'
-                                        : 'Perangkat ini belum mendukung biometrik.',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  'Ganti Password',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w900),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: _passwordController,
-                                  obscureText: true,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Password baru',
-                                    prefixIcon: Icon(Icons.lock_outline),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                OutlinedButton.icon(
-                                  onPressed: _changePassword,
-                                  icon: const Icon(Icons.password_rounded),
-                                  label: const Text('Ganti Password'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Card(
-                          child: Column(
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.vibrantPurple.withValues(alpha: 0.18),
+                    AppTheme.electricBlue.withValues(alpha: 0.08),
+                    AppTheme.offWhite,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(22),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 620),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildProfileHeader(context),
+                          const SizedBox(height: 16),
+                          _buildMenuCard(
+                            context,
                             children: [
+                              _profileTile(
+                                icon: Icons.edit_outlined,
+                                title: 'Edit Profil',
+                                subtitle: 'Nama, NIM/NIP, WhatsApp, dan foto',
+                                onTap: _showEditProfileSheet,
+                              ),
+                              _profileTile(
+                                icon: Icons.language_rounded,
+                                title: 'Bahasa',
+                                subtitle: _language == 'id'
+                                    ? 'Bahasa Indonesia'
+                                    : 'English',
+                                onTap: _showLanguageSheet,
+                              ),
+                              _profileTile(
+                                icon: Icons.lock_outline,
+                                title: 'Ganti Password',
+                                subtitle: 'Perbarui kata sandi akun',
+                                onTap: _showPasswordSheet,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _buildMenuCard(
+                            context,
+                            children: [
+                              _switchTile(
+                                icon: Icons.location_on_outlined,
+                                title: 'Fitur Lokasi',
+                                subtitle:
+                                    'Izinkan lokasi untuk cek reservasi dan akses.',
+                                value: _locationEnabled,
+                                onChanged: (value) => _updatePreference(
+                                  () => _locationEnabled = value,
+                                ),
+                              ),
+                              _switchTile(
+                                icon: Icons.verified_user_outlined,
+                                title: 'Keamanan Perangkat',
+                                subtitle: _biometricSupported
+                                    ? 'Sinkronkan perlindungan perangkat.'
+                                    : 'Perangkat belum mendukung biometrik.',
+                                value: _deviceSecurityEnabled,
+                                onChanged: _biometricSupported
+                                    ? (value) {
+                                        _updatePreference(() {
+                                          _deviceSecurityEnabled = value;
+                                          if (!value) {
+                                            _biometricEnabled = false;
+                                          }
+                                        });
+                                      }
+                                    : null,
+                              ),
                               BlocBuilder<ThemeCubit, ThemeMode>(
                                 builder: (context, mode) {
-                                  return SwitchListTile(
+                                  return _switchTile(
+                                    icon: Icons.dark_mode_outlined,
+                                    title: 'Dark Mode',
+                                    subtitle: 'Aktifkan tampilan gelap.',
                                     value: mode == ThemeMode.dark,
-                                    onChanged: (value) => context
-                                        .read<ThemeCubit>()
-                                        .setDarkMode(value),
-                                    title: const Text('Dark Mode'),
-                                    subtitle: const Text(
-                                      'Midnight Navy, Dark Charcoal, dan aksen Cyan.',
-                                    ),
+                                    onChanged: (value) {
+                                      context.read<ThemeCubit>().setDarkMode(
+                                        value,
+                                      );
+                                      _persistSettings();
+                                    },
                                   );
                                 },
                               ),
-                              SwitchListTile(
+                              _switchTile(
+                                icon: Icons.fingerprint_rounded,
+                                title: 'Biometric Login',
+                                subtitle: kIsWeb
+                                    ? 'Aktif via browser session.'
+                                    : 'Preferensi biometrik lokal.',
                                 value: _biometricEnabled,
                                 onChanged:
                                     (_biometricSupported &&
                                         (_deviceSecurityEnabled || kIsWeb))
-                                    ? (value) => setState(
+                                    ? (value) => _updatePreference(
                                         () => _biometricEnabled = value,
                                       )
                                     : null,
-                                title: const Text('Biometric Login'),
-                                subtitle: Text(
-                                  kIsWeb
-                                      ? 'Fitur biometrik diaktifkan otomatis via browser session'
-                                      : 'Aktifkan preferensi biometric login untuk perangkat lokal.',
-                                ),
                               ),
-                              SwitchListTile(
+                              _switchTile(
+                                icon: Icons.notifications_active_outlined,
+                                title: 'Realtime Notification',
+                                subtitle:
+                                    'Update booking dan inventaris instan.',
                                 value: _realtimeNotifications,
-                                onChanged: (value) => setState(
+                                onChanged: (value) => _updatePreference(
                                   () => _realtimeNotifications = value,
                                 ),
-                                title: const Text('Realtime Push Notification'),
-                                subtitle: const Text(
-                                  'Terima perubahan booking dan inventaris instan.',
-                                ),
                               ),
-                              SwitchListTile(
+                              _switchTile(
+                                icon: Icons.volume_up_outlined,
+                                title: 'Notification Sound',
+                                subtitle: 'Suara untuk notifikasi realtime.',
                                 value: _notificationSound,
-                                onChanged: (value) =>
-                                    setState(() => _notificationSound = value),
-                                title: const Text('Notification Sound'),
-                                subtitle: const Text(
-                                  'Aktifkan suara untuk pusat notifikasi realtime.',
+                                onChanged: (value) => _updatePreference(
+                                  () => _notificationSound = value,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            if (widget.showAppBar &&
-                                Navigator.of(context).canPop()) {
-                              Navigator.of(context).pop();
-                            }
-                            context.read<AuthBloc>().add(
-                              const AuthLogoutRequested(),
-                            );
-                          },
-                          icon: const Icon(Icons.logout_rounded),
-                          label: const Text('Keluar Akun'),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Role aktif: $_role',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppTheme.muted),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          _buildMenuCard(
+                            context,
+                            children: [
+                              _profileTile(
+                                icon: Icons.logout_rounded,
+                                title: 'Keluar Akun',
+                                subtitle: 'Akhiri sesi akun LabIn',
+                                iconColor: Colors.redAccent,
+                                onTap: _logout,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Role aktif: $_role',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.muted),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -479,11 +298,383 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _save() async {
-    final whatsapp = _waController.text.trim();
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
+  Widget _buildProfileHeader(BuildContext context) {
+    final name = _nameController.text.trim().isEmpty
+        ? 'Pengguna LabIn'
+        : _nameController.text.trim();
+    final nim = _nimController.text.trim().isEmpty
+        ? 'Lengkapi profil Anda'
+        : _nimController.text.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppTheme.cyberGradient,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.vibrantPurple.withValues(alpha: 0.22),
+            blurRadius: 28,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _pickAvatar,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 34,
+                  backgroundColor: Colors.white.withValues(alpha: 0.22),
+                  backgroundImage: _avatarUrl == null
+                      ? null
+                      : NetworkImage(_avatarUrl!),
+                  child: _avatarUrl == null
+                      ? const Icon(Icons.person, color: Colors.white, size: 34)
+                      : null,
+                ),
+                Positioned(
+                  right: -3,
+                  bottom: -3,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 15,
+                      color: AppTheme.electricBlue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  nim,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton.filled(
+            onPressed: _showEditProfileSheet,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.18),
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.edit_rounded),
+            tooltip: 'Edit Profil',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(
+    BuildContext context, {
+    required List<Widget> children,
+  }) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _profileTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color? iconColor,
+  }) {
+    final color = iconColor ?? AppTheme.electricBlue;
+    return ListTile(
+      onTap: onTap,
+      leading: _tileIcon(icon, color),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+
+  Widget _switchTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return ListTile(
+      leading: _tileIcon(icon, AppTheme.vibrantPurple),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+      subtitle: Text(subtitle),
+      trailing: Switch(value: value, onChanged: onChanged),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+
+  Widget _tileIcon(IconData icon, Color color) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(icon, color: color),
+    );
+  }
+
+  void _showEditProfileSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            22,
+            8,
+            22,
+            MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Edit Profil',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: _pickAvatar,
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: const Text('Edit Foto Profil'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nameController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nama wajib diisi';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Nama',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _nimController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'NIM/NIP wajib diisi';
+                      }
+                      if (!AppValidation.isValidNim(value)) {
+                        return 'Format NIM/NIP tidak valid';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'NIM/NIP',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _waController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nomor WhatsApp wajib diisi';
+                      }
+                      if (!AppValidation.isValidWhatsappNumber(value)) {
+                        return 'Format WhatsApp tidak valid';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'No WhatsApp',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  CyberGradientButton(
+                    onPressed: () async {
+                      final saved = await _save();
+                      if (saved && sheetContext.mounted) {
+                        Navigator.of(sheetContext).pop();
+                      }
+                    },
+                    child: const Text('Simpan Perubahan'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLanguageSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: _tileIcon(
+                  Icons.translate_rounded,
+                  AppTheme.electricBlue,
+                ),
+                title: const Text('Bahasa Indonesia'),
+                trailing: _language == 'id'
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () {
+                  _changeLanguage('id');
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+              ListTile(
+                leading: _tileIcon(
+                  Icons.translate_rounded,
+                  AppTheme.vibrantPurple,
+                ),
+                title: const Text('English'),
+                trailing: _language == 'en'
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () {
+                  _changeLanguage('en');
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPasswordSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            22,
+            8,
+            22,
+            MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Ganti Password',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password baru',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+              ),
+              const SizedBox(height: 16),
+              CyberGradientButton(
+                onPressed: () async {
+                  final changed = await _changePassword();
+                  if (changed && sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+                },
+                child: const Text('Ganti Password'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _logout() {
+    if (widget.showAppBar && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
+    context.read<AuthBloc>().add(const AuthLogoutRequested());
+  }
+
+  void _updatePreference(VoidCallback update) {
+    setState(update);
+    _persistSettings();
+  }
+
+  Future<bool> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return false;
+    }
+    return _persistSettings(showSnackBar: true);
+  }
+
+  Future<bool> _persistSettings({bool showSnackBar = false}) async {
+    final whatsapp = _waController.text.trim();
     try {
       final prefs = await SharedPreferences.getInstance();
       await widget.repository.updateProfile(
@@ -504,17 +695,19 @@ class _SettingsPageState extends State<SettingsPage> {
       await prefs.setString('app_language', _language);
       await prefs.setBool('feature_location', _locationEnabled);
       await prefs.setBool('feature_device_security', _deviceSecurityEnabled);
-      if (mounted) {
+      if (mounted && showSnackBar) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pengaturan berhasil disimpan.')),
         );
       }
+      return true;
     } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
+      return false;
     }
   }
 
@@ -562,7 +755,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _changePassword() async {
+  Future<bool> _changePassword() async {
     try {
       await widget.repository.updatePassword(_passwordController.text);
       _passwordController.clear();
@@ -571,12 +764,14 @@ class _SettingsPageState extends State<SettingsPage> {
           const SnackBar(content: Text('Password berhasil diperbarui.')),
         );
       }
+      return true;
     } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
+      return false;
     }
   }
 }

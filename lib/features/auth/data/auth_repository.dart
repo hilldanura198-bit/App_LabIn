@@ -6,6 +6,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/brand.dart';
 import '../bloc/auth_bloc.dart';
 
+class BiometricUnavailableException implements Exception {
+  const BiometricUnavailableException();
+
+  @override
+  String toString() => 'Perangkat ini tidak mendukung fitur biometrik.';
+}
+
 class AuthRepository {
   AuthRepository(this._client);
 
@@ -121,34 +128,41 @@ class AuthRepository {
   }
 
   Future<String> signInWithBiometricSession() async {
-    if (kIsWeb) {
-      throw Exception('Biometrik tidak didukung di browser web.');
-    }
-    final session = _supabase.auth.currentSession;
-    final canAuthenticate = await _canAuthenticateBiometrically();
-    if (!canAuthenticate) {
-      throw Exception('Biometric login tidak tersedia di perangkat ini.');
-    }
-    if (session == null || _supabase.auth.currentUser == null) {
-      throw Exception(
-        'Aktifkan sesi Supabase terlebih dahulu sebelum masuk biometrik.',
+    try {
+      if (kIsWeb) {
+        throw const BiometricUnavailableException();
+      }
+      final session = _supabase.auth.currentSession;
+      final canAuthenticate = await _canAuthenticateBiometrically();
+      if (!canAuthenticate) {
+        throw const BiometricUnavailableException();
+      }
+      if (session == null || _supabase.auth.currentUser == null) {
+        throw Exception(
+          'Aktifkan sesi Supabase terlebih dahulu sebelum masuk biometrik.',
+        );
+      }
+
+      final authenticated = await _localAuth.authenticate(
+        localizedReason:
+            'Gunakan biometrik untuk membuka sesi ${AppBrand.name}',
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
       );
-    }
+      if (!authenticated) {
+        throw Exception('Autentikasi biometrik dibatalkan.');
+      }
 
-    final authenticated = await _localAuth.authenticate(
-      localizedReason: 'Gunakan biometrik untuk membuka sesi ${AppBrand.name}',
-      biometricOnly: true,
-      persistAcrossBackgrounding: true,
-    );
-    if (!authenticated) {
-      throw Exception('Autentikasi biometrik dibatalkan.');
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('Belum ada sesi Supabase aktif untuk biometric login.');
+      }
+      return userId;
+    } on BiometricUnavailableException {
+      rethrow;
+    } on Object catch (error) {
+      throw Exception('Login biometrik gagal: $error');
     }
-
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('Belum ada sesi Supabase aktif untuk biometric login.');
-    }
-    return userId;
   }
 
   Future<bool> _canAuthenticateBiometrically() async {
@@ -156,8 +170,9 @@ class AuthRepository {
       if (kIsWeb) {
         return false;
       }
-      return await _localAuth.canCheckBiometrics ||
-          await _localAuth.isDeviceSupported();
+      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+      return canCheckBiometrics && isDeviceSupported;
     } on Object {
       return false;
     }
