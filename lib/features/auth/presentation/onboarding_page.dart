@@ -63,23 +63,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ? 500.0
                   : constraints.maxWidth;
               final compact = constraints.maxHeight < 700;
+              final slideHeight =
+                  (constraints.maxHeight * (compact ? 0.48 : 0.54)).clamp(
+                    320.0,
+                    460.0,
+                  );
 
               return Center(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(22, compact ? 18 : 28, 22, 24),
+                  padding: EdgeInsets.fromLTRB(22, compact ? 14 : 28, 22, 24),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       maxWidth: maxWidth,
-                      minHeight: constraints.maxHeight - (compact ? 42 : 52),
+                      minHeight: compact ? 0 : constraints.maxHeight - 52,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const _BrandIntro(),
-                        SizedBox(height: compact ? 16 : 26),
+                        SizedBox(height: compact ? 14 : 26),
                         SizedBox(
-                          height: compact ? 390 : 460,
+                          height: slideHeight,
                           child: PageView.builder(
                             controller: _controller,
                             itemCount: _slides.length,
@@ -93,7 +98,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             },
                           ),
                         ),
-                        SizedBox(height: compact ? 16 : 24),
+                        SizedBox(height: compact ? 14 : 24),
                         _OnboardingDots(
                           activeIndex: _index,
                           length: _slides.length,
@@ -226,48 +231,62 @@ class _OnboardingSlide extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(child: _InventoryTechIllustration(activeIndex: index)),
-            const SizedBox(height: 18),
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                gradient: AppTheme.cyberGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.vibrantPurple.withValues(alpha: 0.20),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tight = constraints.maxHeight < 360;
+            final iconBox = tight ? 48.0 : 58.0;
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(child: _InventoryTechIllustration(activeIndex: index)),
+                SizedBox(height: tight ? 12 : 18),
+                Container(
+                  width: iconBox,
+                  height: iconBox,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cyberGradient,
+                    borderRadius: BorderRadius.circular(tight ? 17 : 20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.vibrantPurple.withValues(alpha: 0.20),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(data.icon, color: Colors.white, size: 30),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              data.headline,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppTheme.ink,
-                fontWeight: FontWeight.w900,
-                height: 1.18,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              data.description,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.muted,
-                fontWeight: FontWeight.w600,
-                height: 1.48,
-              ),
-            ),
-          ],
+                  child: Icon(
+                    data.icon,
+                    color: Colors.white,
+                    size: tight ? 25 : 30,
+                  ),
+                ),
+                SizedBox(height: tight ? 12 : 18),
+                Text(
+                  data.headline,
+                  textAlign: TextAlign.center,
+                  style:
+                      (tight
+                              ? Theme.of(context).textTheme.titleMedium
+                              : Theme.of(context).textTheme.titleLarge)
+                          ?.copyWith(
+                            color: AppTheme.ink,
+                            fontWeight: FontWeight.w900,
+                            height: 1.18,
+                          ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  data.description,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.muted,
+                    fontWeight: FontWeight.w600,
+                    height: 1.48,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

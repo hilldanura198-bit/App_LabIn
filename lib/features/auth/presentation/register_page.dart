@@ -61,6 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ? 540.0
                 : constraints.maxWidth;
             final isWide = constraints.maxWidth >= 720;
+            final compact = constraints.maxHeight < 760;
             final horizontalPadding = isWide ? 48.0 : 20.0;
 
             return Container(
@@ -76,7 +77,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
-                      18,
+                      compact ? 12 : 18,
                       horizontalPadding,
                       30,
                     ),
@@ -87,13 +88,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           _RegisterHero(
                             onBack: () => Navigator.of(context).maybePop(),
+                            compact: compact,
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: compact ? 16 : 24),
                           _RegisterFormCard(
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
+                              padding: EdgeInsets.fromLTRB(
                                 22,
-                                26,
+                                compact ? 20 : 26,
                                 22,
                                 24,
                               ),
@@ -562,15 +564,21 @@ class _RegisterPageState extends State<RegisterPage> {
 }
 
 class _RegisterHero extends StatelessWidget {
-  const _RegisterHero({required this.onBack});
+  const _RegisterHero({required this.onBack, required this.compact});
 
   final VoidCallback onBack;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 30),
+      padding: EdgeInsets.fromLTRB(
+        18,
+        compact ? 10 : 16,
+        18,
+        compact ? 22 : 30,
+      ),
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(28)),
         gradient: LinearGradient(
@@ -593,11 +601,11 @@ class _RegisterHero extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: compact ? 0 : 2),
           Container(
-            width: 84,
-            height: 84,
-            padding: const EdgeInsets.all(9),
+            width: compact ? 70 : 84,
+            height: compact ? 70 : 84,
+            padding: EdgeInsets.all(compact ? 8 : 9),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(26),
@@ -618,7 +626,7 @@ class _RegisterHero extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: compact ? 14 : 22),
           Text(
             'Selamat Datang',
             textAlign: TextAlign.center,
@@ -628,7 +636,7 @@ class _RegisterHero extends StatelessWidget {
               height: 1.12,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: compact ? 8 : 12),
           Text(
             'Daftar sebagai mahasiswa untuk mulai memakai ${AppBrand.name}.',
             textAlign: TextAlign.center,

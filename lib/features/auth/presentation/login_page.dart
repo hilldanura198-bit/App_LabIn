@@ -62,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 720;
+          final compact = constraints.maxHeight < 700;
           final horizontalPadding = isWide ? 48.0 : 20.0;
           final panelWidth = isWide ? 460.0 : constraints.maxWidth;
 
@@ -78,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(
                     horizontalPadding,
-                    24,
+                    compact ? 14 : 24,
                     horizontalPadding,
                     28,
                   ),
@@ -91,11 +92,17 @@ class _LoginPageState extends State<LoginPage> {
                           title: 'Selamat Datang',
                           subtitle:
                               'Masuk ke ${AppBrand.name} dan kelola aktivitas lab.',
+                          compact: compact,
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: compact ? 16 : 24),
                         _FormCard(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              22,
+                              compact ? 20 : 26,
+                              22,
+                              24,
+                            ),
                             child: Form(
                               key: _formKey,
                               child: Column(
@@ -393,16 +400,26 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _AuthHero extends StatelessWidget {
-  const _AuthHero({required this.title, required this.subtitle});
+  const _AuthHero({
+    required this.title,
+    required this.subtitle,
+    required this.compact,
+  });
 
   final String title;
   final String subtitle;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        compact ? 20 : 28,
+        24,
+        compact ? 22 : 30,
+      ),
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(28)),
         gradient: LinearGradient(
@@ -415,9 +432,9 @@ class _AuthHero extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 84,
-            height: 84,
-            padding: const EdgeInsets.all(9),
+            width: compact ? 70 : 84,
+            height: compact ? 70 : 84,
+            padding: EdgeInsets.all(compact ? 8 : 9),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(26),
@@ -438,7 +455,7 @@ class _AuthHero extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: compact ? 14 : 22),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -448,7 +465,7 @@ class _AuthHero extends StatelessWidget {
               height: 1.12,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: compact ? 8 : 12),
           Text(
             subtitle,
             textAlign: TextAlign.center,
