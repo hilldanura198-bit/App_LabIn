@@ -47,7 +47,7 @@ class LabInApp extends StatelessWidget {
                 AuthBloc(context.read<AuthRepository>())
                   ..add(const AuthStarted()),
           ),
-          BlocProvider(create: (_) => ThemeCubit()),
+          BlocProvider(create: (_) => ThemeCubit()..loadSavedTheme()),
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) {
@@ -55,7 +55,7 @@ class LabInApp extends StatelessWidget {
               title: AppBrand.name,
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
+              darkTheme: AppTheme.darkTheme,
               themeMode: themeMode,
               home: const OnboardingGate(),
             );

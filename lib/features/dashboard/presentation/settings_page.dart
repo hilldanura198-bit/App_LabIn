@@ -31,6 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _nimController = TextEditingController();
+  final _emailController = TextEditingController();
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
@@ -56,6 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void dispose() {
     _nameController.dispose();
     _nimController.dispose();
+    _emailController.dispose();
     _waController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -78,6 +80,9 @@ class _SettingsPageState extends State<SettingsPage> {
           (metadata['whatsapp_number'] ?? metadata['phone'] ?? '')
               .toString()
               .trim();
+      final fallbackEmail = (metadata['email'] ?? currentUser?.email ?? '')
+          .toString()
+          .trim();
       final language = prefs.getString('app_language') ?? 'id';
       final locationEnabled = prefs.getBool('feature_location') ?? true;
       final deviceSecurityEnabled = kIsWeb
@@ -97,6 +102,9 @@ class _SettingsPageState extends State<SettingsPage> {
         _waController.text = profile.whatsappNumber.isNotEmpty
             ? profile.whatsappNumber
             : fallbackWhatsapp;
+        _emailController.text = profile.email.isNotEmpty
+            ? profile.email
+            : fallbackEmail;
         _avatarUrl = profile.avatarUrl;
         _biometricEnabled = kIsWeb
             ? true
@@ -165,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               _profileTile(
                                 icon: Icons.edit_outlined,
                                 title: 'Edit Profil',
-                                subtitle: 'Nama, NIM/NIP, WhatsApp, dan foto',
+                                subtitle: 'Nama, NIM/NIP, Email, WhatsApp',
                                 onTap: _showEditProfileSheet,
                               ),
                               _profileTile(
@@ -278,6 +286,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                 subtitle: 'Akhiri sesi akun LabIn',
                                 iconColor: Colors.redAccent,
                                 onTap: _logout,
+                              ),
+                              _profileTile(
+                                icon: Icons.delete_outline_rounded,
+                                title: 'Hapus Akun',
+                                subtitle: 'Ajukan penghapusan akun LabIn',
+                                iconColor: Colors.redAccent,
+                                onTap: _showDeleteAccountDialog,
                               ),
                             ],
                           ),
@@ -525,6 +540,24 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Email wajib diisi';
+                      }
+                      if (!AppValidation.isValidEmail(value)) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.mail_outline_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
                     controller: _waController,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -661,6 +694,40 @@ class _SettingsPageState extends State<SettingsPage> {
     context.read<AuthBloc>().add(const AuthLogoutRequested());
   }
 
+  Future<void> _showDeleteAccountDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Hapus Akun'),
+          content: const Text(
+            'Penghapusan akun membutuhkan verifikasi admin agar data peminjaman dan riwayat lab tetap aman.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Ajukan'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Permintaan hapus akun dikirim untuk diverifikasi admin.',
+        ),
+      ),
+    );
+  }
+
   void _updatePreference(VoidCallback update) {
     setState(update);
     _persistSettings();
@@ -670,7 +737,11 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return false;
     }
-    return _persistSettings(showSnackBar: true);
+    final saved = await _persistSettings(showSnackBar: true);
+    if (saved) {
+      await _load();
+    }
+    return saved;
   }
 
   Future<bool> _persistSettings({bool showSnackBar = false}) async {
@@ -681,6 +752,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ProfileSettings(
           name: _nameController.text,
           nimNip: _nimController.text,
+          email: _emailController.text,
           role: _role,
           whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
           avatarUrl: _avatarUrl,

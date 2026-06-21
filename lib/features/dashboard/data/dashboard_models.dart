@@ -294,6 +294,7 @@ class ProfileSettings {
   const ProfileSettings({
     required this.name,
     required this.nimNip,
+    required this.email,
     required this.role,
     required this.whatsappNumber,
     required this.avatarUrl,
@@ -304,6 +305,7 @@ class ProfileSettings {
 
   final String name;
   final String nimNip;
+  final String email;
   final String role;
   final String whatsappNumber;
   final String? avatarUrl;
@@ -315,6 +317,7 @@ class ProfileSettings {
     return ProfileSettings(
       name: map['nama'] as String? ?? '',
       nimNip: map['nim_nip'] as String? ?? '',
+      email: map['email'] as String? ?? '',
       role: map['role'] as String? ?? 'mahasiswa',
       whatsappNumber: map['whatsapp_number'] as String? ?? '',
       avatarUrl: map['avatar_url'] as String?,

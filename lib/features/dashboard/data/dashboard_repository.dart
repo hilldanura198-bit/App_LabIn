@@ -382,7 +382,7 @@ class DashboardRepository {
     final row = await _supabase
         .from('profiles')
         .select(
-          'nama,nim_nip,role,whatsapp_number,avatar_url,biometric_enabled,realtime_notifications_enabled,notification_sound_enabled',
+          'nama,nim_nip,email,role,whatsapp_number,avatar_url,biometric_enabled,realtime_notifications_enabled,notification_sound_enabled',
         )
         .eq('id', userId)
         .single();
@@ -403,6 +403,7 @@ class DashboardRepository {
         .update({
           'nama': settings.name.trim(),
           'nim_nip': settings.nimNip.trim(),
+          'email': settings.email.trim(),
           'whatsapp_number': settings.whatsappNumber.trim(),
           'avatar_url': settings.avatarUrl,
           'biometric_enabled': settings.biometricEnabled,

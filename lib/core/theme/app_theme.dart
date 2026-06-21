@@ -191,6 +191,8 @@ class AppTheme {
     );
   }
 
+  static ThemeData get darkTheme => dark;
+
   static ThemeData get dark {
     final textTheme = _buildTextTheme(
       bodyColor: Colors.white,
@@ -198,12 +200,12 @@ class AppTheme {
     );
 
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: electricBlue,
+      seedColor: vibrantPurple,
       brightness: Brightness.dark,
       primary: electricBlue,
       secondary: vibrantPurple,
-      tertiary: electricBlue,
-      surface: darkCharcoal,
+      tertiary: const Color(0xFF22D3EE),
+      surface: const Color(0xFF141827),
       error: const Color(0xFFF87171),
     );
 
@@ -211,10 +213,10 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: midnightNavy,
+      scaffoldBackgroundColor: const Color(0xFF070A16),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: midnightNavy,
+        backgroundColor: const Color(0xFF070A16),
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -225,11 +227,11 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: darkCharcoal,
+        color: const Color(0xFF141827),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF2B3A3A)),
+          side: const BorderSide(color: Color(0xFF29324A)),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -273,18 +275,18 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF242424),
+        fillColor: const Color(0xFF111827),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF3A4A4A)),
+          borderSide: const BorderSide(color: Color(0xFF29324A)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF3A4A4A)),
+          borderSide: const BorderSide(color: Color(0xFF29324A)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
