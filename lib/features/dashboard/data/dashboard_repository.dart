@@ -508,10 +508,17 @@ class DashboardRepository {
         .eq('id', bookingId)
         .single();
     final previousStatus = booking['status'] as String? ?? 'pending';
+    if (previousStatus != 'pending') {
+      throw Exception('Pengajuan sudah tidak berstatus pending.');
+    }
     await _supabase
         .from('bookings')
-        .update({'status': 'approved_aslab', 'aslab_note': note?.trim()})
-        .eq('id', bookingId);
+        .update({
+          'status': 'approved_aslab',
+          'aslab_note': _optionalTrimmed(note),
+        })
+        .eq('id', bookingId)
+        .eq('status', 'pending');
     if (_shouldDecrementStockOnApproval(previousStatus)) {
       await _decrementInventoryStockForBooking(bookingId);
     }
@@ -558,16 +565,51 @@ class DashboardRepository {
   }
 
   Future<bool> hasScheduleConflict(LabBooking booking) async {
+    final dayStart = DateTime(
+      booking.tanggalPinjam.year,
+      booking.tanggalPinjam.month,
+      booking.tanggalPinjam.day,
+    );
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final bookingStart = _timeToMinutes(
+      booking.startTime.isNotEmpty
+          ? booking.startTime
+          : DateFormat('HH:mm').format(booking.tanggalPinjam),
+    );
+    final bookingEnd = _timeToMinutes(
+      booking.endTime.isNotEmpty
+          ? booking.endTime
+          : DateFormat('HH:mm').format(booking.tanggalKembali),
+    );
+
     final rows = await _supabase
         .from('bookings')
-        .select('id')
+        .select('id,start_time,end_time,tanggal_pinjam,tanggal_kembali,status')
         .eq('lab_id', booking.labId)
         .neq('id', booking.id)
         .not('status', 'in', '(rejected,cancelled)')
-        .lt('tanggal_pinjam', booking.tanggalKembali.toUtc().toIso8601String())
-        .gt('tanggal_kembali', booking.tanggalPinjam.toUtc().toIso8601String())
-        .limit(1);
-    return rows.isNotEmpty;
+        .gte('tanggal_pinjam', dayStart.toUtc().toIso8601String())
+        .lt('tanggal_pinjam', dayEnd.toUtc().toIso8601String());
+
+    return rows.any((row) {
+      final otherStartTime = row['start_time'] as String?;
+      final otherEndTime = row['end_time'] as String?;
+      final otherStart = _timeToMinutes(
+        otherStartTime?.trim().isNotEmpty == true
+            ? otherStartTime!
+            : DateFormat(
+                'HH:mm',
+              ).format(DateTime.parse(row['tanggal_pinjam'] as String)),
+      );
+      final otherEnd = _timeToMinutes(
+        otherEndTime?.trim().isNotEmpty == true
+            ? otherEndTime!
+            : DateFormat(
+                'HH:mm',
+              ).format(DateTime.parse(row['tanggal_kembali'] as String)),
+      );
+      return otherStart < bookingEnd && otherEnd > bookingStart;
+    });
   }
 
   Future<void> approveKalab({
@@ -827,6 +869,21 @@ class DashboardRepository {
     final hour = int.parse(parts.first);
     final minute = int.parse(parts.last);
     return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    final hour = int.tryParse(parts.first) ?? 0;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    return (hour * 60) + minute;
+  }
+
+  String? _optionalTrimmed(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 
   Future<void> _insertNotification({

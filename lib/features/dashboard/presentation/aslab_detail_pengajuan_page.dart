@@ -24,7 +24,7 @@ class AslabDetailPengajuanPage extends StatefulWidget {
 
 class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
   final _noteController = TextEditingController();
-  late final Future<bool> _conflictFuture;
+  late Future<bool> _conflictFuture;
   bool _submitting = false;
 
   @override
@@ -248,11 +248,33 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
   Future<void> _approve() async {
     setState(() => _submitting = true);
     try {
+      final hasConflict = await widget.repository.hasScheduleConflict(
+        widget.booking,
+      );
+      if (hasConflict) {
+        if (!mounted) return;
+        setState(() {
+          _submitting = false;
+          _conflictFuture = Future.value(true);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Jadwal bentrok dengan reservasi lain. Pengajuan tidak bisa disetujui.',
+            ),
+          ),
+        );
+        return;
+      }
       await widget.repository.approveAslab(
         widget.booking.id,
         note: _noteController.text,
       );
-      if (mounted) Navigator.of(context).pop('Pengajuan diteruskan ke Kalab');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengajuan diteruskan ke Kalab')),
+      );
+      Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -276,7 +298,11 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
         bookingId: widget.booking.id,
         reason: note,
       );
-      if (mounted) Navigator.of(context).pop('Pengajuan ditolak');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pengajuan ditolak')));
+      Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
