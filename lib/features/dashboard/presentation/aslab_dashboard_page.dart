@@ -206,9 +206,9 @@ class _AslabDashboardView extends StatelessWidget {
       ),
     );
     if (result != null && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result)));
+      context.read<DashboardBloc>().add(
+        const DashboardStarted(inventoryStream: false, bookingStream: true),
+      );
     }
   }
 }

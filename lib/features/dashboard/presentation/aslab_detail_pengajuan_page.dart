@@ -73,6 +73,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
               final hasConflict = snapshot.data ?? false;
               final checking =
                   snapshot.connectionState == ConnectionState.waiting;
+              final conflictError = snapshot.hasError;
 
               return Center(
                 child: SingleChildScrollView(
@@ -143,7 +144,10 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
                           children: [
                             _ConflictIndicator(
                               loading: checking,
-                              hasConflict: hasConflict,
+                              hasConflict: hasConflict || conflictError,
+                              message: conflictError
+                                  ? 'Gagal mengecek konflik: ${snapshot.error}'
+                                  : null,
                             ),
                           ],
                         ),
@@ -198,7 +202,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
           child: FutureBuilder<bool>(
             future: _conflictFuture,
             builder: (context, snapshot) {
-              final hasConflict = snapshot.data ?? false;
+              final hasConflict = snapshot.data ?? snapshot.hasError;
               return Row(
                 children: [
                   Expanded(
@@ -272,9 +276,12 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengajuan diteruskan ke Kalab')),
+        SnackBar(
+          content: const Text('Pengajuan diteruskan ke Kalab'),
+          backgroundColor: Colors.green.shade700,
+        ),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pop('approved');
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -299,10 +306,13 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
         reason: note,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Pengajuan ditolak')));
-      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pengajuan ditolak'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      Navigator.of(context).pop('rejected');
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -590,10 +600,15 @@ class _EmptyItemText extends StatelessWidget {
 }
 
 class _ConflictIndicator extends StatelessWidget {
-  const _ConflictIndicator({required this.loading, required this.hasConflict});
+  const _ConflictIndicator({
+    required this.loading,
+    required this.hasConflict,
+    this.message,
+  });
 
   final bool loading;
   final bool hasConflict;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -604,9 +619,11 @@ class _ConflictIndicator extends StatelessWidget {
         ? Icons.warning_amber_rounded
         : Icons.verified_rounded;
     final title = hasConflict ? 'Konflik jadwal terdeteksi' : 'Aman';
-    final message = hasConflict
-        ? 'Ruangan dan waktu peminjaman bertabrakan dengan reservasi lain. Tombol setujui dinonaktifkan.'
-        : 'Tidak ada bentrok jadwal untuk ruangan dan waktu yang diajukan.';
+    final body =
+        message ??
+        (hasConflict
+            ? 'Ruangan dan waktu peminjaman bertabrakan dengan reservasi lain. Tombol setujui dinonaktifkan.'
+            : 'Tidak ada bentrok jadwal untuk ruangan dan waktu yang diajukan.');
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -648,7 +665,7 @@ class _ConflictIndicator extends StatelessWidget {
                 Text(
                   loading
                       ? 'Sistem sedang mengecek bentrok ruangan dan waktu.'
-                      : message,
+                      : body,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: color,
                     fontWeight: FontWeight.w700,

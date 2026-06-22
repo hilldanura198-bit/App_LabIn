@@ -202,7 +202,9 @@ class LabBooking {
           : DateTime.parse(map['created_at'] as String).toLocal(),
       signatureUrl: map['signature_url'] as String?,
       otherItems: map['other_items'] as String?,
-      labNameSnapshot: map['lab_name_snapshot'] as String?,
+      labNameSnapshot:
+          map['lab_name_snapshot'] as String? ??
+          _labNameFromMap(map['laboratories']),
       ratingReview: _ratingReviewFromMap(map['rating_review']),
       borrowerIdentity: _borrowerIdentityFromMap(map['profiles']),
       borrowerProgramStudi: _borrowerProgramStudiFromMap(map['profiles']),
@@ -278,6 +280,12 @@ class LabBooking {
   static String? _borrowerProgramStudiFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value['program_studi'] as String?;
     if (value is Map) return value['program_studi'] as String?;
+    return null;
+  }
+
+  static String? _labNameFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['nama_lab'] as String?;
+    if (value is Map) return value['nama_lab'] as String?;
     return null;
   }
 }
