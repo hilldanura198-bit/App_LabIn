@@ -103,19 +103,28 @@ class _NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _kindColor(notification.kind);
-    final backgroundColor = zebraIndex.isOdd
-        ? const Color(0xFF1C1330).withValues(alpha: 0.88)
-        : const Color(0xFF1A2432).withValues(alpha: 0.90);
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? Color.alphaBlend(color.withValues(alpha: 0.10), scheme.surface)
+        : Color.alphaBlend(color.withValues(alpha: 0.06), scheme.surface);
+    final textColor = scheme.onSurface;
+    final mutedColor = scheme.onSurfaceVariant;
+
     return Card(
       color: backgroundColor,
+      elevation: 0,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: zebraIndex.isOdd
-                ? AppTheme.vibrantPurple.withValues(alpha: 0.20)
-                : AppTheme.electricBlue.withValues(alpha: 0.18),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.20)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: isDark ? 0.10 : 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: InkWell(
           onTap: onTap,
@@ -147,7 +156,7 @@ class _NotificationCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(
                                     fontWeight: FontWeight.w900,
-                                    color: Colors.white,
+                                    color: textColor,
                                   ),
                             ),
                           ),
@@ -166,8 +175,9 @@ class _NotificationCard extends StatelessWidget {
                       Text(
                         notification.message,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
+                          color: mutedColor,
                           height: 1.35,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -183,7 +193,10 @@ class _NotificationCard extends StatelessWidget {
                           Text(
                             _formatTime(notification.createdAt),
                             style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Colors.grey.shade300),
+                                ?.copyWith(
+                                  color: mutedColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                         ],
                       ),
@@ -249,19 +262,20 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
+        color: color.withValues(alpha: isDark ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: color,
+          color: isDark ? color : Color.alphaBlend(color, Colors.black12),
           fontSize: 11,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
