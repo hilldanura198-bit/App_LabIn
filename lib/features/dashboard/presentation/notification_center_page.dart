@@ -104,10 +104,10 @@ class _NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _kindColor(notification.kind);
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? Color.alphaBlend(color.withValues(alpha: 0.10), scheme.surface)
-        : Color.alphaBlend(color.withValues(alpha: 0.06), scheme.surface);
+    final cardColor = Theme.of(context).cardColor;
+    final backgroundColor = zebraIndex.isOdd
+        ? Color.alphaBlend(scheme.primary.withValues(alpha: 0.05), cardColor)
+        : cardColor;
     final textColor = scheme.onSurface;
     final mutedColor = scheme.onSurfaceVariant;
 
@@ -120,9 +120,9 @@ class _NotificationCard extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.20)),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: isDark ? 0.10 : 0.08),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
+              color: scheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

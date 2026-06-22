@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/local_notification_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
@@ -53,6 +54,51 @@ class _MahasiswaDashboardView extends StatefulWidget {
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   int _selectedIndex = 0;
   bool _isRatingDialogOpen = false;
+  bool _notificationListenerStarted = false;
+  bool _notificationsPrimed = false;
+  final Set<String> _knownNotificationIds = {};
+  StreamSubscription<List<AppNotification>>? _notificationSubscription;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_notificationListenerStarted) {
+      return;
+    }
+    _notificationListenerStarted = true;
+    _notificationSubscription = _repository(
+      context,
+    ).watchNotifications().listen(_handleRealtimeNotifications);
+  }
+
+  void _handleRealtimeNotifications(List<AppNotification> notifications) {
+    if (!_notificationsPrimed) {
+      _knownNotificationIds.addAll(notifications.map((item) => item.id));
+      _notificationsPrimed = true;
+      return;
+    }
+
+    final freshNotifications = notifications
+        .where(
+          (item) => !_knownNotificationIds.contains(item.id) && !item.isRead,
+        )
+        .toList();
+    _knownNotificationIds.addAll(notifications.map((item) => item.id));
+
+    for (final notification in freshNotifications.take(3)) {
+      LocalNotificationService.instance.show(
+        title: notification.title,
+        body: notification.message,
+        payload: notification.targetId,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -329,14 +375,18 @@ class _HomeScrollContent extends StatelessWidget {
                         text: TextSpan(
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w900),
-                          children: const [
+                          children: [
                             TextSpan(
                               text: 'Lab',
-                              style: TextStyle(color: AppTheme.deepSpace),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                             TextSpan(
                               text: 'In',
-                              style: TextStyle(color: AppTheme.electricBlue),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
                           ],
                         ),

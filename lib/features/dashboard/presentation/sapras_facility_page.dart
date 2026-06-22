@@ -7,9 +7,6 @@ import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'widgets/glass_app_bar.dart';
 
-const _facilityAssetPath = 'assets/images/facility_lab.png';
-const _roomAssetPath = 'assets/images/facility_room.png';
-
 class SaprasFacilityPage extends StatelessWidget {
   const SaprasFacilityPage({super.key, required this.repository});
 
@@ -96,8 +93,8 @@ class _FacilityList extends StatelessWidget {
                         final compact = constraints.maxWidth < 620;
                         final image = _FacilityImage(
                           imageUrl: item.imageUrl,
-                          fallbackAssetPath: _facilityAssetPath,
                           height: compact ? 150 : 112,
+                          fallbackIcon: Icons.precision_manufacturing_outlined,
                         );
                         final detail = _FacilityDetail(
                           item: item,
@@ -178,7 +175,6 @@ class _FacilityList extends StatelessWidget {
         title: item.namaAlat,
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
         imageUrl: item.imageUrl,
-        fallbackAssetPath: _facilityAssetPath,
         booking: booking,
         icon: Icons.precision_manufacturing_outlined,
       ),
@@ -300,13 +296,13 @@ class _DataPill extends StatelessWidget {
 class _FacilityImage extends StatelessWidget {
   const _FacilityImage({
     required this.imageUrl,
-    required this.fallbackAssetPath,
     required this.height,
+    required this.fallbackIcon,
   });
 
   final String? imageUrl;
-  final String fallbackAssetPath;
   final double height;
+  final IconData fallbackIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -314,8 +310,8 @@ class _FacilityImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: _RealtimeImage(
         imageUrl: imageUrl,
-        fallbackAssetPath: fallbackAssetPath,
         height: height,
+        fallbackIcon: fallbackIcon,
       ),
     );
   }
@@ -324,13 +320,11 @@ class _FacilityImage extends StatelessWidget {
 class _RealtimeImage extends StatelessWidget {
   const _RealtimeImage({
     required this.imageUrl,
-    required this.fallbackAssetPath,
     required this.height,
     this.fallbackIcon = Icons.image_outlined,
   });
 
   final String? imageUrl;
-  final String fallbackAssetPath;
   final double height;
   final IconData fallbackIcon;
 
@@ -338,11 +332,7 @@ class _RealtimeImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = imageUrl?.trim();
     if (url == null || url.isEmpty) {
-      return _FallbackImage(
-        assetPath: fallbackAssetPath,
-        height: height,
-        icon: fallbackIcon,
-      );
+      return _ImagePlaceholder(height: height, icon: fallbackIcon);
     }
     return CachedNetworkImage(
       imageUrl: url,
@@ -356,40 +346,33 @@ class _RealtimeImage extends StatelessWidget {
           child: CircularProgressIndicator(color: Colors.white),
         ),
       ),
-      errorWidget: (context, _, _) => _FallbackImage(
-        assetPath: fallbackAssetPath,
-        height: height,
-        icon: fallbackIcon,
-      ),
+      errorWidget: (context, _, _) =>
+          _ImagePlaceholder(height: height, icon: fallbackIcon),
     );
   }
 }
 
-class _FallbackImage extends StatelessWidget {
-  const _FallbackImage({
-    required this.assetPath,
-    required this.height,
-    required this.icon,
-  });
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder({required this.height, required this.icon});
 
-  final String assetPath;
   final double height;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      assetPath,
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
       height: height,
       width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          height: height,
-          decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
-          child: Icon(icon, color: Colors.white, size: 36),
-        );
-      },
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            scheme.primary.withValues(alpha: 0.16),
+            AppTheme.cleanCyan.withValues(alpha: 0.14),
+          ],
+        ),
+      ),
+      child: Icon(icon, color: scheme.primary, size: 36),
     );
   }
 }
@@ -555,7 +538,6 @@ class _InfrastructureList extends StatelessWidget {
                   title: room.name,
                   subtitle: '${room.location} - Status ${room.status}',
                   imageUrl: room.imageUrl,
-                  fallbackAssetPath: _roomAssetPath,
                   booking: null,
                   icon: Icons.apartment_rounded,
                 ),
@@ -572,8 +554,8 @@ class _InfrastructureList extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                           child: _RealtimeImage(
                             imageUrl: room.imageUrl,
-                            fallbackAssetPath: _roomAssetPath,
                             height: double.infinity,
+                            fallbackIcon: Icons.apartment_rounded,
                           ),
                         ),
                       ),
@@ -1328,7 +1310,6 @@ class _ImageDialog extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.imageUrl,
-    required this.fallbackAssetPath,
     required this.booking,
     required this.icon,
   });
@@ -1336,7 +1317,6 @@ class _ImageDialog extends StatelessWidget {
   final String title;
   final String subtitle;
   final String? imageUrl;
-  final String fallbackAssetPath;
   final LabBooking? booking;
   final IconData icon;
 
@@ -1358,7 +1338,6 @@ class _ImageDialog extends StatelessWidget {
               ),
               child: _RealtimeImage(
                 imageUrl: imageUrl,
-                fallbackAssetPath: fallbackAssetPath,
                 height: 220,
                 fallbackIcon: icon,
               ),

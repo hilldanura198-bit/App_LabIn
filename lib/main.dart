@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import 'core/brand.dart';
 import 'core/constants/supabase_credentials.dart';
+import 'core/local_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'features/auth/bloc/auth_bloc.dart';
@@ -27,6 +28,7 @@ Future<void> main() async {
     );
     supabaseClient = Supabase.instance.client;
   }
+  await LocalNotificationService.instance.initialize();
 
   runApp(LabInApp(supabaseClient: supabaseClient));
 }

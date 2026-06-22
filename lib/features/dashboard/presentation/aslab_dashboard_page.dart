@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
@@ -41,22 +40,58 @@ class _AslabDashboardView extends StatefulWidget {
 
 class _AslabDashboardViewState extends State<_AslabDashboardView> {
   late Future<List<Map<String, dynamic>>> _pendingFuture;
+  String _aslabName = 'Aslab';
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_initialized) {
+      return;
+    }
+    _initialized = true;
     _pendingFuture = _fetchPendingBookings();
+    _loadAslabProfile();
+  }
+
+  Future<void> _loadAslabProfile() async {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    try {
+      final profile = await repository.fetchProfileSettings();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _aslabName = profile.name.trim().isEmpty
+            ? 'Aslab'
+            : profile.name.trim();
+      });
+    } catch (_) {
+      final user = context.read<AuthRepository>().client?.auth.currentUser;
+      final metadata = user?.userMetadata ?? const <String, dynamic>{};
+      final fallback = (metadata['nama'] ?? metadata['name'] ?? 'Aslab')
+          .toString()
+          .trim();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _aslabName = fallback.isEmpty ? 'Aslab' : fallback);
+    }
   }
 
   Future<List<Map<String, dynamic>>> _fetchPendingBookings() async {
     final client = context.read<AuthRepository>().client;
     if (client == null) {
-      throw Exception('Sistem backend belum dikonfigurasi.');
+      return const [];
     }
     // PERUBAHAN: Mengubah laboratories(name) menjadi laboratories(nama_lab)
     final rows = await client
         .from('bookings')
-        .select('*, profiles(nama, nim_nip), laboratories(nama_lab)')
+        .select(
+          '*, profiles(nama, nim_nip, program_studi), laboratories(nama_lab)',
+        )
         .eq('status', 'pending')
         .order('tanggal_pinjam');
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
@@ -82,7 +117,7 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
       },
       child: Scaffold(
         appBar: GlassAppBar(
-          title: '${AppBrand.name} Aslab',
+          title: _aslabName,
           showProfileAvatar: true,
           onProfilePressed: () => _openSettings(context),
           actions: [
@@ -158,7 +193,7 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
                                         ),
                                       )
                                     else if (snapshot.hasError)
-                                      _InfoCard(snapshot.error.toString())
+                                      _InfoCard(_friendlyError(snapshot.error))
                                     else if (pending.isEmpty)
                                       const _InfoCard(
                                         'Tidak ada antrean pending.',
@@ -207,11 +242,15 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
     if (result == null || !context.mounted) {
       return;
     }
+    await _handleScanResult(context, result);
+  }
+
+  Future<void> _handleScanResult(BuildContext context, String rawCode) async {
     final repository = DashboardRepository(
       context.read<AuthRepository>().client,
     );
     try {
-      final booking = await repository.fetchBookingForQr(result);
+      final booking = await repository.fetchBookingForQr(rawCode);
       if (!context.mounted) return;
       await showModalBottomSheet<void>(
         context: context,
@@ -229,9 +268,14 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
               ),
             );
             Navigator.of(context).pop();
+            final returned = booking.status == 'active';
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Serah terima barang berhasil dikonfirmasi.'),
+              SnackBar(
+                content: Text(
+                  returned
+                      ? 'Pengembalian barang berhasil dikonfirmasi.'
+                      : 'Serah terima barang berhasil dikonfirmasi.',
+                ),
               ),
             );
           },
@@ -241,7 +285,7 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(error))));
     }
   }
 
@@ -283,6 +327,14 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
       );
     }
   }
+
+  String _friendlyError(Object? error) {
+    final message = error?.toString() ?? 'Terjadi kendala.';
+    return message
+        .replaceFirst('Exception: ', '')
+        .replaceFirst('PostgrestException(message: ', '')
+        .trim();
+  }
 }
 
 class _QrHandoverSheet extends StatefulWidget {
@@ -301,6 +353,7 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
   @override
   Widget build(BuildContext context) {
     final booking = widget.booking;
+    final isReturn = booking.status == 'active';
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -315,7 +368,9 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Bukti Pengambilan Barang',
+                isReturn
+                    ? 'Konfirmasi Pengembalian Barang'
+                    : 'Bukti Pengambilan Barang',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -367,8 +422,16 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.handshake_outlined),
-                label: const Text('Konfirmasi Serah Terima Barang'),
+                    : Icon(
+                        isReturn
+                            ? Icons.assignment_return_rounded
+                            : Icons.handshake_outlined,
+                      ),
+                label: Text(
+                  isReturn
+                      ? 'Konfirmasi Pengembalian'
+                      : 'Konfirmasi Serah Terima Barang',
+                ),
               ),
             ],
           ),
@@ -384,9 +447,13 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.toString().replaceFirst('Exception: ', '').trim(),
+          ),
+        ),
+      );
     }
   }
 }
@@ -490,8 +557,7 @@ class _ApprovalRequestCard extends StatelessWidget {
       'Unknown',
     ]);
     final nim = _firstNotEmpty([profile['nim_nip'], '-']);
-    
-    // PERUBAHAN: Memastikan mengambil dari nama_lab
+    final programStudi = _firstNotEmpty([profile['program_studi'], '-']);
     final labName = _firstNotEmpty([
       laboratory['nama_lab'],
       booking['lab_name_snapshot'],
@@ -534,7 +600,9 @@ class _ApprovalRequestCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'NIM $nim',
+                    'NIM $nim • $programStudi',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,

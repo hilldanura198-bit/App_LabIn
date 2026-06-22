@@ -205,44 +205,56 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
             future: _conflictFuture,
             builder: (context, snapshot) {
               final hasConflict = snapshot.data ?? snapshot.hasError;
-              return Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _submitting ? null : _reject,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFE11D48),
-                        side: const BorderSide(color: Color(0xFFE11D48)),
+              final rejectButton = OutlinedButton.icon(
+                onPressed: _submitting ? null : _reject,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFE11D48),
+                  side: const BorderSide(color: Color(0xFFE11D48)),
+                ),
+                icon: const Icon(Icons.close_rounded),
+                label: const Text('Tolak'),
+              );
+              final approveButton = CyberGradientButton(
+                onPressed: _submitting || hasConflict ? null : _approve,
+                borderRadius: 16,
+                child: _submitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_rounded),
+                          SizedBox(width: 8),
+                          Text('Setujui'),
+                        ],
                       ),
-                      icon: const Icon(Icons.close_rounded),
-                      label: const Text('Tolak'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CyberGradientButton(
-                      onPressed: _submitting || hasConflict ? null : _approve,
-                      borderRadius: 16,
-                      child: _submitting
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.check_rounded),
-                                SizedBox(width: 8),
-                                Text('Setujui'),
-                              ],
-                            ),
-                    ),
-                  ),
-                ],
+              );
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 380) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        rejectButton,
+                        const SizedBox(height: 10),
+                        approveButton,
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: rejectButton),
+                      const SizedBox(width: 12),
+                      Expanded(child: approveButton),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -287,21 +299,22 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
       setState(() => _submitting = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(error))));
     }
   }
 
   Future<void> _reject() async {
-    final note = _noteController.text.trim();
-    if (note.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Catatan penolakan wajib diisi.')),
-      );
+    final reason = await _showRejectionReasonDialog();
+    if (reason == null || reason.trim().isEmpty) {
       return;
     }
     setState(() => _submitting = true);
     try {
-      await widget.repository.rejectAslab(bookingId: _booking.id, reason: note);
+      _noteController.text = reason.trim();
+      await widget.repository.rejectAslab(
+        bookingId: _booking.id,
+        reason: reason.trim(),
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -315,8 +328,53 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
       setState(() => _submitting = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(error))));
     }
+  }
+
+  Future<String?> _showRejectionReasonDialog() async {
+    final controller = TextEditingController(text: _noteController.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Alasan Penolakan'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            minLines: 3,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText: 'Tuliskan alasan agar mahasiswa bisa memperbaiki.',
+              prefixIcon: Icon(Icons.report_problem_outlined),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = controller.text.trim();
+                if (text.isEmpty) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Alasan penolakan wajib diisi.'),
+                    ),
+                  );
+                  return;
+                }
+                Navigator.of(dialogContext).pop(text);
+              },
+              child: const Text('Kirim Penolakan'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    return result;
   }
 
   LabBooking _bookingFromMap(Map<String, dynamic> source) {
@@ -343,6 +401,11 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value);
     return const {};
+  }
+
+  String _friendlyError(Object? error) {
+    final message = error?.toString() ?? 'Terjadi kendala.';
+    return message.replaceFirst('Exception: ', '').trim();
   }
 }
 

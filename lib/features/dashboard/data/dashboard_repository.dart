@@ -12,7 +12,7 @@ class DashboardRepository {
 
   final SupabaseClient? _client;
   static const _bookingColumns =
-      'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no,created_at,aslab_note,rejection_reason';
+      'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no,created_at,aslab_note,rejection_reason,approved_by_aslab_id';
   static const _bookingWithProfileColumns =
       '$_bookingColumns,profiles(nama,nim_nip,program_studi),laboratories(nama_lab)';
 
@@ -496,11 +496,16 @@ class DashboardRepository {
     if (previousStatus != 'pending') {
       throw Exception('Pengajuan sudah tidak berstatus pending.');
     }
+    final aslabId = currentUserId;
+    if (aslabId == null) {
+      throw Exception('Sesi Aslab tidak ditemukan. Silakan login ulang.');
+    }
     await _supabase
         .from('bookings')
         .update({
           'status': 'approved_aslab',
           'aslab_note': _optionalTrimmed(note),
+          'approved_by_aslab_id': aslabId,
         })
         .eq('id', bookingId)
         .eq('status', 'pending');
@@ -667,19 +672,26 @@ class DashboardRepository {
         .eq('id', bookingId)
         .single();
     final status = booking['status'] as String? ?? 'pending';
-    if (status != 'approved_kalab') {
-      throw Exception('Status booking belum siap serah terima: $status');
+    final nextStatus = switch (status) {
+      'approved_kalab' => 'active',
+      'active' => 'returned',
+      _ => null,
+    };
+    if (nextStatus == null) {
+      throw Exception('Status booking belum siap diproses: $status');
     }
 
     await _supabase
         .from('bookings')
-        .update({'status': 'active'})
+        .update({'status': nextStatus})
         .eq('id', bookingId);
+    final returned = nextStatus == 'returned';
     await _insertNotification(
       userId: booking['user_id'] as String,
-      title: 'Barang diserahterimakan',
-      message:
-          'Reservasi ${booking['reservation_no'] as String? ?? bookingId} sudah aktif.',
+      title: returned ? 'Barang dikembalikan' : 'Barang diserahterimakan',
+      message: returned
+          ? 'Reservasi ${booking['reservation_no'] as String? ?? bookingId} selesai dan barang sudah dikembalikan.'
+          : 'Reservasi ${booking['reservation_no'] as String? ?? bookingId} sudah aktif.',
       kind: 'booking_status',
       targetType: 'booking',
       targetId: bookingId,
@@ -811,11 +823,7 @@ class DashboardRepository {
   }
 
   bool _shouldDecrementStockOnApproval(String previousStatus) {
-    return previousStatus != 'approved_aslab' &&
-        previousStatus != 'approved_kalab' &&
-        previousStatus != 'active' &&
-        previousStatus != 'returned' &&
-        previousStatus != 'rejected';
+    return previousStatus == 'approved_aslab';
   }
 
   String _bookingIdFromQr(String rawCode) {
