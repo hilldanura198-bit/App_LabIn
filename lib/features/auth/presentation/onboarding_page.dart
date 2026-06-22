@@ -63,28 +63,23 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ? 500.0
                   : constraints.maxWidth;
               final compact = constraints.maxHeight < 700;
-              final slideHeight =
-                  (constraints.maxHeight * (compact ? 0.48 : 0.54)).clamp(
-                    320.0,
-                    460.0,
-                  );
 
               return Center(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(22, compact ? 14 : 28, 22, 24),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: maxWidth,
-                      minHeight: compact ? 0 : constraints.maxHeight - 52,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      22,
+                      compact ? 12 : 22,
+                      22,
+                      compact ? 16 : 24,
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const _BrandIntro(),
-                        SizedBox(height: compact ? 14 : 26),
-                        SizedBox(
-                          height: slideHeight,
+                        _BrandIntro(compact: compact),
+                        SizedBox(height: compact ? 12 : 20),
+                        Expanded(
                           child: PageView.builder(
                             controller: _controller,
                             itemCount: _slides.length,
@@ -98,12 +93,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             },
                           ),
                         ),
-                        SizedBox(height: compact ? 14 : 24),
+                        SizedBox(height: compact ? 12 : 18),
                         _OnboardingDots(
                           activeIndex: _index,
                           length: _slides.length,
                         ),
-                        const SizedBox(height: 22),
+                        SizedBox(height: compact ? 14 : 22),
                         CyberGradientButton(
                           onPressed: () {
                             if (isLast) {
@@ -140,57 +135,84 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 class _BrandIntro extends StatelessWidget {
-  const _BrandIntro();
+  const _BrandIntro({required this.compact});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 86,
-          height: 86,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.electricBlue.withValues(alpha: 0.14),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
-              ),
-            ],
+    final logoSize = compact ? 64.0 : 78.0;
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        18,
+        compact ? 14 : 18,
+        18,
+        compact ? 14 : 18,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.electricBlue.withValues(alpha: 0.10),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: Image.asset(
-              'assets/images/labin.jpg',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: logoSize,
+            height: logoSize,
+            padding: EdgeInsets.all(compact ? 8 : 9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(compact ? 22 : 26),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.electricBlue.withValues(alpha: 0.12),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(compact ? 16 : 20),
+              child: Image.asset(
+                'assets/images/labin.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          AppBrand.name,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            color: AppTheme.ink,
-            fontWeight: FontWeight.w900,
-            height: 1.05,
+          SizedBox(height: compact ? 10 : 14),
+          Text(
+            AppBrand.name,
+            textAlign: TextAlign.center,
+            style:
+                (compact
+                        ? Theme.of(context).textTheme.headlineSmall
+                        : Theme.of(context).textTheme.headlineMedium)
+                    ?.copyWith(
+                      color: AppTheme.ink,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          AppBrand.tagline,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppTheme.muted,
-            fontWeight: FontWeight.w800,
-            height: 1.45,
+          SizedBox(height: compact ? 6 : 8),
+          Text(
+            AppBrand.tagline,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppTheme.muted,
+              fontWeight: FontWeight.w800,
+              height: 1.38,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -233,12 +255,17 @@ class _OnboardingSlide extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final tight = constraints.maxHeight < 360;
+            final tight = constraints.maxHeight < 390;
             final iconBox = tight ? 48.0 : 58.0;
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Flexible(child: _InventoryTechIllustration(activeIndex: index)),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _InventoryTechIllustration(activeIndex: index),
+                  ),
+                ),
                 SizedBox(height: tight ? 12 : 18),
                 Container(
                   width: iconBox,
@@ -278,6 +305,8 @@ class _OnboardingSlide extends StatelessWidget {
                 Text(
                   data.description,
                   textAlign: TextAlign.center,
+                  maxLines: tight ? 2 : 3,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.muted,
                     fontWeight: FontWeight.w600,
@@ -302,7 +331,16 @@ class _InventoryTechIllustration extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size = constraints.biggest.shortestSide.clamp(190.0, 250.0);
+        final availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width - 48;
+        final availableHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : availableWidth;
+        final rawSize = availableWidth < availableHeight
+            ? availableWidth
+            : availableHeight;
+        final size = rawSize.clamp(0.0, 250.0);
         return Center(
           child: SizedBox(
             width: size,
