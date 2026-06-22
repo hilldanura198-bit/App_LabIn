@@ -1781,7 +1781,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
       bottom: false,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF00A3FF), Color(0xFF6C5CE7), Color(0xFFAF52DE)],
@@ -1790,6 +1790,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
           ),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -1857,46 +1858,30 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _GlobalSearchField(
               controller: _searchController,
               onSubmitted: _submitSearch,
             ),
-            const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Row(
-                children: _quickTags
-                    .map(
-                      (tag) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          onPressed: () {
-                            _searchController.text = tag;
-                            _submitSearch(tag);
-                          },
-                          label: Text(tag),
-                          labelStyle: const TextStyle(
-                            color: AppTheme.ink,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          avatar: const Icon(
-                            Icons.bolt_rounded,
-                            color: AppTheme.electricBlue,
-                            size: 17,
-                          ),
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.28),
-                          ),
-                          backgroundColor: Colors.white.withValues(alpha: 0.92),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.only(bottom: 2),
+                itemCount: _quickTags.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final tag = _quickTags[index];
+                  return _HeaderQuickTag(
+                    label: tag,
+                    onTap: () {
+                      _searchController.text = tag;
+                      _submitSearch(tag);
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -1908,6 +1893,52 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
   void _submitSearch(String value) {
     final query = value.trim();
     widget.onSearchSubmitted(query.isEmpty ? 'Alat' : query);
+  }
+}
+
+class _HeaderQuickTag extends StatelessWidget {
+  const _HeaderQuickTag({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.bolt_rounded,
+                color: AppTheme.electricBlue,
+                size: 15,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.ink,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1946,7 +1977,7 @@ class _GlobalSearchField extends StatelessWidget {
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
-          vertical: 15,
+          vertical: 13,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(22),
