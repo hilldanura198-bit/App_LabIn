@@ -53,9 +53,10 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
     if (client == null) {
       throw Exception('Sistem backend belum dikonfigurasi.');
     }
+    // PERUBAHAN: Mengubah laboratories(name) menjadi laboratories(nama_lab)
     final rows = await client
         .from('bookings')
-        .select('*, profiles(nama, nim_nip), laboratories(name)')
+        .select('*, profiles(nama, nim_nip), laboratories(nama_lab)')
         .eq('status', 'pending')
         .order('tanggal_pinjam');
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
@@ -489,8 +490,9 @@ class _ApprovalRequestCard extends StatelessWidget {
       'Unknown',
     ]);
     final nim = _firstNotEmpty([profile['nim_nip'], '-']);
+    
+    // PERUBAHAN: Memastikan mengambil dari nama_lab
     final labName = _firstNotEmpty([
-      laboratory['name'],
       laboratory['nama_lab'],
       booking['lab_name_snapshot'],
       booking['lab_id'],
