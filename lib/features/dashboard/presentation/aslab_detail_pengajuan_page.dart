@@ -14,7 +14,7 @@ class AslabDetailPengajuanPage extends StatefulWidget {
     required this.repository,
   });
 
-  final LabBooking booking;
+  final Map<String, dynamic> booking;
   final DashboardRepository repository;
 
   @override
@@ -25,13 +25,15 @@ class AslabDetailPengajuanPage extends StatefulWidget {
 class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
   final _noteController = TextEditingController();
   late Future<bool> _conflictFuture;
+  late final LabBooking _booking;
   bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
-    _noteController.text = widget.booking.aslabNote ?? '';
-    _conflictFuture = widget.repository.hasScheduleConflict(widget.booking);
+    _booking = _bookingFromMap(widget.booking);
+    _noteController.text = _booking.aslabNote ?? '';
+    _conflictFuture = widget.repository.hasScheduleConflict(_booking);
   }
 
   @override
@@ -42,7 +44,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
 
   @override
   Widget build(BuildContext context) {
-    final booking = widget.booking;
+    final booking = _booking;
     final date = DateFormat('dd MMMM yyyy').format(booking.tanggalPinjam);
     final startTime = booking.startTime.isNotEmpty
         ? booking.startTime
@@ -252,9 +254,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
   Future<void> _approve() async {
     setState(() => _submitting = true);
     try {
-      final hasConflict = await widget.repository.hasScheduleConflict(
-        widget.booking,
-      );
+      final hasConflict = await widget.repository.hasScheduleConflict(_booking);
       if (hasConflict) {
         if (!mounted) return;
         setState(() {
@@ -271,7 +271,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
         return;
       }
       await widget.repository.approveAslab(
-        widget.booking.id,
+        _booking.id,
         note: _noteController.text,
       );
       if (!mounted) return;
@@ -301,10 +301,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
     }
     setState(() => _submitting = true);
     try {
-      await widget.repository.rejectAslab(
-        bookingId: widget.booking.id,
-        reason: note,
-      );
+      await widget.repository.rejectAslab(bookingId: _booking.id, reason: note);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -320,6 +317,32 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  LabBooking _bookingFromMap(Map<String, dynamic> source) {
+    final map = Map<String, dynamic>.from(source);
+    final laboratory = _asMap(map['laboratories']);
+    if (map['lab_id'] == null && map['ruangan_id'] != null) {
+      map['lab_id'] = map['ruangan_id'];
+    }
+    map['lab_name_snapshot'] ??=
+        laboratory['name'] ?? laboratory['nama_lab'] ?? map['lab_name'];
+    map['items_snapshot'] ??= map['items'] ?? const [];
+    map['borrower_name'] ??= _asMap(map['profiles'])['nama'];
+    map['reservation_no'] ??= 'Booking ${map['id'] ?? ''}';
+    map['qr_token'] ??= '';
+    map['whatsapp_number'] ??= '';
+    map['faculty_code'] ??= '';
+    map['purpose'] ??= '';
+    map['tanggal_kembali'] ??= map['tanggal_pinjam'];
+    map['created_at'] ??= map['tanggal_pinjam'];
+    return LabBooking.fromMap(map);
+  }
+
+  Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const {};
   }
 }
 

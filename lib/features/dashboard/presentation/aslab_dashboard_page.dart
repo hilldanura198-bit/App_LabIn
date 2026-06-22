@@ -32,8 +32,40 @@ class AslabDashboardPage extends StatelessWidget {
   }
 }
 
-class _AslabDashboardView extends StatelessWidget {
+class _AslabDashboardView extends StatefulWidget {
   const _AslabDashboardView();
+
+  @override
+  State<_AslabDashboardView> createState() => _AslabDashboardViewState();
+}
+
+class _AslabDashboardViewState extends State<_AslabDashboardView> {
+  late Future<List<Map<String, dynamic>>> _pendingFuture;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pendingFuture = _fetchPendingBookings();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchPendingBookings() async {
+    final client = context.read<AuthRepository>().client;
+    if (client == null) {
+      throw Exception('Sistem backend belum dikonfigurasi.');
+    }
+    final rows = await client
+        .from('bookings')
+        .select('*, profiles(nama, nim_nip), laboratories(name)')
+        .eq('status', 'pending')
+        .order('tanggal_pinjam');
+    return rows.map((row) => Map<String, dynamic>.from(row)).toList();
+  }
+
+  void _refreshPending() {
+    setState(() {
+      _pendingFuture = _fetchPendingBookings();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,9 +94,6 @@ class _AslabDashboardView extends StatelessWidget {
         ),
         body: BlocBuilder<DashboardBloc, DashboardState>(
           builder: (context, state) {
-            final pending = state.bookings
-                .where((booking) => booking.status == 'pending')
-                .toList();
             final active = state.bookings
                 .where(
                   (booking) =>
@@ -90,29 +119,70 @@ class _AslabDashboardView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _AslabHero(
-                              pendingCount: pending.length,
-                              activeCount: active.length,
+                            FutureBuilder<List<Map<String, dynamic>>>(
+                              future: _pendingFuture,
+                              builder: (context, snapshot) {
+                                final pending =
+                                    snapshot.data ??
+                                    const <Map<String, dynamic>>[];
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    _AslabHero(
+                                      pendingCount: pending.length,
+                                      activeCount: active.length,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    RoomStockStreamBanner(
+                                      repository: repository,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Daftar Pengajuan Pending',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting)
+                                      const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(28),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    else if (snapshot.hasError)
+                                      _InfoCard(snapshot.error.toString())
+                                    else if (pending.isEmpty)
+                                      const _InfoCard(
+                                        'Tidak ada antrean pending.',
+                                      )
+                                    else
+                                      ListView.builder(
+                                        shrinkWrap: true,
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        itemCount: pending.length,
+                                        itemBuilder: (context, index) {
+                                          final booking = pending[index];
+                                          return _ApprovalRequestCard(
+                                            booking: booking,
+                                            onTap: () => _openApprovalDetail(
+                                              context,
+                                              booking,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
-                            const SizedBox(height: 16),
-                            RoomStockStreamBanner(repository: repository),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Daftar Pengajuan Pending',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 10),
-                            if (pending.isEmpty)
-                              const _InfoCard('Tidak ada antrean pending.')
-                            else
-                              ...pending.map(
-                                (booking) => _ApprovalRequestCard(
-                                  booking: booking,
-                                  onTap: () =>
-                                      _openApprovalDetail(context, booking),
-                                ),
-                              ),
                             const SizedBox(height: 16),
                             _ScannerPrompt(onScan: () => _scanQr(context)),
                           ],
@@ -193,7 +263,7 @@ class _AslabDashboardView extends StatelessWidget {
 
   Future<void> _openApprovalDetail(
     BuildContext context,
-    LabBooking booking,
+    Map<String, dynamic> booking,
   ) async {
     final result = await Navigator.of(context).push<String>(
       MaterialPageRoute(
@@ -206,6 +276,7 @@ class _AslabDashboardView extends StatelessWidget {
       ),
     );
     if (result != null && context.mounted) {
+      _refreshPending();
       context.read<DashboardBloc>().add(
         const DashboardStarted(inventoryStream: false, bookingStream: true),
       );
@@ -392,182 +463,107 @@ class _AslabHero extends StatelessWidget {
 class _ApprovalRequestCard extends StatelessWidget {
   const _ApprovalRequestCard({required this.booking, required this.onTap});
 
-  final LabBooking booking;
+  final Map<String, dynamic> booking;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('dd MMM yyyy').format(booking.tanggalPinjam);
-    final start = booking.startTime.isNotEmpty
-        ? booking.startTime
-        : DateFormat.Hm().format(booking.tanggalPinjam);
-    final end = booking.endTime.isNotEmpty
-        ? booking.endTime
-        : DateFormat.Hm().format(booking.tanggalKembali);
-    final itemCount = booking.itemsSnapshot.fold<int>(
-      0,
-      (sum, item) => sum + item.quantity,
-    );
-    final nim = booking.borrowerIdentity?.trim().isNotEmpty == true
-        ? booking.borrowerIdentity!
+    final profile = _asMap(booking['profiles']);
+    final laboratory = _asMap(booking['laboratories']);
+    final rawDate = booking['tanggal_pinjam']?.toString();
+    final date = rawDate == null
+        ? '-'
+        : DateFormat('dd MMM yyyy').format(DateTime.parse(rawDate).toLocal());
+    final start = booking['start_time']?.toString().trim().isNotEmpty == true
+        ? booking['start_time'].toString()
         : '-';
-    final programStudi = booking.borrowerProgramStudi?.trim().isNotEmpty == true
-        ? booking.borrowerProgramStudi!
-        : booking.facultyLabel;
-    final itemLabel = itemCount == 0
-        ? 'Tidak ada barang'
-        : '$itemCount barang dipinjam';
+    final end = booking['end_time']?.toString().trim().isNotEmpty == true
+        ? booking['end_time'].toString()
+        : '-';
+    final items = _itemsFromBooking(booking);
+    final itemCount = items.length;
+    final itemLabel = itemCount == 0 ? 'Tidak ada barang' : '$itemCount barang';
+    final borrowerName = _firstNotEmpty([
+      profile['nama'],
+      booking['borrower_name'],
+      'Unknown',
+    ]);
+    final nim = _firstNotEmpty([profile['nim_nip'], '-']);
+    final labName = _firstNotEmpty([
+      laboratory['name'],
+      laboratory['nama_lab'],
+      booking['lab_name_snapshot'],
+      booking['lab_id'],
+      '-',
+    ]);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.electricBlue.withValues(alpha: 0.10),
-              blurRadius: 26,
-              offset: const Offset(0, 14),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          clipBehavior: Clip.antiAlias,
+      child: Center(
+        child: Card(
+          elevation: 2,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: InkWell(
             onTap: onTap,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppTheme.electricBlue.withValues(alpha: 0.12),
-                ),
-                borderRadius: BorderRadius.circular(22),
-              ),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.electricBlue.withValues(alpha: 0.12),
-                          AppTheme.vibrantPurple.withValues(alpha: 0.10),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          borrowerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: const BoxDecoration(
-                            gradient: AppTheme.cyberGradient,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person_search_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                booking.borrowerName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(
-                                      color: AppTheme.ink,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                'NIM $nim - $programStudi',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: AppTheme.muted,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const _PendingBadge(),
-                      ],
+                      const SizedBox(width: 10),
+                      const _PendingBadge(),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'NIM $nim',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            _BookingInfoPill(
-                              icon: Icons.meeting_room_outlined,
-                              label: 'Ruangan',
-                              value: booking.labDisplayName,
-                            ),
-                            _BookingInfoPill(
-                              icon: Icons.event_note_outlined,
-                              label: 'Tanggal',
-                              value: date,
-                            ),
-                            _BookingInfoPill(
-                              icon: Icons.schedule_rounded,
-                              label: 'Jam',
-                              value: '$start - $end',
-                            ),
-                            _BookingInfoPill(
-                              icon: Icons.inventory_2_outlined,
-                              label: 'Barang',
-                              value: itemLabel,
-                            ),
-                          ],
+                  const SizedBox(height: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _CompactInfo(
+                          icon: Icons.meeting_room_outlined,
+                          label: 'Laboratorium',
+                          value: labName,
                         ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                booking.reservationNo,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: AppTheme.muted,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              ),
-                            ),
-                            Text(
-                              'Lihat detail',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: AppTheme.electricBlue,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              color: AppTheme.electricBlue,
-                            ),
-                          ],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _CompactInfo(
+                          icon: Icons.event_note_outlined,
+                          label: 'Tanggal',
+                          value: date,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _CompactInfo(
+                    icon: Icons.schedule_rounded,
+                    label: 'Waktu',
+                    value: '$start - $end | $itemLabel',
                   ),
                 ],
               ),
@@ -576,6 +572,26 @@ class _ApprovalRequestCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const {};
+  }
+
+  static List<Object?> _itemsFromBooking(Map<String, dynamic> booking) {
+    final value = booking['items'] ?? booking['items_snapshot'];
+    if (value is List) return value;
+    return const [];
+  }
+
+  static String _firstNotEmpty(List<Object?> values) {
+    for (final value in values) {
+      final text = value?.toString().trim();
+      if (text != null && text.isNotEmpty) return text;
+    }
+    return '-';
   }
 }
 
@@ -616,8 +632,8 @@ class _PendingBadge extends StatelessWidget {
   }
 }
 
-class _BookingInfoPill extends StatelessWidget {
-  const _BookingInfoPill({
+class _CompactInfo extends StatelessWidget {
+  const _CompactInfo({
     required this.icon,
     required this.label,
     required this.value,
@@ -629,46 +645,35 @@ class _BookingInfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 138, maxWidth: 220),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.coolMist,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.electricBlue.withValues(alpha: 0.10),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppTheme.electricBlue, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppTheme.electricBlue, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w900),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
