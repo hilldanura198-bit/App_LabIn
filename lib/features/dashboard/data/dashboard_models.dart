@@ -10,6 +10,7 @@ class LabInventory {
     required this.kondisi,
     required this.type,
     this.manualUrl,
+    this.imageUrl,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class LabInventory {
   final String kondisi;
   final String type;
   final String? manualUrl;
+  final String? imageUrl;
 
   bool get isAvailable => stokTersedia > 0 && kondisi == 'bagus';
   bool get isCritical => stokTersedia <= 1 || kondisi == 'rusak';
@@ -44,7 +46,20 @@ class LabInventory {
       kondisi: map['kondisi'] as String? ?? 'bagus',
       type: map['type'] as String? ?? map['jenis'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
+      imageUrl: _imageUrlFromMap(map),
     );
+  }
+
+  static String? _imageUrlFromMap(Map<String, dynamic> map) {
+    final value =
+        map['image_url'] ??
+        map['gambar_url'] ??
+        map['foto_url'] ??
+        map['photo_url'] ??
+        map['image'] ??
+        map['gambar'];
+    final text = value?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
   }
 }
 
@@ -273,12 +288,14 @@ class LabRoom {
     required this.name,
     required this.location,
     required this.status,
+    this.imageUrl,
   });
 
   final String id;
   final String name;
   final String location;
   final String status;
+  final String? imageUrl;
 
   factory LabRoom.fromMap(Map<String, dynamic> map) {
     return LabRoom(
@@ -286,7 +303,20 @@ class LabRoom {
       name: map['nama_lab'] as String? ?? 'Ruang Lab',
       location: map['lokasi'] as String? ?? '-',
       status: map['status_operasional'] as String? ?? 'aktif',
+      imageUrl: _imageUrlFromMap(map),
     );
+  }
+
+  static String? _imageUrlFromMap(Map<String, dynamic> map) {
+    final value =
+        map['image_url'] ??
+        map['gambar_url'] ??
+        map['foto_url'] ??
+        map['photo_url'] ??
+        map['image'] ??
+        map['gambar'];
+    final text = value?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
   }
 }
 

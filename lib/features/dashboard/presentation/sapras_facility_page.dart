@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -6,7 +7,6 @@ import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'widgets/glass_app_bar.dart';
 
-const _denahAssetPath = 'assets/images/denah.png';
 const _facilityAssetPath = 'assets/images/facility_lab.png';
 const _roomAssetPath = 'assets/images/facility_room.png';
 
@@ -76,7 +76,6 @@ class _FacilityList extends StatelessWidget {
                 final item = items[index];
                 final code = _assetCode(index);
                 final booking = _latestBookingForLab(bookings, item.labId);
-                final imagePath = _facilityAssetPath;
                 final odd = index.isOdd;
                 return Container(
                   decoration: BoxDecoration(
@@ -96,7 +95,8 @@ class _FacilityList extends StatelessWidget {
                       builder: (context, constraints) {
                         final compact = constraints.maxWidth < 620;
                         final image = _FacilityImage(
-                          imagePath: imagePath,
+                          imageUrl: item.imageUrl,
+                          fallbackAssetPath: _facilityAssetPath,
                           height: compact ? 150 : 112,
                         );
                         final detail = _FacilityDetail(
@@ -119,7 +119,6 @@ class _FacilityList extends StatelessWidget {
                                     context,
                                     item,
                                     booking,
-                                    imagePath,
                                   ),
                                 ),
                               ),
@@ -133,12 +132,8 @@ class _FacilityList extends StatelessWidget {
                             Expanded(child: detail),
                             const SizedBox(width: 12),
                             _DetailButton(
-                              onPressed: () => _showFacilityImage(
-                                context,
-                                item,
-                                booking,
-                                imagePath,
-                              ),
+                              onPressed: () =>
+                                  _showFacilityImage(context, item, booking),
                             ),
                           ],
                         );
@@ -176,14 +171,14 @@ class _FacilityList extends StatelessWidget {
     BuildContext context,
     LabInventory item,
     LabBooking? booking,
-    String imagePath,
   ) {
     showDialog<void>(
       context: context,
       builder: (_) => _ImageDialog(
         title: item.namaAlat,
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
-        imagePath: imagePath,
+        imageUrl: item.imageUrl,
+        fallbackAssetPath: _facilityAssetPath,
         booking: booking,
         icon: Icons.precision_manufacturing_outlined,
       ),
@@ -303,31 +298,98 @@ class _DataPill extends StatelessWidget {
 }
 
 class _FacilityImage extends StatelessWidget {
-  const _FacilityImage({required this.imagePath, required this.height});
+  const _FacilityImage({
+    required this.imageUrl,
+    required this.fallbackAssetPath,
+    required this.height,
+  });
 
-  final String imagePath;
+  final String? imageUrl;
+  final String fallbackAssetPath;
   final double height;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: Image.asset(
-        imagePath,
+      child: _RealtimeImage(
+        imageUrl: imageUrl,
+        fallbackAssetPath: fallbackAssetPath,
         height: height,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: height,
-            decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
-            child: const Icon(
-              Icons.image_not_supported_outlined,
-              color: Colors.white,
-            ),
-          );
-        },
       ),
+    );
+  }
+}
+
+class _RealtimeImage extends StatelessWidget {
+  const _RealtimeImage({
+    required this.imageUrl,
+    required this.fallbackAssetPath,
+    required this.height,
+    this.fallbackIcon = Icons.image_outlined,
+  });
+
+  final String? imageUrl;
+  final String fallbackAssetPath;
+  final double height;
+  final IconData fallbackIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    if (url == null || url.isEmpty) {
+      return _FallbackImage(
+        assetPath: fallbackAssetPath,
+        height: height,
+        icon: fallbackIcon,
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      height: height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      placeholder: (context, _) => Container(
+        height: height,
+        decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      ),
+      errorWidget: (context, _, _) => _FallbackImage(
+        assetPath: fallbackAssetPath,
+        height: height,
+        icon: fallbackIcon,
+      ),
+    );
+  }
+}
+
+class _FallbackImage extends StatelessWidget {
+  const _FallbackImage({
+    required this.assetPath,
+    required this.height,
+    required this.icon,
+  });
+
+  final String assetPath;
+  final double height;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      assetPath,
+      height: height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: height,
+          decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
+          child: Icon(icon, color: Colors.white, size: 36),
+        );
+      },
     );
   }
 }
@@ -492,7 +554,8 @@ class _InfrastructureList extends StatelessWidget {
                 builder: (_) => _ImageDialog(
                   title: room.name,
                   subtitle: '${room.location} - Status ${room.status}',
-                  imagePath: _roomAssetPath,
+                  imageUrl: room.imageUrl,
+                  fallbackAssetPath: _roomAssetPath,
                   booking: null,
                   icon: Icons.apartment_rounded,
                 ),
@@ -507,24 +570,10 @@ class _InfrastructureList extends StatelessWidget {
                       Expanded(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(14),
-                          child: Image.asset(
-                            _roomAssetPath,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: AppTheme.cyberGradient,
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.meeting_room_outlined,
-                                    color: Colors.white,
-                                    size: 34,
-                                  ),
-                                ),
-                              );
-                            },
+                          child: _RealtimeImage(
+                            imageUrl: room.imageUrl,
+                            fallbackAssetPath: _roomAssetPath,
+                            height: double.infinity,
                           ),
                         ),
                       ),
@@ -561,7 +610,6 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Ki Mangun Sarkoro No.20, Nusukan, Banjarsari, Surakarta',
       subtitle: 'Pusat administrasi dan layanan akademik utama.',
       layout: _CampusLayout.rektorat,
-      bannerAssetPath: _denahAssetPath,
       rooms: [
         'Lobby Utama',
         'Ruang Rektor',
@@ -576,7 +624,6 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Bhayangkara No.55, Tipes, Serengan, Surakarta',
       subtitle: 'Ruang kelas utama dan pusat aktivitas praktikum FIK.',
       layout: _CampusLayout.campus1,
-      bannerAssetPath: _denahAssetPath,
       rooms: [
         'Lab RPL',
         'Lab IoT',
@@ -591,7 +638,6 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. KH Samanhudi No.93, Sondakan, Laweyan, Surakarta',
       subtitle: 'Fokus pada klinik, simulasi, dan layanan kesehatan.',
       layout: _CampusLayout.campus2,
-      bannerAssetPath: _denahAssetPath,
       rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
     ),
     _CampusMapData(
@@ -599,7 +645,6 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
       layout: _CampusLayout.campus3,
-      bannerAssetPath: _denahAssetPath,
       rooms: [
         'Lab Legal Tech',
         'Lab Mediasi',
@@ -613,7 +658,6 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Blok lanjutan untuk praktikum, diskusi, dan kegiatan modern.',
       layout: _CampusLayout.campus4,
-      bannerAssetPath: _denahAssetPath,
       rooms: [
         'Ruang Diskusi',
         'Lab Presentasi',
@@ -739,20 +783,14 @@ class _CampusDenahPreview extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: _BlueprintImage(
-                imagePath: campus.bannerAssetPath,
-                height: 180,
-                fallbackIcon: Icons.map_outlined,
-              ),
-            ),
-            const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.84),
+                color: const Color(0xFFF8FBFF),
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: campus.accent.withValues(alpha: 0.18),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -769,6 +807,15 @@ class _CampusDenahPreview extends StatelessWidget {
                       const Icon(Icons.grid_view_rounded, size: 18),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Layout blueprint terstruktur untuk ruang, koridor, dan loker alat.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                  ),
+                  const SizedBox(height: 14),
+                  const _BlueprintLegend(),
                   const SizedBox(height: 12),
                   LayoutBuilder(
                     builder: (context, constraints) {
@@ -787,12 +834,19 @@ class _CampusDenahPreview extends StatelessWidget {
                           final room = rooms[index];
                           return _RoomBlock(
                             label: room,
-                            imagePath: _roomAssetPath,
                             accent: campus.accent,
+                            type: _zoneTypeFor(index),
                           );
                         },
                       );
                     },
+                  ),
+                  const SizedBox(height: 10),
+                  _RoomBlock(
+                    label: 'Loker Alat Utama',
+                    accent: AppTheme.cleanCyan,
+                    type: _BlueprintZoneType.locker,
+                    wide: true,
                   ),
                 ],
               ),
@@ -801,6 +855,12 @@ class _CampusDenahPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  _BlueprintZoneType _zoneTypeFor(int index) {
+    if (index == 0) return _BlueprintZoneType.entry;
+    if (index == 1 || index == 4) return _BlueprintZoneType.locker;
+    return _BlueprintZoneType.room;
   }
 }
 
@@ -875,160 +935,89 @@ class _CampusInfoCard extends StatelessWidget {
 class _RoomBlock extends StatelessWidget {
   const _RoomBlock({
     required this.label,
-    required this.imagePath,
     required this.accent,
+    required this.type,
+    this.wide = false,
   });
 
   final String label;
-  final String imagePath;
   final Color accent;
+  final _BlueprintZoneType type;
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            imagePath,
-            fit: BoxFit.cover,
-            color: Colors.white.withValues(alpha: 0.10),
-            colorBlendMode: BlendMode.modulate,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.cyberGradient,
-                ),
-                child: const Icon(
-                  Icons.meeting_room_outlined,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              );
-            },
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.black.withValues(alpha: 0.05),
-                  Colors.black.withValues(alpha: 0.55),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: accent.withValues(alpha: 0.22)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black54,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    final zoneColor = switch (type) {
+      _BlueprintZoneType.entry => AppTheme.electricBlue,
+      _BlueprintZoneType.locker => AppTheme.cleanCyan,
+      _BlueprintZoneType.room => accent,
+    };
+    final icon = switch (type) {
+      _BlueprintZoneType.entry => Icons.login_rounded,
+      _BlueprintZoneType.locker => Icons.inventory_2_outlined,
+      _BlueprintZoneType.room => Icons.meeting_room_outlined,
+    };
+    final typeLabel = switch (type) {
+      _BlueprintZoneType.entry => 'Akses',
+      _BlueprintZoneType.locker => 'Loker Alat',
+      _BlueprintZoneType.room => 'Ruangan',
+    };
+    return Container(
+      constraints: wide
+          ? const BoxConstraints(minHeight: 72)
+          : const BoxConstraints(),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: zoneColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: zoneColor.withValues(alpha: 0.48),
+          width: 1.4,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: zoneColor.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _BlueprintImage extends StatelessWidget {
-  const _BlueprintImage({
-    required this.imagePath,
-    required this.height,
-    required this.fallbackIcon,
-  });
-
-  final String imagePath;
-  final double height;
-  final IconData fallbackIcon;
-
-  static const _grayscaleMatrix = <double>[
-    0.2126,
-    0.7152,
-    0.0722,
-    0,
-    0,
-    0.2126,
-    0.7152,
-    0.0722,
-    0,
-    0,
-    0.2126,
-    0.7152,
-    0.0722,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
+      child: Row(
         children: [
-          ColorFiltered(
-            colorFilter: const ColorFilter.matrix(_grayscaleMatrix),
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    gradient: AppTheme.cyberGradient,
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: zoneColor.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: zoneColor.withValues(alpha: 0.34)),
+            ),
+            child: Icon(icon, color: zoneColor, size: 21),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppTheme.ink,
+                    fontWeight: FontWeight.w900,
                   ),
-                  child: Icon(fallbackIcon, color: Colors.white, size: 42),
-                );
-              },
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.10),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white.withValues(alpha: 0.04),
-                  Colors.black.withValues(alpha: 0.12),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
-              borderRadius: BorderRadius.circular(18),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  typeLabel,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: zoneColor,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1036,6 +1025,62 @@ class _BlueprintImage extends StatelessWidget {
     );
   }
 }
+
+class _BlueprintLegend extends StatelessWidget {
+  const _BlueprintLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: const [
+        _LegendChip(color: AppTheme.vibrantPurple, label: 'Ruangan'),
+        _LegendChip(color: AppTheme.cleanCyan, label: 'Loker Alat'),
+        _LegendChip(color: AppTheme.electricBlue, label: 'Akses'),
+      ],
+    );
+  }
+}
+
+class _LegendChip extends StatelessWidget {
+  const _LegendChip({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppTheme.ink,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _BlueprintZoneType { room, locker, entry }
 
 class _SatisfactionAnalytics extends StatefulWidget {
   const _SatisfactionAnalytics({required this.repository});
@@ -1282,14 +1327,16 @@ class _ImageDialog extends StatelessWidget {
   const _ImageDialog({
     required this.title,
     required this.subtitle,
-    required this.imagePath,
+    required this.imageUrl,
+    required this.fallbackAssetPath,
     required this.booking,
     required this.icon,
   });
 
   final String title;
   final String subtitle;
-  final String imagePath;
+  final String? imageUrl;
+  final String fallbackAssetPath;
   final LabBooking? booking;
   final IconData icon;
 
@@ -1309,17 +1356,11 @@ class _ImageDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    decoration: const BoxDecoration(
-                      gradient: AppTheme.cyberGradient,
-                    ),
-                    child: Icon(icon, size: 88, color: Colors.white),
-                  );
-                },
+              child: _RealtimeImage(
+                imageUrl: imageUrl,
+                fallbackAssetPath: fallbackAssetPath,
+                height: 220,
+                fallbackIcon: icon,
               ),
             ),
             const SizedBox(height: 16),
@@ -1368,7 +1409,6 @@ class _CampusMapData {
     required this.address,
     required this.subtitle,
     required this.layout,
-    required this.bannerAssetPath,
     required this.rooms,
   });
 
@@ -1376,7 +1416,6 @@ class _CampusMapData {
   final String address;
   final String subtitle;
   final _CampusLayout layout;
-  final String bannerAssetPath;
   final List<String> rooms;
 
   String get mapUrl =>

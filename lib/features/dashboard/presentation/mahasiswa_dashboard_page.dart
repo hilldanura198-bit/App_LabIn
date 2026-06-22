@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -1204,18 +1205,13 @@ class _InventoryGrid extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  height: 96,
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cyberGradient,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    inventory.isAvailable
-                        ? Icons.precision_manufacturing_outlined
-                        : Icons.warning_amber_rounded,
-                    color: Colors.white,
-                  ),
+                  child: _InventoryRealtimeImage(inventory: inventory),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -1293,6 +1289,65 @@ class _InventoryGrid extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SaprasFacilityPage(repository: repository),
+      ),
+    );
+  }
+}
+
+class _InventoryRealtimeImage extends StatelessWidget {
+  const _InventoryRealtimeImage({required this.inventory});
+
+  final LabInventory inventory;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = inventory.imageUrl?.trim();
+    if (url == null || url.isEmpty) {
+      return _InventoryImageFallback(inventory: inventory);
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (context, _) => const DecoratedBox(
+        decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
+        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
+      errorWidget: (context, _, _) =>
+          _InventoryImageFallback(inventory: inventory),
+    );
+  }
+}
+
+class _InventoryImageFallback extends StatelessWidget {
+  const _InventoryImageFallback({required this.inventory});
+
+  final LabInventory inventory;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              inventory.isAvailable
+                  ? Icons.precision_manufacturing_outlined
+                  : Icons.warning_amber_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'LabIn',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

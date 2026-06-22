@@ -127,7 +127,7 @@ class AuthRepository {
     };
   }
 
-  Future<String> signInWithBiometricSession() async {
+  Future<String> signInWithBiometricSession({bool skipPrompt = false}) async {
     try {
       if (kIsWeb) {
         throw const BiometricUnavailableException();
@@ -143,12 +143,14 @@ class AuthRepository {
         );
       }
 
-      final authenticated = await _localAuth.authenticate(
-        localizedReason:
-            'Gunakan biometrik untuk membuka sesi ${AppBrand.name}',
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
-      );
+      final authenticated =
+          skipPrompt ||
+          await _localAuth.authenticate(
+            localizedReason:
+                'Gunakan biometrik untuk membuka sesi ${AppBrand.name}',
+            biometricOnly: true,
+            persistAcrossBackgrounding: true,
+          );
       if (!authenticated) {
         throw Exception('Autentikasi biometrik dibatalkan.');
       }

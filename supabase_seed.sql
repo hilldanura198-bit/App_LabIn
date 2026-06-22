@@ -3,21 +3,22 @@
 
 begin;
 
-insert into public.laboratories (id, nama_lab, lokasi, status_operasional)
+insert into public.laboratories (id, nama_lab, lokasi, image_url, status_operasional)
 values
-  ('11111111-1111-4111-8111-111111111111', 'Lab RPL', 'Gedung Teknologi Lt. 2', 'aktif'),
-  ('22222222-2222-4222-8222-222222222222', 'Lab IoT', 'Gedung Teknologi Lt. 3', 'aktif'),
-  ('33333333-3333-4333-8333-333333333333', 'Lab Jaringan', 'Gedung Teknologi Lt. 1', 'aktif'),
-  ('44444444-4444-4444-8444-444444444444', 'Lab Akuntansi Digital', 'Gedung Bisnis Lt. 1', 'aktif'),
-  ('55555555-5555-4555-8555-555555555555', 'Lab Business Analytics', 'Gedung Bisnis Lt. 2', 'aktif'),
-  ('66666666-6666-4666-8666-666666666666', 'Lab Legal Tech', 'Gedung Hukum Lt. 1', 'aktif'),
-  ('77777777-7777-4777-8777-777777777777', 'Lab Mediasi Digital', 'Gedung Hukum Lt. 2', 'aktif'),
-  ('88888888-8888-4888-8888-888888888888', 'Lab Simulasi Klinik', 'Gedung Kesehatan Lt. 1', 'aktif'),
-  ('99999999-9999-4999-8999-999999999999', 'Lab Kesehatan Masyarakat', 'Gedung Kesehatan Lt. 2', 'aktif')
+  ('11111111-1111-4111-8111-111111111111', 'Lab RPL', 'Gedung Teknologi Lt. 2', null, 'aktif'),
+  ('22222222-2222-4222-8222-222222222222', 'Lab IoT', 'Gedung Teknologi Lt. 3', null, 'aktif'),
+  ('33333333-3333-4333-8333-333333333333', 'Lab Jaringan', 'Gedung Teknologi Lt. 1', null, 'aktif'),
+  ('44444444-4444-4444-8444-444444444444', 'Lab Akuntansi Digital', 'Gedung Bisnis Lt. 1', null, 'aktif'),
+  ('55555555-5555-4555-8555-555555555555', 'Lab Business Analytics', 'Gedung Bisnis Lt. 2', null, 'aktif'),
+  ('66666666-6666-4666-8666-666666666666', 'Lab Legal Tech', 'Gedung Hukum Lt. 1', null, 'aktif'),
+  ('77777777-7777-4777-8777-777777777777', 'Lab Mediasi Digital', 'Gedung Hukum Lt. 2', null, 'aktif'),
+  ('88888888-8888-4888-8888-888888888888', 'Lab Simulasi Klinik', 'Gedung Kesehatan Lt. 1', null, 'aktif'),
+  ('99999999-9999-4999-8999-999999999999', 'Lab Kesehatan Masyarakat', 'Gedung Kesehatan Lt. 2', null, 'aktif')
 on conflict (id) do update
 set
   nama_lab = excluded.nama_lab,
   lokasi = excluded.lokasi,
+  image_url = excluded.image_url,
   status_operasional = excluded.status_operasional;
 
 insert into public.inventories (

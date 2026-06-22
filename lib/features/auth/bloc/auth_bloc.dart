@@ -46,7 +46,9 @@ class AuthRegisterMahasiswaRequested extends AuthEvent {
 }
 
 class AuthBiometricLoginRequested extends AuthEvent {
-  const AuthBiometricLoginRequested();
+  const AuthBiometricLoginRequested({this.alreadyAuthenticated = false});
+
+  final bool alreadyAuthenticated;
 }
 
 class AuthLogoutRequested extends AuthEvent {
@@ -200,7 +202,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      final userId = await _repository.signInWithBiometricSession();
+      final userId = await _repository.signInWithBiometricSession(
+        skipPrompt: event.alreadyAuthenticated,
+      );
       final role = await _repository.fetchUserRole(userId);
       emit(Authenticated(userId: userId, role: role));
     } on Object catch (error) {

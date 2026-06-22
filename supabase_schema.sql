@@ -31,6 +31,7 @@ create table if not exists public.laboratories (
   id uuid primary key default gen_random_uuid(),
   nama_lab text not null,
   lokasi text not null,
+  image_url text,
   status_operasional text not null default 'aktif',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -45,6 +46,7 @@ create table if not exists public.inventories (
   stok_tersedia integer not null default 0,
   kondisi text not null default 'bagus',
   manual_url text,
+  image_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint inventories_total_stok_check check (total_stok >= 0),
@@ -52,6 +54,12 @@ create table if not exists public.inventories (
   constraint inventories_stok_tersedia_lte_total_check check (stok_tersedia <= total_stok),
   constraint inventories_kondisi_check check (kondisi in ('bagus', 'rusak'))
 );
+
+alter table public.laboratories
+  add column if not exists image_url text;
+
+alter table public.inventories
+  add column if not exists image_url text;
 
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
