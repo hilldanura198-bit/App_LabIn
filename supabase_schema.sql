@@ -81,6 +81,7 @@ create table if not exists public.bookings (
   qr_token text not null unique default encode(gen_random_bytes(32), 'hex'),
   signature_url text,
   aslab_note text,
+  kalab_note text,
   rejection_reason text,
   rating_review jsonb,
   created_at timestamptz not null default now(),
@@ -221,6 +222,7 @@ add column if not exists desk_no text;
 
 alter table public.bookings
 add column if not exists aslab_note text,
+add column if not exists kalab_note text,
 add column if not exists rejection_reason text;
 
 alter table public.bookings

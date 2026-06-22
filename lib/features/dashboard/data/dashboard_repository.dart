@@ -201,6 +201,7 @@ class DashboardRepository {
               name: item.inventory.namaAlat,
               quantity: item.quantity,
               labId: item.inventory.labId,
+              inventoryId: item.inventory.id,
             ).toMap(),
           )
           .toList();
@@ -315,6 +316,7 @@ class DashboardRepository {
                   name: item.inventory.namaAlat,
                   quantity: item.quantity,
                   labId: item.inventory.labId,
+                  inventoryId: item.inventory.id,
                 ).toMap(),
               )
               .toList(),

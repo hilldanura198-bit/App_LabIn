@@ -75,12 +75,14 @@ class BookingSnapshotItem {
     required this.name,
     required this.quantity,
     required this.labId,
+    this.inventoryId,
     this.note,
   });
 
   final String name;
   final int quantity;
   final String labId;
+  final String? inventoryId;
   final String? note;
 
   factory BookingSnapshotItem.fromMap(Map<String, dynamic> map) {
@@ -88,6 +90,8 @@ class BookingSnapshotItem {
       name: map['name'] as String? ?? map['nama'] as String? ?? 'Item',
       quantity: map['quantity'] as int? ?? 1,
       labId: map['lab_id'] as String? ?? '',
+      inventoryId:
+          map['inventory_id'] as String? ?? map['inventoryId'] as String?,
       note: map['note'] as String?,
     );
   }
@@ -97,6 +101,8 @@ class BookingSnapshotItem {
       'name': name,
       'quantity': quantity,
       'lab_id': labId,
+      if (inventoryId != null && inventoryId!.trim().isNotEmpty)
+        'inventory_id': inventoryId!.trim(),
       if (note != null && note!.trim().isNotEmpty) 'note': note!.trim(),
     };
   }
