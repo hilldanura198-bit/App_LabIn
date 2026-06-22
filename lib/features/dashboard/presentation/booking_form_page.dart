@@ -28,6 +28,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
   final _otherItemsController = TextEditingController();
   final _requestDateController = TextEditingController();
   final _borrowDateController = TextEditingController();
+  final _returnDateController = TextEditingController();
   final _startTimeController = TextEditingController();
   final _endTimeController = TextEditingController();
 
@@ -40,6 +41,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
   String? _selectedLabId;
   DateTime? _requestDate;
   DateTime? _borrowDate;
+  DateTime? _returnDate;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   final Map<String, BookingItemDraft> _selectedItems = {};
@@ -54,9 +56,10 @@ class _BookingFormPageState extends State<BookingFormPage> {
         AppValidation.isValidWhatsappNumber(_waController.text) &&
         _requestDate != null &&
         _borrowDate != null &&
+        _returnDate != null &&
         _startTime != null &&
         _endTime != null &&
-        _isEndAfterStart() &&
+        _isReturnAfterStart() &&
         _purposeController.text.trim().length >= 8;
   }
 
@@ -88,6 +91,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
       _otherItemsController,
       _requestDateController,
       _borrowDateController,
+      _returnDateController,
       _startTimeController,
       _endTimeController,
     ]) {
@@ -105,6 +109,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
       _otherItemsController,
       _requestDateController,
       _borrowDateController,
+      _returnDateController,
       _startTimeController,
       _endTimeController,
     ]) {
@@ -116,6 +121,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
     _otherItemsController.dispose();
     _requestDateController.dispose();
     _borrowDateController.dispose();
+    _returnDateController.dispose();
     _startTimeController.dispose();
     _endTimeController.dispose();
     super.dispose();
@@ -159,7 +165,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
             colors: [
               AppTheme.vibrantPurple.withValues(alpha: 0.22),
               AppTheme.electricBlue.withValues(alpha: 0.10),
-              Colors.white,
+              Theme.of(context).colorScheme.surface,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -181,7 +187,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                           child: Container(
                             padding: const EdgeInsets.fromLTRB(18, 20, 18, 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
                                 color: AppTheme.electricBlue.withValues(
@@ -440,6 +446,19 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                       onSelected: (date) {
                                                         setState(() {
                                                           _borrowDate = date;
+                                                          if (_returnDate ==
+                                                                  null ||
+                                                              _returnDate!
+                                                                  .isBefore(
+                                                                    date,
+                                                                  )) {
+                                                            _returnDate = date;
+                                                            _returnDateController
+                                                                    .text =
+                                                                _formatDate(
+                                                                  date,
+                                                                );
+                                                          }
                                                           _borrowDateController
                                                                   .text =
                                                               _formatDate(date);
@@ -452,6 +471,62 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                       prefixIcon: Icon(
                                                         Icons
                                                             .date_range_outlined,
+                                                      ),
+                                                      suffixIcon: Icon(
+                                                        Icons
+                                                            .calendar_today_outlined,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _returnDateController,
+                                                    readOnly: true,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (_returnDate == null) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      if (_borrowDate != null &&
+                                                          _returnDate!.isBefore(
+                                                            _borrowDate!,
+                                                          )) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
+                                                    onTap: () => _pickDate(
+                                                      context: context,
+                                                      title:
+                                                          'Pilih Tanggal Pengembalian',
+                                                      initial:
+                                                          _returnDate ??
+                                                          _borrowDate ??
+                                                          DateTime.now().add(
+                                                            const Duration(
+                                                              days: 1,
+                                                            ),
+                                                          ),
+                                                      onSelected: (date) {
+                                                        setState(() {
+                                                          _returnDate = date;
+                                                          _returnDateController
+                                                                  .text =
+                                                              _formatDate(date);
+                                                        });
+                                                      },
+                                                    ),
+                                                    decoration: const InputDecoration(
+                                                      labelText:
+                                                          'Tanggal Pengembalian',
+                                                      prefixIcon: Icon(
+                                                        Icons
+                                                            .event_repeat_outlined,
                                                       ),
                                                       suffixIcon: Icon(
                                                         Icons
@@ -519,7 +594,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                         return _invalidMessage;
                                                       }
                                                       if (_startTime != null &&
-                                                          !_isEndAfterStart()) {
+                                                          !_isReturnAfterStart()) {
                                                         return _invalidMessage;
                                                       }
                                                       return null;
@@ -828,6 +903,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                         content: _ReviewPanel(
                                           requestDate: _requestDate,
                                           borrowDate: _borrowDate,
+                                          returnDate: _returnDate,
                                           startTime: _startTime,
                                           endTime: _endTime,
                                           selectedFacultyCode:
@@ -888,13 +964,19 @@ class _BookingFormPageState extends State<BookingFormPage> {
         _showWarning(_invalidMessage);
         return;
       }
-      if (!_isEndAfterStart()) {
+      if (!_isReturnAfterStart()) {
         _showWarning(_invalidMessage);
         return;
       }
       if (_borrowDate != null &&
           _requestDate != null &&
           _borrowDate!.isBefore(_requestDate!)) {
+        _showWarning(_invalidMessage);
+        return;
+      }
+      if (_returnDate != null &&
+          _borrowDate != null &&
+          _returnDate!.isBefore(_borrowDate!)) {
         _showWarning(_invalidMessage);
         return;
       }
@@ -929,8 +1011,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
     if (_borrowDate == null ||
         _requestDate == null ||
         _startTime == null ||
+        _returnDate == null ||
         _endTime == null ||
-        !_isEndAfterStart()) {
+        !_isReturnAfterStart()) {
       _showWarning(_invalidMessage);
       setState(() => _step = 0);
       return;
@@ -955,6 +1038,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
         labNameSnapshot: selectedLab.name,
         requestDate: _requestDate!,
         borrowDate: _borrowDate!,
+        returnDate: _returnDate!,
         startTime: _formatTime(_startTime!),
         endTime: _formatTime(_endTime!),
         purpose: _purposeController.text.trim(),
@@ -1044,13 +1128,32 @@ class _BookingFormPageState extends State<BookingFormPage> {
     }
   }
 
-  bool _isEndAfterStart() {
+  bool _isReturnAfterStart() {
+    final borrowDate = _borrowDate;
+    final returnDate = _returnDate;
     final start = _startTime;
     final end = _endTime;
-    if (start == null || end == null) return false;
-    final startMinutes = start.hour * 60 + start.minute;
-    final endMinutes = end.hour * 60 + end.minute;
-    return endMinutes > startMinutes;
+    if (borrowDate == null ||
+        returnDate == null ||
+        start == null ||
+        end == null) {
+      return false;
+    }
+    final startDateTime = DateTime(
+      borrowDate.year,
+      borrowDate.month,
+      borrowDate.day,
+      start.hour,
+      start.minute,
+    );
+    final endDateTime = DateTime(
+      returnDate.year,
+      returnDate.month,
+      returnDate.day,
+      end.hour,
+      end.minute,
+    );
+    return endDateTime.isAfter(startDateTime);
   }
 
   String _formatDate(DateTime date) => DateFormat('dd/MM/yyyy').format(date);
@@ -1278,6 +1381,7 @@ class _ReviewPanel extends StatelessWidget {
   const _ReviewPanel({
     required this.requestDate,
     required this.borrowDate,
+    required this.returnDate,
     required this.startTime,
     required this.endTime,
     required this.selectedFacultyCode,
@@ -1293,6 +1397,7 @@ class _ReviewPanel extends StatelessWidget {
 
   final DateTime? requestDate;
   final DateTime? borrowDate;
+  final DateTime? returnDate;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
   final String? selectedFacultyCode;
@@ -1356,6 +1461,13 @@ class _ReviewPanel extends StatelessWidget {
                 value: borrowDate == null
                     ? '-'
                     : dateFormatter.format(borrowDate!),
+              ),
+              _ReviewChip(
+                icon: Icons.event_repeat_outlined,
+                label: 'Pengembalian',
+                value: returnDate == null
+                    ? '-'
+                    : dateFormatter.format(returnDate!),
               ),
               _ReviewChip(
                 icon: Icons.schedule_outlined,

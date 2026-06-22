@@ -98,12 +98,24 @@ class AppTheme {
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: offWhite,
-        foregroundColor: ink,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: ink,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
+      listTileTheme: ListTileThemeData(
+        iconColor: colorScheme.onSurfaceVariant,
+        textColor: colorScheme.onSurface,
+        titleTextStyle: textTheme.titleMedium?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w800,
+        ),
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
       cardTheme: CardThemeData(
@@ -217,12 +229,24 @@ class AppTheme {
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: const Color(0xFF070A16),
-        foregroundColor: Colors.white,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
-          color: Colors.white,
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
+      listTileTheme: ListTileThemeData(
+        iconColor: colorScheme.onSurfaceVariant,
+        textColor: colorScheme.onSurface,
+        titleTextStyle: textTheme.titleMedium?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w800,
+        ),
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
       cardTheme: CardThemeData(

@@ -11,6 +11,7 @@ import '../../../core/validation.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import '../data/profile_repository.dart';
 import 'widgets/glass_app_bar.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -83,11 +84,13 @@ class _SettingsPageState extends State<SettingsPage> {
       final fallbackEmail = (metadata['email'] ?? currentUser?.email ?? '')
           .toString()
           .trim();
-      final language = prefs.getString('app_language') ?? 'id';
-      final locationEnabled = prefs.getBool('feature_location') ?? true;
+      final language = prefs.getString('app_language') ?? profile.appLanguage;
+      final locationEnabled =
+          prefs.getBool('feature_location') ?? profile.locationEnabled;
       final deviceSecurityEnabled = kIsWeb
           ? true
-          : prefs.getBool('feature_device_security') ?? biometricSupported;
+          : prefs.getBool('feature_device_security') ??
+                profile.deviceSecurityEnabled;
       setState(() {
         _language = language;
         _locationEnabled = locationEnabled;
@@ -150,7 +153,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   colors: [
                     AppTheme.vibrantPurple.withValues(alpha: 0.18),
                     AppTheme.electricBlue.withValues(alpha: 0.08),
-                    AppTheme.offWhite,
+                    Theme.of(context).colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -417,7 +420,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }) {
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -762,6 +765,9 @@ class _SettingsPageState extends State<SettingsPage> {
               _deviceSecurityEnabled,
           realtimeNotificationsEnabled: _realtimeNotifications,
           notificationSoundEnabled: _notificationSound,
+          appLanguage: _language,
+          locationEnabled: _locationEnabled,
+          deviceSecurityEnabled: _deviceSecurityEnabled,
         ),
       );
       await prefs.setString('app_language', _language);
@@ -787,6 +793,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _language = value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_language', value);
+    await _persistSettings();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -801,20 +808,30 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _pickAvatar() async {
+    final source = await _chooseAvatarSource();
+    if (source == null) {
+      return;
+    }
     try {
       final image = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         imageQuality: 76,
         maxWidth: 640,
       );
       if (image == null) {
         return;
       }
-      final url = await widget.repository.uploadAvatar(image);
+      final url = await ProfileRepository(
+        widget.repository.client,
+      ).uploadProfilePicture(image);
       if (!mounted) {
         return;
       }
       setState(() => _avatarUrl = url);
+      await _load();
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Avatar profil berhasil diperbarui.')),
       );
@@ -825,6 +842,49 @@ class _SettingsPageState extends State<SettingsPage> {
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
+  }
+
+  Future<ImageSource?> _chooseAvatarSource() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: _tileIcon(
+                    Icons.photo_library_outlined,
+                    AppTheme.electricBlue,
+                  ),
+                  title: const Text(
+                    'Pilih dari Galeri',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  onTap: () =>
+                      Navigator.of(sheetContext).pop(ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: _tileIcon(
+                    Icons.photo_camera_outlined,
+                    AppTheme.vibrantPurple,
+                  ),
+                  title: const Text(
+                    'Ambil dari Kamera',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  onTap: () =>
+                      Navigator.of(sheetContext).pop(ImageSource.camera),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<bool> _changePassword() async {

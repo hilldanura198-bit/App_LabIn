@@ -88,46 +88,45 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         }
       },
       child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(190),
-          child: BlocBuilder<DashboardBloc, DashboardState>(
-            builder: (context, state) {
-              return _ModernFloatingHeader(
-                cartCount: state.cartCount,
-                onCartPressed: () => _openCart(context, state),
-                onProfilePressed: () => _openSettings(context),
-                onNotifPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => NotificationCenterPage(
-                      repository: _repository(context),
-                    ),
-                  ),
-                ),
-                onSearchSubmitted: (query) => _showGlobalSearch(
-                  context,
-                  query: query,
-                  state: state,
-                  repository: _repository(context),
-                ),
-              );
-            },
-          ),
-        ),
         body: BlocBuilder<DashboardBloc, DashboardState>(
           builder: (context, state) {
-            return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 320),
-              transitionBuilder: (child, animation) {
-                final slide = Tween<Offset>(
-                  begin: const Offset(0.06, 0),
-                  end: Offset.zero,
-                ).animate(animation);
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(position: slide, child: child),
-                );
-              },
-              child: _buildTab(context, state),
+            return Column(
+              children: [
+                _ModernFloatingHeader(
+                  cartCount: state.cartCount,
+                  onCartPressed: () => _openCart(context, state),
+                  onProfilePressed: () => _openSettings(context),
+                  onNotifPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => NotificationCenterPage(
+                        repository: _repository(context),
+                      ),
+                    ),
+                  ),
+                  onSearchSubmitted: (query) => _showGlobalSearch(
+                    context,
+                    query: query,
+                    state: state,
+                    repository: _repository(context),
+                  ),
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 320),
+                    transitionBuilder: (child, animation) {
+                      final slide = Tween<Offset>(
+                        begin: const Offset(0.06, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(position: slide, child: child),
+                      );
+                    },
+                    child: _buildTab(context, state),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -147,11 +146,11 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                     horizontal: 14,
                     vertical: 12,
                   ),
-                  activeColor: AppTheme.espresso,
-                  color: AppTheme.sepia,
-                  tabBackgroundColor: AppTheme.richBronze.withValues(
-                    alpha: 0.22,
-                  ),
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  tabBackgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.22),
                   tabs: const [
                     GButton(icon: Icons.home_outlined, text: 'Beranda'),
                     GButton(icon: Icons.search_rounded, text: 'Reservasi'),
@@ -1782,7 +1781,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
       bottom: false,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF00A3FF), Color(0xFF6C5CE7), Color(0xFFAF52DE)],
@@ -1863,9 +1862,10 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
               controller: _searchController,
               onSubmitted: _submitSearch,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(bottom: 2),
               child: Row(
                 children: _quickTags
                     .map(

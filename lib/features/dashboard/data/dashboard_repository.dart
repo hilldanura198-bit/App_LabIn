@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'dashboard_models.dart';
+import 'profile_repository.dart';
 
 class DashboardRepository {
   DashboardRepository(this._client);
@@ -26,6 +27,8 @@ class DashboardRepository {
   String? get currentUserId => _client?.auth.currentUser?.id;
 
   User? get currentUser => _client?.auth.currentUser;
+
+  SupabaseClient? get client => _client;
 
   Stream<List<LabInventory>> watchInventories() {
     return _supabase
@@ -264,6 +267,7 @@ class DashboardRepository {
     required String labNameSnapshot,
     required DateTime requestDate,
     required DateTime borrowDate,
+    required DateTime returnDate,
     required String startTime,
     required String endTime,
     required String purpose,
@@ -276,7 +280,7 @@ class DashboardRepository {
       throw Exception('User belum login.');
     }
     final startDateTime = _combineDateAndTime(borrowDate, startTime);
-    final endDateTime = _combineDateAndTime(borrowDate, endTime);
+    final endDateTime = _combineDateAndTime(returnDate, endTime);
     _validateBookingRange(startDateTime, endDateTime);
     await _ensureNoTimeCollision(
       labId: labId,
@@ -386,7 +390,8 @@ class DashboardRepository {
         )
         .eq('id', userId)
         .single();
-    return ProfileSettings.fromMap(row);
+    final preferences = await _fetchOptionalProfilePreferences(userId);
+    return ProfileSettings.fromMap({...row, ...preferences});
   }
 
   Future<void> updateProfile(ProfileSettings settings) {
@@ -412,6 +417,7 @@ class DashboardRepository {
           'notification_sound_enabled': settings.notificationSoundEnabled,
         })
         .eq('id', userId);
+    await _updateOptionalProfilePreferences(userId, settings);
     await _insertNotification(
       userId: userId,
       title: 'Profil diperbarui',
@@ -423,31 +429,7 @@ class DashboardRepository {
   }
 
   Future<String> uploadAvatar(XFile image) async {
-    final userId = currentUserId;
-    if (userId == null) {
-      throw Exception('User belum login.');
-    }
-    final bytes = await image.readAsBytes();
-    final extension = image.name.split('.').last.toLowerCase();
-    final safeExtension = extension.isEmpty ? 'jpg' : extension;
-    final path =
-        '$userId/avatar-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
-    await _supabase.storage
-        .from('avatars')
-        .uploadBinary(
-          path,
-          bytes,
-          fileOptions: FileOptions(
-            upsert: true,
-            contentType: image.mimeType ?? 'image/$safeExtension',
-          ),
-        );
-    final avatarUrl = _supabase.storage.from('avatars').getPublicUrl(path);
-    await _supabase
-        .from('profiles')
-        .update({'avatar_url': avatarUrl})
-        .eq('id', userId);
-    return avatarUrl;
+    return ProfileRepository(_client).uploadProfilePicture(image);
   }
 
   Future<void> updatePassword(String password) async {
@@ -817,11 +799,47 @@ class DashboardRepository {
       final currentStock = inventory is Map
           ? inventory['stok_tersedia'] as int? ?? 0
           : 0;
+      if (quantity > currentStock) {
+        throw Exception('Stok inventaris tidak cukup untuk disetujui.');
+      }
       final nextStock = currentStock - quantity;
       await _supabase
           .from('inventories')
-          .update({'stok_tersedia': nextStock < 0 ? 0 : nextStock})
+          .update({'stok_tersedia': nextStock})
           .eq('id', inventoryId);
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchOptionalProfilePreferences(
+    String userId,
+  ) async {
+    try {
+      final row = await _supabase
+          .from('profiles')
+          .select('app_language,location_enabled,device_security_enabled')
+          .eq('id', userId)
+          .single();
+      return Map<String, dynamic>.from(row);
+    } on Object {
+      return const {};
+    }
+  }
+
+  Future<void> _updateOptionalProfilePreferences(
+    String userId,
+    ProfileSettings settings,
+  ) async {
+    try {
+      await _supabase
+          .from('profiles')
+          .update({
+            'app_language': settings.appLanguage,
+            'location_enabled': settings.locationEnabled,
+            'device_security_enabled': settings.deviceSecurityEnabled,
+          })
+          .eq('id', userId);
+    } on Object {
+      // Kolom preferensi mungkin belum dimigrasi di database lama.
     }
   }
 

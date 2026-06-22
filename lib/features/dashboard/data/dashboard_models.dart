@@ -331,6 +331,9 @@ class ProfileSettings {
     required this.biometricEnabled,
     required this.realtimeNotificationsEnabled,
     required this.notificationSoundEnabled,
+    required this.appLanguage,
+    required this.locationEnabled,
+    required this.deviceSecurityEnabled,
   });
 
   final String name;
@@ -342,6 +345,9 @@ class ProfileSettings {
   final bool biometricEnabled;
   final bool realtimeNotificationsEnabled;
   final bool notificationSoundEnabled;
+  final String appLanguage;
+  final bool locationEnabled;
+  final bool deviceSecurityEnabled;
 
   factory ProfileSettings.fromMap(Map<String, dynamic> map) {
     return ProfileSettings(
@@ -356,6 +362,42 @@ class ProfileSettings {
           map['realtime_notifications_enabled'] as bool? ?? true,
       notificationSoundEnabled:
           map['notification_sound_enabled'] as bool? ?? true,
+      appLanguage: map['app_language'] as String? ?? 'id',
+      locationEnabled: map['location_enabled'] as bool? ?? true,
+      deviceSecurityEnabled: map['device_security_enabled'] as bool? ?? true,
+    );
+  }
+
+  ProfileSettings copyWith({
+    String? name,
+    String? nimNip,
+    String? email,
+    String? role,
+    String? whatsappNumber,
+    String? avatarUrl,
+    bool? biometricEnabled,
+    bool? realtimeNotificationsEnabled,
+    bool? notificationSoundEnabled,
+    String? appLanguage,
+    bool? locationEnabled,
+    bool? deviceSecurityEnabled,
+  }) {
+    return ProfileSettings(
+      name: name ?? this.name,
+      nimNip: nimNip ?? this.nimNip,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      whatsappNumber: whatsappNumber ?? this.whatsappNumber,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      biometricEnabled: biometricEnabled ?? this.biometricEnabled,
+      realtimeNotificationsEnabled:
+          realtimeNotificationsEnabled ?? this.realtimeNotificationsEnabled,
+      notificationSoundEnabled:
+          notificationSoundEnabled ?? this.notificationSoundEnabled,
+      appLanguage: appLanguage ?? this.appLanguage,
+      locationEnabled: locationEnabled ?? this.locationEnabled,
+      deviceSecurityEnabled:
+          deviceSecurityEnabled ?? this.deviceSecurityEnabled,
     );
   }
 }

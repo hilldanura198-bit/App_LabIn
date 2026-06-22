@@ -18,6 +18,9 @@ create table if not exists public.profiles (
   biometric_enabled boolean not null default false,
   realtime_notifications_enabled boolean not null default true,
   notification_sound_enabled boolean not null default true,
+  app_language text not null default 'id',
+  location_enabled boolean not null default true,
+  device_security_enabled boolean not null default true,
   compliance_score integer not null default 100,
   denda_terakumulasi integer not null default 0,
   created_at timestamptz not null default now(),
@@ -60,6 +63,11 @@ alter table public.laboratories
 
 alter table public.inventories
   add column if not exists image_url text;
+
+alter table public.profiles
+  add column if not exists app_language text not null default 'id',
+  add column if not exists location_enabled boolean not null default true,
+  add column if not exists device_security_enabled boolean not null default true;
 
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
