@@ -15,7 +15,7 @@ class SaprasFacilityPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 3,
       child: Scaffold(
         appBar: const GlassAppBar(
           title: 'SAPRAS Kampus',
@@ -25,7 +25,6 @@ class SaprasFacilityPage extends StatelessWidget {
               Tab(text: 'Sarana'),
               Tab(text: 'Prasarana'),
               Tab(text: 'Denah'),
-              Tab(text: 'Kepuasan'),
             ],
           ),
         ),
@@ -35,7 +34,6 @@ class SaprasFacilityPage extends StatelessWidget {
               _FacilityList(repository: repository),
               _InfrastructureList(repository: repository),
               const _CampusMapTabs(),
-              _SatisfactionAnalytics(repository: repository),
             ],
           ),
         ),
@@ -365,28 +363,14 @@ class _ImagePlaceholder extends StatelessWidget {
       height: height,
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            scheme.primary.withValues(alpha: 0.16),
-            AppTheme.cleanCyan.withValues(alpha: 0.14),
-          ],
-        ),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.86),
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/images/facility_lab.png',
-            fit: BoxFit.cover,
-            errorBuilder: (context, _, _) =>
-                Icon(icon, color: scheme.primary, size: 36),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: scheme.surface.withValues(alpha: 0.16),
-            ),
-          ),
-        ],
+      child: Center(
+        child: Icon(
+          icon == Icons.image_outlined ? Icons.image_rounded : icon,
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+          size: 38,
+        ),
       ),
     );
   }
@@ -535,61 +519,69 @@ class _InfrastructureList extends StatelessWidget {
             status: 'aktif',
           ),
         );
-        return GridView.builder(
-          padding: const EdgeInsets.all(18),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 260,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.15,
-          ),
-          itemCount: displayRooms.length,
-          itemBuilder: (context, index) {
-            final room = displayRooms[index];
-            return InkWell(
-              onTap: () => showDialog<void>(
-                context: context,
-                builder: (_) => _ImageDialog(
-                  title: room.name,
-                  subtitle: '${room.location} - Status ${room.status}',
-                  imageUrl: room.imageUrl,
-                  booking: null,
-                  icon: Icons.apartment_rounded,
-                ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 520;
+            return GridView.builder(
+              padding: const EdgeInsets.all(18),
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: compact ? 220 : 280,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: compact ? 0.92 : 1.05,
               ),
-              borderRadius: BorderRadius.circular(16),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: _RealtimeImage(
-                            imageUrl: room.imageUrl,
-                            height: double.infinity,
-                            fallbackIcon: Icons.apartment_rounded,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        room.name,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        room.location,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-                      ),
-                    ],
+              itemCount: displayRooms.length,
+              itemBuilder: (context, index) {
+                final room = displayRooms[index];
+                return InkWell(
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => _ImageDialog(
+                      title: room.name,
+                      subtitle: '${room.location} - Status ${room.status}',
+                      imageUrl: room.imageUrl,
+                      booking: null,
+                      icon: Icons.apartment_rounded,
+                    ),
                   ),
-                ),
-              ),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: _RealtimeImage(
+                                imageUrl: room.imageUrl,
+                                height: double.infinity,
+                                fallbackIcon: Icons.apartment_rounded,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            room.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          Text(
+                            room.location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             );
           },
         );

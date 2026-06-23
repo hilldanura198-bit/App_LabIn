@@ -76,7 +76,7 @@ class BookingSuccessPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    if (booking.status == 'approved_kalab')
+                    if (_canRenderQr)
                       ElevatedButton.icon(
                         onPressed: () => _showQrTicket(context),
                         icon: const Icon(Icons.qr_code_2_rounded),
@@ -123,8 +123,15 @@ class BookingSuccessPage extends StatelessWidget {
     );
   }
 
+  bool get _canRenderQr {
+    return switch (booking.status) {
+      'approved_kalab' || 'active' || 'returned' || 'late' => true,
+      _ => false,
+    };
+  }
+
   void _showQrTicket(BuildContext context) {
-    if (booking.status != 'approved_kalab') {
+    if (!_canRenderQr) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('QR Code muncul setelah di-ACC Kepala Lab'),
@@ -135,38 +142,54 @@ class BookingSuccessPage extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Tiket QR Peminjaman',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 16),
-              QrImageView(
-                data: booking.id,
-                version: QrVersions.auto,
-                size: 220,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                booking.reservationNo,
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Tunjukkan QR ini ke Aslab saat pengambilan barang.',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-              ),
-            ],
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              8,
+              24,
+              28 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Tiket QR Peminjaman',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final qrSize = constraints.maxWidth < 360 ? 178.0 : 220.0;
+                    return QrImageView(
+                      data: booking.id,
+                      version: QrVersions.auto,
+                      size: qrSize,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  booking.reservationNo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Tunjukkan QR ini ke Aslab saat pengambilan barang.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                ),
+              ],
+            ),
           ),
         );
       },

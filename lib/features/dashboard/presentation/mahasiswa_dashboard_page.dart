@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/local_notification_service.dart';
@@ -53,7 +52,6 @@ class _MahasiswaDashboardView extends StatefulWidget {
 
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   int _selectedIndex = 0;
-  bool _isRatingDialogOpen = false;
   bool _notificationListenerStarted = false;
   bool _notificationsPrimed = false;
   final Set<String> _knownNotificationIds = {};
@@ -117,20 +115,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                   : null,
             ),
           );
-        }
-
-        if (!_isRatingDialogOpen && state.bookings.isNotEmpty) {
-          try {
-            final unratedBooking = state.bookings.firstWhere(
-              (b) => b.status == 'returned' && b.ratingReview == null,
-            );
-            _isRatingDialogOpen = true;
-            _showRatingDialog(context, unratedBooking).then((_) {
-              _isRatingDialogOpen = false;
-            });
-          } catch (_) {
-            // Abaikan jika tidak ada peminjaman yang butuh di-rating
-          }
         }
       },
       child: Scaffold(
@@ -303,19 +287,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
     );
   }
 
-  Future<void> _showRatingDialog(BuildContext context, LabBooking booking) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return _RatingDialog(
-          booking: booking,
-          repository: _repository(context),
-        );
-      },
-    );
-  }
-
   Future<void> _showGlobalSearch(
     BuildContext context, {
     required String query,
@@ -424,8 +395,6 @@ class _HomeScrollContent extends StatelessWidget {
                       _CartCheckout(state: state),
                       const SizedBox(height: 16),
                       if (state.latestBooking != null) ...[
-                        _DynamicQrPass(booking: state.latestBooking!),
-                        const SizedBox(height: 16),
                         StatusTimeline(booking: state.latestBooking!),
                         const SizedBox(height: 16),
                       ],
@@ -1231,104 +1200,114 @@ class _InventoryGrid extends StatelessWidget {
         onAction: () => _openCatalog(context),
       );
     }
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: inventories.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.63,
-      ),
-      itemBuilder: (context, index) {
-        final inventory = inventories[index];
-        final reserved = cart[inventory.id]?.quantity ?? 0;
-        final remaining = inventory.stokTersedia - reserved;
-        final available = remaining > 0 && inventory.isAvailable;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  height: 96,
-                  width: double.infinity,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: _InventoryRealtimeImage(inventory: inventory),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  inventory.namaAlat,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: available
-                        ? AppTheme.cleanCyan.withValues(alpha: 0.12)
-                        : Colors.redAccent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    available ? 'Sisa $remaining' : 'Stok Sudah Habis',
-                    style: TextStyle(
-                      color: available ? AppTheme.deepTeal : Colors.redAccent,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-                ),
-                const SizedBox(height: 10),
-                FilledButton.icon(
-                  onPressed: available
-                      ? () => context.read<DashboardBloc>().add(
-                          DashboardCartItemAdded(inventory),
-                        )
-                      : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: available
-                        ? AppTheme.vibrantPurple
-                        : Colors.grey.shade500,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade500,
-                    disabledForegroundColor: Colors.white70,
-                    minimumSize: const Size.fromHeight(42),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  icon: Icon(
-                    available ? Icons.add_rounded : Icons.block_outlined,
-                  ),
-                  label: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(available ? 'Pinjam' : 'Stok Habis'),
-                  ),
-                ),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 420;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: inventories.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: compact ? 1 : columns,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: compact ? 1.06 : 0.68,
           ),
+          itemBuilder: (context, index) {
+            final inventory = inventories[index];
+            final reserved = cart[inventory.id]?.quantity ?? 0;
+            final remaining = inventory.stokTersedia - reserved;
+            final available = remaining > 0 && inventory.isAvailable;
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: compact ? 5 : 4,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: _InventoryRealtimeImage(inventory: inventory),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      inventory.namaAlat,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: available
+                              ? AppTheme.cleanCyan.withValues(alpha: 0.12)
+                              : Colors.redAccent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          available ? 'Sisa $remaining' : 'Stok Habis',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: available
+                                ? AppTheme.deepTeal
+                                : Colors.redAccent,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton.icon(
+                      onPressed: available
+                          ? () => context.read<DashboardBloc>().add(
+                              DashboardCartItemAdded(inventory),
+                            )
+                          : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: available
+                            ? AppTheme.vibrantPurple
+                            : Colors.grey.shade500,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade500,
+                        disabledForegroundColor: Colors.white70,
+                        minimumSize: const Size.fromHeight(42),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      icon: Icon(
+                        available ? Icons.add_rounded : Icons.block_outlined,
+                      ),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(available ? 'Pinjam' : 'Stok Habis'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1357,9 +1336,11 @@ class _InventoryRealtimeImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
       placeholder: (context, _) => const DecoratedBox(
-        decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
-        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+        decoration: BoxDecoration(color: Color(0xFFE5E7EB)),
+        child: Center(child: CircularProgressIndicator()),
       ),
       errorWidget: (context, _, _) =>
           _InventoryImageFallback(inventory: inventory),
@@ -1374,41 +1355,16 @@ class _InventoryImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = inventory.isRoomStock
-        ? 'assets/images/facility_room.png'
-        : 'assets/images/facility_lab.png';
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.asset(
-          asset,
-          fit: BoxFit.cover,
-          errorBuilder: (context, _, _) => const DecoratedBox(
-            decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
-          ),
+    final scheme = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.9),
+      child: Center(
+        child: Icon(
+          Icons.image_rounded,
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+          size: 34,
         ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.black.withValues(alpha: 0.10),
-                Colors.black.withValues(alpha: 0.34),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
-        Center(
-          child: Icon(
-            inventory.isAvailable
-                ? Icons.precision_manufacturing_outlined
-                : Icons.warning_amber_rounded,
-            color: Colors.white,
-            size: 30,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -1468,130 +1424,6 @@ class _CartCheckout extends StatelessWidget {
                   : null,
               icon: const Icon(Icons.task_alt_rounded),
               label: const Text('Checkout Pengajuan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DynamicQrPass extends StatefulWidget {
-  const _DynamicQrPass({required this.booking});
-
-  final LabBooking booking;
-
-  @override
-  State<_DynamicQrPass> createState() => _DynamicQrPassState();
-}
-
-class _DynamicQrPassState extends State<_DynamicQrPass> {
-  @override
-  Widget build(BuildContext context) {
-    if (widget.booking.status != 'approved_kalab') {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Icon(Icons.lock_clock_rounded, color: AppTheme.muted),
-              SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  'QR Code muncul setelah di-ACC Kepala Lab',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.qr_code_2_rounded,
-                  color: AppTheme.electricBlue,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tiket QR Peminjaman',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Status disetujui Kalab. Tunjukkan QR saat mengambil barang.',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: _showQr,
-              icon: const Icon(Icons.qr_code_rounded),
-              label: const Text('Tampilkan QR'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showQr() {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Tiket QR Peminjaman',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 16),
-            QrImageView(
-              data: widget.booking.id,
-              version: QrVersions.auto,
-              size: 220,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              widget.booking.reservationNo,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'QR ini berisi booking_id untuk validasi serah terima barang.',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
             ),
           ],
         ),

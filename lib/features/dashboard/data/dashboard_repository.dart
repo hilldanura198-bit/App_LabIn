@@ -106,7 +106,7 @@ class DashboardRepository {
   Future<List<LabRoom>> fetchLaboratories() async {
     final rows = await _supabase
         .from('laboratories')
-        .select('id,nama_lab,lokasi,status_operasional,image_url')
+        .select('id,nama_lab,lokasi,status_operasional,image_url,foto_url,foto')
         .order('nama_lab');
     return rows.map(LabRoom.fromMap).toList();
   }
