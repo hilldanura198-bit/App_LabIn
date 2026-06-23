@@ -87,28 +87,33 @@ class StatusTimeline extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(width: 12),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          stepStatus,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: done
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                                color: done ? AppTheme.ink : AppTheme.muted,
-                              ),
-                        ),
-                        if (booking != null && done && index == activeIndex)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            booking!.reservationNo,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: AppTheme.muted),
+                            stepStatus,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: done
+                                      ? FontWeight.w800
+                                      : FontWeight.w500,
+                                  color: done ? AppTheme.ink : AppTheme.muted,
+                                ),
                           ),
-                      ],
+                          if (booking != null && done && index == activeIndex)
+                            Text(
+                              booking!.reservationNo,
+                              maxLines: 2,
+                              softWrap: true,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppTheme.muted),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
