@@ -41,20 +41,6 @@ class AuthRepository {
     );
   }
 
-  Future<String?> findEmailByNim(String nim) async {
-    final normalized = nim.trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-    final profile = await _supabase
-        .from('profiles')
-        .select('email')
-        .eq('nim_nip', normalized)
-        .maybeSingle();
-    final email = profile?['email']?.toString().trim();
-    return email == null || email.isEmpty ? null : email;
-  }
-
   Stream<Session?> authStateChanges() {
     if (_client == null) {
       return Stream<Session?>.value(null);

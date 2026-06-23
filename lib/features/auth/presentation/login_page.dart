@@ -1,15 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/validation.dart';
 import '../bloc/auth_bloc.dart';
-import '../data/auth_repository.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -24,12 +21,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _nimController = TextEditingController();
   final _passwordController = TextEditingController();
   final _localAuth = LocalAuthentication();
-  final _picker = ImagePicker();
   bool _obscurePassword = true;
-  bool _isScanningCard = false;
 
   @override
   void initState() {
@@ -60,7 +54,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _emailController.dispose();
-    _nimController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -162,35 +155,6 @@ class _LoginPageState extends State<LoginPage> {
                                       }
                                       return null;
                                     },
-                                  ),
-                                  const SizedBox(height: 14),
-                                  TextFormField(
-                                    controller: _nimController,
-                                    keyboardType: TextInputType.number,
-                                    textInputAction: TextInputAction.next,
-                                    decoration: InputDecoration(
-                                      labelText: 'NIM',
-                                      prefixIcon: const Icon(
-                                        Icons.badge_outlined,
-                                      ),
-                                      suffixIcon: IconButton(
-                                        tooltip: 'Scan KTM',
-                                        onPressed: _isScanningCard
-                                            ? null
-                                            : _scanNimCard,
-                                        icon: _isScanningCard
-                                            ? const SizedBox.square(
-                                                dimension: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Icon(
-                                                Icons.document_scanner_outlined,
-                                              ),
-                                      ),
-                                    ),
                                   ),
                                   const SizedBox(height: 14),
                                   TextFormField(
@@ -305,15 +269,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _submit() {
-    _resolveEmailFromNimIfNeeded().then((_) {
-      if (!mounted) {
-        return;
-      }
-      _submitResolved();
-    });
-  }
-
-  void _submitResolved() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -323,80 +278,6 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       ),
     );
-  }
-
-  Future<void> _resolveEmailFromNimIfNeeded() async {
-    if (AppValidation.isValidEmail(_emailController.text)) {
-      return;
-    }
-    final nim = _nimController.text.trim();
-    if (nim.isEmpty) {
-      return;
-    }
-    final email = await context.read<AuthRepository>().findEmailByNim(nim);
-    if (email != null && mounted) {
-      _emailController.text = email;
-    }
-  }
-
-  Future<void> _scanNimCard() async {
-    setState(() => _isScanningCard = true);
-    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    try {
-      final image = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 90,
-        maxWidth: 1600,
-      );
-      if (image == null) {
-        return;
-      }
-      final result = await recognizer.processImage(
-        InputImage.fromFilePath(image.path),
-      );
-      final text = result.text;
-      final normalizedText = text.toLowerCase();
-      final hasKtmKeyword =
-          normalizedText.contains('kartu tanda mahasiswa') ||
-          (normalizedText.contains('kartu') &&
-              normalizedText.contains('mahasiswa'));
-      final nim = RegExp(r'\b\d{8,12}\b').firstMatch(text)?.group(0);
-      if (!hasKtmKeyword && nim == null) {
-        throw Exception('Foto belum sesuai atau kurang jelas!');
-      }
-      if (!mounted) {
-        return;
-      }
-      if (nim != null) {
-        _nimController.text = nim;
-      }
-      await _resolveEmailFromNimIfNeeded();
-      if (!mounted) {
-        return;
-      }
-      _showPremiumSnackBar(
-        'NIM berhasil dipindai. Email login otomatis diisi bila profil ditemukan.',
-        Icons.verified_rounded,
-      );
-      if (_passwordController.text.length >= 6 &&
-          AppValidation.isValidEmail(_emailController.text)) {
-        _submitResolved();
-      }
-    } on Object catch (error) {
-      if (mounted) {
-        _showPremiumSnackBar(
-          error.toString().contains('Foto belum sesuai')
-              ? 'Foto belum sesuai atau kurang jelas!'
-              : 'Scan NIM gagal. Coba foto KTM lebih jelas.',
-          Icons.warning_amber_rounded,
-        );
-      }
-    } finally {
-      await recognizer.close();
-      if (mounted) {
-        setState(() => _isScanningCard = false);
-      }
-    }
   }
 
   void _openRegisterPage() {

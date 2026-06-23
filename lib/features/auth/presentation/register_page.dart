@@ -404,11 +404,17 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       final text = result.text;
       final normalizedText = text.toLowerCase();
-      final hasKtmKeyword =
+      final hasCardKeyword =
           normalizedText.contains('kartu tanda mahasiswa') ||
+          normalizedText.contains('kartu tanda penduduk') ||
+          normalizedText.contains('ktm') ||
+          normalizedText.contains('ktp') ||
+          normalizedText.contains('atm') ||
           (normalizedText.contains('kartu') &&
-              normalizedText.contains('mahasiswa'));
-      final nimMatch = RegExp(r'\b\d{8,12}\b').firstMatch(text);
+              (normalizedText.contains('mahasiswa') ||
+                  normalizedText.contains('penduduk') ||
+                  normalizedText.contains('bank')));
+      final nimMatch = RegExp(r'\b\d{8,15}\b').firstMatch(text);
       final lines = text
           .split('\n')
           .map((line) => line.trim())
@@ -433,7 +439,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) {
         return;
       }
-      final didExtractSomething = hasKtmKeyword || extractedNim != null;
+      final didExtractSomething = hasCardKeyword && extractedNim != null;
       setState(() {
         if (didExtractSomething && extractedName.isNotEmpty) {
           _nameController.text = extractedName;

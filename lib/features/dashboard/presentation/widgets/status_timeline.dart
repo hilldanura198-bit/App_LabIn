@@ -152,28 +152,53 @@ class StatusTimeline extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('QR Scan Peminjaman'),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          title: const Text(
+            'QR Scan Peminjaman',
+            style: TextStyle(color: AppTheme.ink, fontWeight: FontWeight.w900),
+          ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final size = constraints.maxWidth < 260 ? 190.0 : 220.0;
-                    return QrImageView(
-                      data: booking.id,
-                      version: QrVersions.auto,
-                      size: size,
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  booking.reservationNo,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final size = constraints.maxWidth < 260 ? 190.0 : 220.0;
+                      return QrImageView(
+                        data: booking.id,
+                        version: QrVersions.auto,
+                        size: size,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Colors.black,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    booking.reservationNo,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [

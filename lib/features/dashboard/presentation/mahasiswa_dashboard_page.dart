@@ -52,16 +52,15 @@ class _MahasiswaDashboardView extends StatefulWidget {
 
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   static const _campusOptions = [
-    'Kampus LabIn',
-    'Kampus Rektorat',
     'Kampus 1',
     'Kampus 2',
     'Kampus 3',
     'Kampus 4',
+    'Kampus Rektorat',
   ];
 
   int _selectedIndex = 0;
-  String _selectedCampus = 'Kampus LabIn';
+  String _selectedCampus = 'Kampus Rektorat';
   String? _lastCheckoutBookingId;
   bool _isRatingSheetOpen = false;
   bool _notificationListenerStarted = false;
@@ -129,9 +128,9 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           );
         }
         if (message?.contains('Checkout berhasil') == true &&
-            state.latestBooking != null &&
-            state.latestBooking!.id != _lastCheckoutBookingId) {
-          _lastCheckoutBookingId = state.latestBooking!.id;
+            state.activeHomeBooking != null &&
+            state.activeHomeBooking!.id != _lastCheckoutBookingId) {
+          _lastCheckoutBookingId = state.activeHomeBooking!.id;
           setState(() => _selectedIndex = 1);
         }
         if (!_isRatingSheetOpen && state.bookings.isNotEmpty) {
@@ -157,8 +156,12 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                   cartCount: state.cartCount,
                   selectedCampus: _selectedCampus,
                   campuses: _campusOptions,
-                  onCampusChanged: (campus) =>
-                      setState(() => _selectedCampus = campus),
+                  onCampusChanged: (campus) {
+                    setState(() => _selectedCampus = campus);
+                    context.read<DashboardBloc>().add(
+                      DashboardCampusSelected(campus),
+                    );
+                  },
                   onCartPressed: () => _openCart(context, state),
                   onProfilePressed: () => _openSettings(context),
                   onNotifPressed: () => Navigator.of(context).push(
@@ -470,8 +473,8 @@ class _HomeScrollContent extends StatelessWidget {
                       const SizedBox(height: 16),
                       _CartCheckout(state: state),
                       const SizedBox(height: 16),
-                      if (state.latestBooking != null) ...[
-                        StatusTimeline(booking: state.latestBooking!),
+                      if (state.activeHomeBooking != null) ...[
+                        StatusTimeline(booking: state.activeHomeBooking!),
                         const SizedBox(height: 16),
                       ],
                       BusyMeter(hours: state.busyHours),
@@ -1285,16 +1288,17 @@ class _InventoryGrid extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
+        final gridColumns = constraints.maxWidth >= 760 ? columns : 2;
         final compact = constraints.maxWidth < 420;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: inventories.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: compact ? 1 : columns,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: compact ? 1.06 : 0.68,
+            crossAxisCount: gridColumns,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: compact ? 0.58 : 0.68,
           ),
           itemBuilder: (context, index) {
             final inventory = inventories[index];
@@ -1303,28 +1307,28 @@ class _InventoryGrid extends StatelessWidget {
             final available = remaining > 0 && inventory.isAvailable;
             return Card(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(compact ? 8 : 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      flex: compact ? 5 : 4,
+                      flex: 4,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(14),
                         child: _InventoryRealtimeImage(inventory: inventory),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: compact ? 7 : 10),
                     Text(
                       inventory.namaAlat,
-                      maxLines: 2,
+                      maxLines: compact ? 2 : 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: compact ? 6 : 8),
                     Align(
                       alignment: Alignment.center,
                       child: Container(
@@ -1351,7 +1355,7 @@ class _InventoryGrid extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: compact ? 6 : 8),
                     Text(
                       'Tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
                       textAlign: TextAlign.center,
@@ -1361,7 +1365,7 @@ class _InventoryGrid extends StatelessWidget {
                         context,
                       ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: compact ? 7 : 10),
                     FilledButton.icon(
                       onPressed: available
                           ? () => context.read<DashboardBloc>().add(
@@ -1375,8 +1379,10 @@ class _InventoryGrid extends StatelessWidget {
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey.shade500,
                         disabledForegroundColor: Colors.white70,
-                        minimumSize: const Size.fromHeight(42),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: Size.fromHeight(compact ? 36 : 42),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 8 : 12,
+                        ),
                       ),
                       icon: Icon(
                         available ? Icons.add_rounded : Icons.block_outlined,
@@ -1443,7 +1449,7 @@ class _InventoryImageFallback extends StatelessWidget {
       color: scheme.surfaceContainerHighest.withValues(alpha: 0.9),
       child: Center(
         child: Icon(
-          Icons.image_rounded,
+          Icons.inventory_2_rounded,
           color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
           size: 34,
         ),
@@ -1905,21 +1911,31 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
               onSubmitted: _submitSearch,
             ),
             const SizedBox(height: 8),
-            Center(
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: _quickTags.map((tag) {
-                  return _HeaderQuickTag(
-                    label: tag,
-                    icon: _iconForTag(tag),
-                    onTap: () {
-                      _searchController.text = tag;
-                      _submitSearch(tag);
-                    },
-                  );
-                }).toList(),
+            SizedBox(
+              height: 34,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.sizeOf(context).width - 36,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _quickTags.map((tag) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: _HeaderQuickTag(
+                          label: tag,
+                          icon: _iconForTag(tag),
+                          onTap: () {
+                            _searchController.text = tag;
+                            _submitSearch(tag);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
             ),
           ],
@@ -2002,8 +2018,8 @@ class _HeaderQuickTag extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 13),
+          height: 30,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
@@ -2011,11 +2027,11 @@ class _HeaderQuickTag extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppTheme.electricBlue, size: 15),
-              const SizedBox(width: 5),
+              Icon(icon, color: AppTheme.electricBlue, size: 14),
+              const SizedBox(width: 4),
               Text(
                 label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: AppTheme.ink,
                   fontWeight: FontWeight.w900,
                   height: 1,

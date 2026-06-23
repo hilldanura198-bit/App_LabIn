@@ -15,10 +15,18 @@ class DashboardStarted extends DashboardEvent {
   const DashboardStarted({
     required this.inventoryStream,
     required this.bookingStream,
+    this.campusName = 'Kampus Rektorat',
   });
 
   final bool inventoryStream;
   final bool bookingStream;
+  final String campusName;
+}
+
+class DashboardCampusSelected extends DashboardEvent {
+  const DashboardCampusSelected(this.campusName);
+
+  final String campusName;
 }
 
 class DashboardDateSelected extends DashboardEvent {
@@ -116,6 +124,7 @@ class DashboardState {
     required this.busyHours,
     required this.isLoading,
     this.message,
+    this.selectedCampus = 'Kampus Rektorat',
   });
 
   factory DashboardState.initial() {
@@ -127,6 +136,7 @@ class DashboardState {
       selectedDate: DateTime(now.year, now.month, now.day, 9),
       busyHours: const [],
       isLoading: true,
+      selectedCampus: 'Kampus Rektorat',
     );
   }
 
@@ -137,8 +147,25 @@ class DashboardState {
   final List<BusyHour> busyHours;
   final bool isLoading;
   final String? message;
+  final String selectedCampus;
 
   LabBooking? get latestBooking => bookings.isEmpty ? null : bookings.first;
+  LabBooking? get activeHomeBooking {
+    final activeStatuses = {
+      'pending',
+      'approved_aslab',
+      'approved_kalab',
+      'active',
+      'late',
+    };
+    final activeBookings =
+        bookings
+            .where((booking) => activeStatuses.contains(booking.status))
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return activeBookings.isEmpty ? null : activeBookings.first;
+  }
+
   int get cartCount => cart.values.fold(0, (sum, item) => sum + item.quantity);
   List<LabInventory> get criticalInventories =>
       inventories.where((inventory) => inventory.isCritical).toList();
@@ -153,6 +180,7 @@ class DashboardState {
     List<BusyHour>? busyHours,
     bool? isLoading,
     String? message,
+    String? selectedCampus,
     bool clearMessage = false,
   }) {
     return DashboardState(
@@ -163,6 +191,7 @@ class DashboardState {
       busyHours: busyHours ?? this.busyHours,
       isLoading: isLoading ?? this.isLoading,
       message: clearMessage ? null : message ?? this.message,
+      selectedCampus: selectedCampus ?? this.selectedCampus,
     );
   }
 }
@@ -170,6 +199,7 @@ class DashboardState {
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   DashboardBloc(this._repository) : super(DashboardState.initial()) {
     on<DashboardStarted>(_onStarted);
+    on<DashboardCampusSelected>(_onCampusSelected);
     on<_InventoriesChanged>(_onInventoriesChanged);
     on<_BookingsChanged>(_onBookingsChanged);
     on<_DashboardFailed>(_onFailed);
@@ -196,10 +226,12 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     try {
       if (event.inventoryStream) {
         await _inventorySubscription?.cancel();
-        _inventorySubscription = _repository.watchInventories().listen(
-          (inventories) => add(_InventoriesChanged(inventories)),
-          onError: (Object error) => add(_DashboardFailed(_message(error))),
-        );
+        _inventorySubscription = _repository
+            .watchInventoriesByCampus(event.campusName)
+            .listen(
+              (inventories) => add(_InventoriesChanged(inventories)),
+              onError: (Object error) => add(_DashboardFailed(_message(error))),
+            );
       }
       if (event.bookingStream) {
         await _bookingSubscription?.cancel();
@@ -224,10 +256,36 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         );
       }
       final busyHours = await _repository.fetchBusyHours();
-      emit(state.copyWith(busyHours: busyHours, isLoading: false));
+      emit(
+        state.copyWith(
+          busyHours: busyHours,
+          isLoading: false,
+          selectedCampus: event.campusName,
+        ),
+      );
     } on Object catch (error) {
       emit(state.copyWith(isLoading: false, message: _message(error)));
     }
+  }
+
+  Future<void> _onCampusSelected(
+    DashboardCampusSelected event,
+    Emitter<DashboardState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        selectedCampus: event.campusName,
+        isLoading: true,
+        clearMessage: true,
+      ),
+    );
+    await _inventorySubscription?.cancel();
+    _inventorySubscription = _repository
+        .watchInventoriesByCampus(event.campusName)
+        .listen(
+          (inventories) => add(_InventoriesChanged(inventories)),
+          onError: (Object error) => add(_DashboardFailed(_message(error))),
+        );
   }
 
   void _onInventoriesChanged(

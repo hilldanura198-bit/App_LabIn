@@ -38,6 +38,37 @@ class DashboardRepository {
         .map((rows) => rows.map(LabInventory.fromMap).toList());
   }
 
+  Stream<List<LabInventory>> watchInventoriesByCampus(
+    String campusName,
+  ) async* {
+    final normalizedCampus = _normalizeCampus(campusName);
+    final rooms = await fetchLaboratories();
+    final labIds = rooms
+        .where((room) {
+          final location = _normalizeCampus(room.location);
+          final name = _normalizeCampus(room.name);
+          return location.contains(normalizedCampus) ||
+              name.contains(normalizedCampus);
+        })
+        .map((room) => room.id)
+        .toSet();
+    if (labIds.isEmpty) {
+      yield const <LabInventory>[];
+      return;
+    }
+    yield* watchInventories().map(
+      (items) => items.where((item) => labIds.contains(item.labId)).toList(),
+    );
+  }
+
+  String _normalizeCampus(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll('rektorat', 'rektor')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   Stream<int> watchRoomStockTotal() {
     return watchInventories().map((inventories) {
       final roomInventories = inventories.where((item) => item.isRoomStock);

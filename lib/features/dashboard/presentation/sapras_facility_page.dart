@@ -11,7 +11,7 @@ class SaprasFacilityPage extends StatelessWidget {
   const SaprasFacilityPage({
     super.key,
     required this.repository,
-    this.selectedCampus = 'Kampus LabIn',
+    this.selectedCampus = 'Kampus Rektorat',
   });
 
   final DashboardRepository repository;
@@ -703,9 +703,9 @@ class _CampusMapTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final campuses = selectedCampus == 'Kampus LabIn'
-        ? _campuses
-        : _campuses.where((campus) => campus.title == selectedCampus).toList();
+    final campuses = _campuses
+        .where((campus) => campus.title == selectedCampus)
+        .toList();
     final visibleCampuses = campuses.isEmpty ? _campuses : campuses;
     return DefaultTabController(
       length: visibleCampuses.length,
