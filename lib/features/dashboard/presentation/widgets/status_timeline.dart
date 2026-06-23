@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../data/dashboard_models.dart';
@@ -122,9 +123,67 @@ class StatusTimeline extends StatelessWidget {
                 ],
               );
             }),
+            if (booking != null && _canRenderQr(currentStatus)) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _showQrDialog(context, booking!),
+                  icon: const Icon(Icons.qr_code_2_rounded),
+                  label: const Text('Lihat QR Scan'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  bool _canRenderQr(String status) {
+    return switch (status) {
+      'approved_kalab' || 'active' || 'returned' || 'late' => true,
+      _ => false,
+    };
+  }
+
+  Future<void> _showQrDialog(BuildContext context, LabBooking booking) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('QR Scan Peminjaman'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final size = constraints.maxWidth < 260 ? 190.0 : 220.0;
+                    return QrImageView(
+                      data: booking.id,
+                      version: QrVersions.auto,
+                      size: size,
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  booking.reservationNo,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

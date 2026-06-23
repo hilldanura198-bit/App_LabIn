@@ -51,7 +51,19 @@ class _MahasiswaDashboardView extends StatefulWidget {
 }
 
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
+  static const _campusOptions = [
+    'Kampus LabIn',
+    'Kampus Rektorat',
+    'Kampus 1',
+    'Kampus 2',
+    'Kampus 3',
+    'Kampus 4',
+  ];
+
   int _selectedIndex = 0;
+  String _selectedCampus = 'Kampus LabIn';
+  String? _lastCheckoutBookingId;
+  bool _isRatingSheetOpen = false;
   bool _notificationListenerStarted = false;
   bool _notificationsPrimed = false;
   final Set<String> _knownNotificationIds = {};
@@ -116,6 +128,25 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
             ),
           );
         }
+        if (message?.contains('Checkout berhasil') == true &&
+            state.latestBooking != null &&
+            state.latestBooking!.id != _lastCheckoutBookingId) {
+          _lastCheckoutBookingId = state.latestBooking!.id;
+          setState(() => _selectedIndex = 1);
+        }
+        if (!_isRatingSheetOpen && state.bookings.isNotEmpty) {
+          final unrated = state.bookings.where(
+            (booking) =>
+                (booking.status == 'returned' || booking.status == 'selesai') &&
+                booking.ratingReview == null,
+          );
+          if (unrated.isNotEmpty) {
+            _isRatingSheetOpen = true;
+            _showRatingBottomSheet(context, unrated.first).whenComplete(() {
+              _isRatingSheetOpen = false;
+            });
+          }
+        }
       },
       child: Scaffold(
         body: BlocBuilder<DashboardBloc, DashboardState>(
@@ -124,6 +155,10 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
               children: [
                 _ModernFloatingHeader(
                   cartCount: state.cartCount,
+                  selectedCampus: _selectedCampus,
+                  campuses: _campusOptions,
+                  onCampusChanged: (campus) =>
+                      setState(() => _selectedCampus = campus),
                   onCartPressed: () => _openCart(context, state),
                   onProfilePressed: () => _openSettings(context),
                   onNotifPressed: () => Navigator.of(context).push(
@@ -211,7 +246,11 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           child: SettingsPage(repository: repository, showAppBar: false),
         ),
       ),
-      _ => _HomeScrollContent(state: state, repository: repository),
+      _ => _HomeScrollContent(
+        state: state,
+        repository: repository,
+        selectedCampus: _selectedCampus,
+      ),
     };
   }
 
@@ -306,13 +345,45 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       },
     );
   }
+
+  Future<void> _showRatingBottomSheet(
+    BuildContext context,
+    LabBooking booking,
+  ) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              22,
+              8,
+              22,
+              MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+            ),
+            child: _RatingDialog(
+              booking: booking,
+              repository: _repository(context),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _HomeScrollContent extends StatelessWidget {
-  const _HomeScrollContent({required this.state, required this.repository});
+  const _HomeScrollContent({
+    required this.state,
+    required this.repository,
+    required this.selectedCampus,
+  });
 
   final DashboardState state;
   final DashboardRepository repository;
+  final String selectedCampus;
 
   @override
   Widget build(BuildContext context) {
@@ -365,7 +436,10 @@ class _HomeScrollContent extends StatelessWidget {
                       const SizedBox(height: 8),
                       _StockCalendar(state: state, repository: repository),
                       const SizedBox(height: 16),
-                      _QuickModuleGrid(repository: repository),
+                      _QuickModuleGrid(
+                        repository: repository,
+                        selectedCampus: selectedCampus,
+                      ),
                       const SizedBox(height: 16),
                       const _CampusInsights(),
                       const SizedBox(height: 16),
@@ -382,8 +456,10 @@ class _HomeScrollContent extends StatelessWidget {
                           child: OutlinedButton.icon(
                             onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    SaprasFacilityPage(repository: repository),
+                                builder: (_) => SaprasFacilityPage(
+                                  repository: repository,
+                                  selectedCampus: selectedCampus,
+                                ),
                               ),
                             ),
                             icon: const Icon(Icons.storefront_outlined),
@@ -418,9 +494,13 @@ class _HomeScrollContent extends StatelessWidget {
 }
 
 class _QuickModuleGrid extends StatelessWidget {
-  const _QuickModuleGrid({required this.repository});
+  const _QuickModuleGrid({
+    required this.repository,
+    required this.selectedCampus,
+  });
 
   final DashboardRepository repository;
+  final String selectedCampus;
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +527,10 @@ class _QuickModuleGrid extends StatelessWidget {
         icon: Icons.location_city_outlined,
         title: 'SAPRAS Kampus',
         color: AppTheme.richBronze.withValues(alpha: 0.22),
-        page: SaprasFacilityPage(repository: repository),
+        page: SaprasFacilityPage(
+          repository: repository,
+          selectedCampus: selectedCampus,
+        ),
       ),
     ];
 
@@ -1376,7 +1459,7 @@ class _CartCheckout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canCheckout = state.cart.isNotEmpty && !state.isLoading;
+    final canCheckout = state.cart.isNotEmpty;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1420,6 +1503,9 @@ class _CartCheckout extends StatelessWidget {
                           endDateTime: end,
                         ),
                       );
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
                     }
                   : null,
               icon: const Icon(Icons.task_alt_rounded),
@@ -1680,6 +1766,9 @@ class _RatingDialogState extends State<_RatingDialog> {
 class _ModernFloatingHeader extends StatefulWidget {
   const _ModernFloatingHeader({
     required this.cartCount,
+    required this.selectedCampus,
+    required this.campuses,
+    required this.onCampusChanged,
     required this.onCartPressed,
     required this.onProfilePressed,
     required this.onNotifPressed,
@@ -1687,6 +1776,9 @@ class _ModernFloatingHeader extends StatefulWidget {
   });
 
   final int cartCount;
+  final String selectedCampus;
+  final List<String> campuses;
+  final ValueChanged<String> onCampusChanged;
   final VoidCallback onCartPressed;
   final VoidCallback onProfilePressed;
   final VoidCallback onNotifPressed;
@@ -1728,49 +1820,66 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
             Row(
               children: [
                 Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.white,
-                          size: 21,
-                        ),
+                  child: InkWell(
+                    onTap: _showCampusSheet,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 3,
                       ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Lokasi',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.78),
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            Text(
-                              'Kampus LabIn',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                            child: const Icon(
+                              Icons.location_on_outlined,
+                              color: Colors.white,
+                              size: 21,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Lokasi',
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.78,
+                                        ),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                                Text(
+                                  widget.selectedCampus,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: Colors.white,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 _HeaderIconButton(
@@ -1796,24 +1905,21 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
               onSubmitted: _submitSearch,
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 34,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                padding: const EdgeInsets.only(bottom: 2),
-                itemCount: _quickTags.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final tag = _quickTags[index];
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: _quickTags.map((tag) {
                   return _HeaderQuickTag(
                     label: tag,
+                    icon: _iconForTag(tag),
                     onTap: () {
                       _searchController.text = tag;
                       _submitSearch(tag);
                     },
                   );
-                },
+                }).toList(),
               ),
             ),
           ],
@@ -1826,12 +1932,65 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
     final query = value.trim();
     widget.onSearchSubmitted(query.isEmpty ? 'Alat' : query);
   }
+
+  IconData _iconForTag(String tag) {
+    return switch (tag.toLowerCase()) {
+      'alat' => Icons.build_rounded,
+      'ruangan' => Icons.meeting_room_rounded,
+      'modul' => Icons.book_rounded,
+      'proyektor' => Icons.videocam_rounded,
+      _ => Icons.category_rounded,
+    };
+  }
+
+  Future<void> _showCampusSheet() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+            children: [
+              Text(
+                'Pilih Kampus',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  sheetContext,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 10),
+              ...widget.campuses.map(
+                (campus) => ListTile(
+                  leading: const Icon(Icons.location_city_rounded),
+                  title: Text(campus),
+                  trailing: campus == widget.selectedCampus
+                      ? const Icon(Icons.check_rounded)
+                      : null,
+                  onTap: () => Navigator.of(sheetContext).pop(campus),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null) {
+      widget.onCampusChanged(selected);
+    }
+  }
 }
 
 class _HeaderQuickTag extends StatelessWidget {
-  const _HeaderQuickTag({required this.label, required this.onTap});
+  const _HeaderQuickTag({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
@@ -1852,11 +2011,7 @@ class _HeaderQuickTag extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.bolt_rounded,
-                color: AppTheme.electricBlue,
-                size: 15,
-              ),
+              Icon(icon, color: AppTheme.electricBlue, size: 15),
               const SizedBox(width: 5),
               Text(
                 label,

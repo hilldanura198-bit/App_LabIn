@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -793,6 +795,10 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _language = value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_language', value);
+    if (!mounted) {
+      return;
+    }
+    await context.setLocale(Locale(value));
     await _persistSettings();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -821,9 +827,37 @@ class _SettingsPageState extends State<SettingsPage> {
       if (image == null) {
         return;
       }
+      if (!mounted) {
+        return;
+      }
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressQuality: 82,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Potong Foto Profil',
+            toolbarColor: AppTheme.electricBlue,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Potong Foto Profil',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+          WebUiSettings(context: context),
+        ],
+      );
+      if (cropped == null) {
+        return;
+      }
+      final croppedImage = XFile(cropped.path, mimeType: image.mimeType);
+      // Supabase Storage: pastikan RLS Policy INSERT/UPDATE bucket avatars
+      // mengizinkan user mengunggah dan memperbarui file miliknya sendiri.
       final url = await ProfileRepository(
         widget.repository.client,
-      ).uploadProfilePicture(image);
+      ).uploadProfilePicture(croppedImage);
       if (!mounted) {
         return;
       }

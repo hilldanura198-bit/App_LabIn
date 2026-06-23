@@ -8,9 +8,14 @@ import '../data/dashboard_repository.dart';
 import 'widgets/glass_app_bar.dart';
 
 class SaprasFacilityPage extends StatelessWidget {
-  const SaprasFacilityPage({super.key, required this.repository});
+  const SaprasFacilityPage({
+    super.key,
+    required this.repository,
+    this.selectedCampus = 'Kampus LabIn',
+  });
 
   final DashboardRepository repository;
+  final String selectedCampus;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +38,7 @@ class SaprasFacilityPage extends StatelessWidget {
             children: [
               _FacilityList(repository: repository),
               _InfrastructureList(repository: repository),
-              const _CampusMapTabs(),
+              _CampusMapTabs(selectedCampus: selectedCampus),
             ],
           ),
         ),
@@ -71,6 +76,7 @@ class _FacilityList extends StatelessWidget {
                 final item = items[index];
                 final code = _assetCode(index);
                 final booking = _latestBookingForLab(bookings, item.labId);
+                final labBookings = _bookingsForLab(bookings, item.labId);
                 final odd = index.isOdd;
                 return Container(
                   decoration: BoxDecoration(
@@ -92,12 +98,13 @@ class _FacilityList extends StatelessWidget {
                         final image = _FacilityImage(
                           imageUrl: item.imageUrl,
                           height: compact ? 150 : 112,
-                          fallbackIcon: Icons.precision_manufacturing_outlined,
+                          fallbackIcon: Icons.inventory_2_rounded,
                         );
                         final detail = _FacilityDetail(
                           item: item,
                           code: code,
                           booking: booking,
+                          bookings: labBookings,
                         );
                         if (compact) {
                           return Column(
@@ -162,6 +169,18 @@ class _FacilityList extends StatelessWidget {
     return activeBookings.isEmpty ? null : activeBookings.first;
   }
 
+  List<LabBooking> _bookingsForLab(List<LabBooking> bookings, String labId) {
+    return bookings
+        .where(
+          (booking) =>
+              booking.labId == labId &&
+              booking.status != 'returned' &&
+              booking.status != 'rejected',
+        )
+        .toList()
+      ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
+  }
+
   void _showFacilityImage(
     BuildContext context,
     LabInventory item,
@@ -174,7 +193,7 @@ class _FacilityList extends StatelessWidget {
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
         imageUrl: item.imageUrl,
         booking: booking,
-        icon: Icons.precision_manufacturing_outlined,
+        icon: Icons.inventory_2_rounded,
       ),
     );
   }
@@ -185,11 +204,13 @@ class _FacilityDetail extends StatelessWidget {
     required this.item,
     required this.code,
     required this.booking,
+    required this.bookings,
   });
 
   final LabInventory item;
   final String code;
   final LabBooking? booking;
+  final List<LabBooking> bookings;
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +263,7 @@ class _FacilityDetail extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _UsageStatusChip(status: booking?.status ?? 'available'),
-            _UsageScheduleChip(booking: booking),
+            _UsageScheduleChip(bookings: bookings),
           ],
         ),
       ],
@@ -411,21 +432,42 @@ class _UsageStatusChip extends StatelessWidget {
 }
 
 class _UsageScheduleChip extends StatelessWidget {
-  const _UsageScheduleChip({required this.booking});
+  const _UsageScheduleChip({required this.bookings});
 
-  final LabBooking? booking;
+  final List<LabBooking> bookings;
 
   @override
   Widget build(BuildContext context) {
-    final label = booking == null
-        ? 'Jadwal penggunaan: tersedia'
-        : 'Jadwal penggunaan: ${_twoDigits(booking!.tanggalPinjam.hour)}:${_twoDigits(booking!.tanggalPinjam.minute)}';
-    return Chip(
-      avatar: const Icon(Icons.event_available_outlined, size: 18),
-      label: Text(label),
-      labelStyle: const TextStyle(fontWeight: FontWeight.w800),
-      backgroundColor: Colors.white.withValues(alpha: 0.10),
-      side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+    if (bookings.isEmpty) {
+      return Chip(
+        avatar: const Icon(Icons.event_busy_outlined, size: 18),
+        label: const Text('Tidak Ada Jadwal Tersedia'),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+        backgroundColor: Colors.white.withValues(alpha: 0.10),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+      );
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: bookings.map((booking) {
+          final start =
+              '${_twoDigits(booking.tanggalPinjam.hour)}:${_twoDigits(booking.tanggalPinjam.minute)}';
+          final end =
+              '${_twoDigits(booking.tanggalKembali.hour)}:${_twoDigits(booking.tanggalKembali.minute)}';
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Chip(
+              avatar: const Icon(Icons.event_available_outlined, size: 18),
+              label: Text('$start-$end'),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+              backgroundColor: Colors.white.withValues(alpha: 0.10),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
@@ -591,7 +633,9 @@ class _InfrastructureList extends StatelessWidget {
 }
 
 class _CampusMapTabs extends StatelessWidget {
-  const _CampusMapTabs();
+  const _CampusMapTabs({required this.selectedCampus});
+
+  final String selectedCampus;
 
   static const _campuses = [
     _CampusMapData(
@@ -659,23 +703,24 @@ class _CampusMapTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campuses = selectedCampus == 'Kampus LabIn'
+        ? _campuses
+        : _campuses.where((campus) => campus.title == selectedCampus).toList();
+    final visibleCampuses = campuses.isEmpty ? _campuses : campuses;
     return DefaultTabController(
-      length: _campuses.length,
+      length: visibleCampuses.length,
       child: Column(
         children: [
-          const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Kampus Rektorat'),
-              Tab(text: 'Kampus 1'),
-              Tab(text: 'Kampus 2'),
-              Tab(text: 'Kampus 3'),
-              Tab(text: 'Kampus 4'),
-            ],
-          ),
+          if (visibleCampuses.length > 1)
+            TabBar(
+              isScrollable: true,
+              tabs: visibleCampuses
+                  .map((campus) => Tab(text: campus.title))
+                  .toList(),
+            ),
           Expanded(
             child: TabBarView(
-              children: _campuses
+              children: visibleCampuses
                   .map((campus) => _CampusMapPanel(campus: campus))
                   .toList(),
             ),
@@ -971,7 +1016,8 @@ class _RoomBlock extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             width: 38,
@@ -983,30 +1029,24 @@ class _RoomBlock extends StatelessWidget {
             ),
             child: Icon(icon, color: zoneColor, size: 21),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppTheme.ink,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  typeLabel,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: zoneColor,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppTheme.ink,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            typeLabel,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: zoneColor,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
@@ -1021,6 +1061,7 @@ class _BlueprintLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
+      alignment: WrapAlignment.center,
       spacing: 8,
       runSpacing: 8,
       children: const [
@@ -1372,7 +1413,7 @@ class _ImageDialog extends StatelessWidget {
               runSpacing: 10,
               children: [
                 _UsageStatusChip(status: booking?.status ?? 'available'),
-                _UsageScheduleChip(booking: booking),
+                _UsageScheduleChip(bookings: booking == null ? [] : [booking!]),
               ],
             ),
             const SizedBox(height: 16),

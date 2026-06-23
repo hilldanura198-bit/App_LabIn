@@ -403,6 +403,11 @@ class _RegisterPageState extends State<RegisterPage> {
         InputImage.fromFilePath(image.path),
       );
       final text = result.text;
+      final normalizedText = text.toLowerCase();
+      final hasKtmKeyword =
+          normalizedText.contains('kartu tanda mahasiswa') ||
+          (normalizedText.contains('kartu') &&
+              normalizedText.contains('mahasiswa'));
       final nimMatch = RegExp(r'\b\d{8,12}\b').firstMatch(text);
       final lines = text
           .split('\n')
@@ -428,10 +433,11 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) {
         return;
       }
-      final didExtractSomething =
-          extractedName.isNotEmpty || extractedNim != null;
+      final didExtractSomething = hasKtmKeyword || extractedNim != null;
       setState(() {
-        if (extractedName.isNotEmpty) _nameController.text = extractedName;
+        if (didExtractSomething && extractedName.isNotEmpty) {
+          _nameController.text = extractedName;
+        }
         if (extractedNim != null) _nimController.text = extractedNim;
         if (programLine.isNotEmpty) {
           _programStudiController.text = programLine;

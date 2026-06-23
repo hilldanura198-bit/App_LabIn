@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -19,6 +21,7 @@ import 'features/auth/presentation/terms_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   SupabaseClient? supabaseClient;
   if (SupabaseCredentials.isConfigured) {
@@ -29,8 +32,18 @@ Future<void> main() async {
     supabaseClient = Supabase.instance.client;
   }
   await LocalNotificationService.instance.initialize();
+  final prefs = await SharedPreferences.getInstance();
+  final savedLanguage = prefs.getString('app_language') ?? 'id';
 
-  runApp(LabInApp(supabaseClient: supabaseClient));
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('id'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('id'),
+      startLocale: Locale(savedLanguage),
+      child: LabInApp(supabaseClient: supabaseClient),
+    ),
+  );
 }
 
 class LabInApp extends StatelessWidget {
@@ -53,9 +66,20 @@ class LabInApp extends StatelessWidget {
         ],
         child: BlocBuilder<ThemeCubit, ThemeMode>(
           builder: (context, themeMode) {
+            final localization = EasyLocalization.of(context);
             return MaterialApp(
               title: AppBrand.name,
               debugShowCheckedModeBanner: false,
+              locale: localization?.locale ?? const Locale('id'),
+              supportedLocales:
+                  localization?.supportedLocales ?? const [Locale('id')],
+              localizationsDelegates:
+                  localization?.delegates ??
+                  const [
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                  ],
               theme: AppTheme.light,
               darkTheme: AppTheme.darkTheme,
               themeMode: themeMode,
