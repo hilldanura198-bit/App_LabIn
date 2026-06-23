@@ -150,6 +150,7 @@ class StatusTimeline extends StatelessWidget {
   Future<void> _showQrDialog(BuildContext context, LabBooking booking) {
     return showDialog<void>(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,

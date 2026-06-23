@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -177,13 +178,13 @@ class _SettingsPageState extends State<SettingsPage> {
                             children: [
                               _profileTile(
                                 icon: Icons.edit_outlined,
-                                title: 'Edit Profil',
-                                subtitle: 'Nama, NIM/NIP, Email, WhatsApp',
+                                title: _label('editProfile'),
+                                subtitle: _label('editProfileSubtitle'),
                                 onTap: _showEditProfileSheet,
                               ),
                               _profileTile(
                                 icon: Icons.language_rounded,
-                                title: 'Bahasa',
+                                title: _label('language'),
                                 subtitle: _language == 'id'
                                     ? 'Bahasa Indonesia'
                                     : 'English',
@@ -191,8 +192,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               _profileTile(
                                 icon: Icons.lock_outline,
-                                title: 'Ganti Password',
-                                subtitle: 'Perbarui kata sandi akun',
+                                title: _label('changePassword'),
+                                subtitle: _label('changePasswordSubtitle'),
                                 onTap: _showPasswordSheet,
                               ),
                             ],
@@ -203,9 +204,8 @@ class _SettingsPageState extends State<SettingsPage> {
                             children: [
                               _switchTile(
                                 icon: Icons.location_on_outlined,
-                                title: 'Fitur Lokasi',
-                                subtitle:
-                                    'Izinkan lokasi untuk cek reservasi dan akses.',
+                                title: _label('locationFeature'),
+                                subtitle: _label('locationFeatureSubtitle'),
                                 value: _locationEnabled,
                                 onChanged: (value) => _updatePreference(
                                   () => _locationEnabled = value,
@@ -213,10 +213,10 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               _switchTile(
                                 icon: Icons.verified_user_outlined,
-                                title: 'Keamanan Perangkat',
+                                title: _label('deviceSecurity'),
                                 subtitle: _biometricSupported
-                                    ? 'Sinkronkan perlindungan perangkat.'
-                                    : 'Perangkat belum mendukung biometrik.',
+                                    ? _label('deviceSecuritySubtitle')
+                                    : _label('biometricUnsupported'),
                                 value: _deviceSecurityEnabled,
                                 onChanged: _biometricSupported
                                     ? (value) {
@@ -233,8 +233,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 builder: (context, mode) {
                                   return _switchTile(
                                     icon: Icons.dark_mode_outlined,
-                                    title: 'Dark Mode',
-                                    subtitle: 'Aktifkan tampilan gelap.',
+                                    title: _label('darkMode'),
+                                    subtitle: _label('darkModeSubtitle'),
                                     value: mode == ThemeMode.dark,
                                     onChanged: (value) {
                                       context.read<ThemeCubit>().setDarkMode(
@@ -247,10 +247,10 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               _switchTile(
                                 icon: Icons.fingerprint_rounded,
-                                title: 'Biometric Login',
+                                title: _label('biometricLogin'),
                                 subtitle: kIsWeb
-                                    ? 'Aktif via browser session.'
-                                    : 'Preferensi biometrik lokal.',
+                                    ? _label('biometricWebSubtitle')
+                                    : _label('biometricSubtitle'),
                                 value: _biometricEnabled,
                                 onChanged:
                                     (_biometricSupported &&
@@ -262,9 +262,10 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               _switchTile(
                                 icon: Icons.notifications_active_outlined,
-                                title: 'Realtime Notification',
-                                subtitle:
-                                    'Update booking dan inventaris instan.',
+                                title: _label('realtimeNotification'),
+                                subtitle: _label(
+                                  'realtimeNotificationSubtitle',
+                                ),
                                 value: _realtimeNotifications,
                                 onChanged: (value) => _updatePreference(
                                   () => _realtimeNotifications = value,
@@ -272,8 +273,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               _switchTile(
                                 icon: Icons.volume_up_outlined,
-                                title: 'Notification Sound',
-                                subtitle: 'Suara untuk notifikasi realtime.',
+                                title: _label('notificationSound'),
+                                subtitle: _label('notificationSoundSubtitle'),
                                 value: _notificationSound,
                                 onChanged: (value) => _updatePreference(
                                   () => _notificationSound = value,
@@ -287,15 +288,15 @@ class _SettingsPageState extends State<SettingsPage> {
                             children: [
                               _profileTile(
                                 icon: Icons.logout_rounded,
-                                title: 'Keluar Akun',
-                                subtitle: 'Akhiri sesi akun LabIn',
+                                title: _label('logout'),
+                                subtitle: _label('logoutSubtitle'),
                                 iconColor: Colors.redAccent,
                                 onTap: _logout,
                               ),
                               _profileTile(
                                 icon: Icons.delete_outline_rounded,
-                                title: 'Hapus Akun',
-                                subtitle: 'Ajukan penghapusan akun LabIn',
+                                title: _label('deleteAccount'),
+                                subtitle: _label('deleteAccountSubtitle'),
                                 iconColor: Colors.redAccent,
                                 onTap: _showDeleteAccountDialog,
                               ),
@@ -349,12 +350,31 @@ class _SettingsPageState extends State<SettingsPage> {
                 CircleAvatar(
                   radius: 34,
                   backgroundColor: Colors.white.withValues(alpha: 0.22),
-                  backgroundImage: _avatarUrl == null
-                      ? null
-                      : NetworkImage(_avatarUrl!),
                   child: _avatarUrl == null
                       ? const Icon(Icons.person, color: Colors.white, size: 34)
-                      : null,
+                      : ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: _avatarUrl!,
+                            width: 68,
+                            height: 68,
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 180),
+                            placeholder: (context, _) => const Center(
+                              child: SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, _, _) => const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 34,
+                            ),
+                          ),
+                        ),
                 ),
                 Positioned(
                   right: -3,
@@ -409,7 +429,7 @@ class _SettingsPageState extends State<SettingsPage> {
               foregroundColor: Colors.white,
             ),
             icon: const Icon(Icons.edit_rounded),
-            tooltip: 'Edit Profil',
+            tooltip: _label('editProfile'),
           ),
         ],
       ),
@@ -862,10 +882,6 @@ class _SettingsPageState extends State<SettingsPage> {
         return;
       }
       setState(() => _avatarUrl = url);
-      await _load();
-      if (!mounted) {
-        return;
-      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Avatar profil berhasil diperbarui.')),
       );
@@ -939,5 +955,61 @@ class _SettingsPageState extends State<SettingsPage> {
       }
       return false;
     }
+  }
+
+  String _label(String key) {
+    const id = {
+      'editProfile': 'Edit Profil',
+      'editProfileSubtitle': 'Nama, NIM/NIP, Email, WhatsApp',
+      'language': 'Bahasa',
+      'changePassword': 'Ganti Password',
+      'changePasswordSubtitle': 'Perbarui kata sandi akun',
+      'locationFeature': 'Fitur Lokasi',
+      'locationFeatureSubtitle':
+          'Izinkan lokasi untuk cek reservasi dan akses.',
+      'deviceSecurity': 'Keamanan Perangkat',
+      'deviceSecuritySubtitle': 'Sinkronkan perlindungan perangkat.',
+      'biometricUnsupported': 'Perangkat belum mendukung biometrik.',
+      'darkMode': 'Dark Mode',
+      'darkModeSubtitle': 'Aktifkan tampilan gelap.',
+      'biometricLogin': 'Biometric Login',
+      'biometricWebSubtitle': 'Aktif via browser session.',
+      'biometricSubtitle': 'Preferensi biometrik lokal.',
+      'realtimeNotification': 'Realtime Notification',
+      'realtimeNotificationSubtitle': 'Update booking dan inventaris instan.',
+      'notificationSound': 'Notification Sound',
+      'notificationSoundSubtitle': 'Suara untuk notifikasi realtime.',
+      'logout': 'Keluar Akun',
+      'logoutSubtitle': 'Akhiri sesi akun LabIn',
+      'deleteAccount': 'Hapus Akun',
+      'deleteAccountSubtitle': 'Ajukan penghapusan akun LabIn',
+    };
+    const en = {
+      'editProfile': 'Edit Profile',
+      'editProfileSubtitle': 'Name, Student ID, Email, WhatsApp',
+      'language': 'Language',
+      'changePassword': 'Change Password',
+      'changePasswordSubtitle': 'Update your account password',
+      'locationFeature': 'Location Feature',
+      'locationFeatureSubtitle':
+          'Allow location for reservation and access checks.',
+      'deviceSecurity': 'Device Security',
+      'deviceSecuritySubtitle': 'Sync device protection.',
+      'biometricUnsupported': 'This device does not support biometrics.',
+      'darkMode': 'Dark Mode',
+      'darkModeSubtitle': 'Enable dark appearance.',
+      'biometricLogin': 'Biometric Login',
+      'biometricWebSubtitle': 'Enabled via browser session.',
+      'biometricSubtitle': 'Local biometric preference.',
+      'realtimeNotification': 'Realtime Notification',
+      'realtimeNotificationSubtitle': 'Instant booking and inventory updates.',
+      'notificationSound': 'Notification Sound',
+      'notificationSoundSubtitle': 'Sound for realtime notifications.',
+      'logout': 'Log Out',
+      'logoutSubtitle': 'End your LabIn session',
+      'deleteAccount': 'Delete Account',
+      'deleteAccountSubtitle': 'Request LabIn account deletion',
+    };
+    return (_language == 'en' ? en : id)[key] ?? key;
   }
 }

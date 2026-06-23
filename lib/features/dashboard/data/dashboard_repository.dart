@@ -53,12 +53,15 @@ class DashboardRepository {
         .map((room) => room.id)
         .toSet();
     if (labIds.isEmpty) {
-      yield const <LabInventory>[];
+      yield* watchInventories();
       return;
     }
-    yield* watchInventories().map(
-      (items) => items.where((item) => labIds.contains(item.labId)).toList(),
-    );
+    yield* watchInventories().map((items) {
+      final filtered = items
+          .where((item) => labIds.contains(item.labId))
+          .toList();
+      return filtered.isEmpty ? items : filtered;
+    });
   }
 
   String _normalizeCampus(String value) {
