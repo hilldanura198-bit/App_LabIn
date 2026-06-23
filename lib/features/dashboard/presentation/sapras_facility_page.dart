@@ -372,7 +372,22 @@ class _ImagePlaceholder extends StatelessWidget {
           ],
         ),
       ),
-      child: Icon(icon, color: scheme.primary, size: 36),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/facility_lab.png',
+            fit: BoxFit.cover,
+            errorBuilder: (context, _, _) =>
+                Icon(icon, color: scheme.primary, size: 36),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.surface.withValues(alpha: 0.16),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

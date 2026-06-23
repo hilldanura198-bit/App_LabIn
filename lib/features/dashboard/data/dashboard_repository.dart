@@ -704,7 +704,12 @@ class DashboardRepository {
         .select(_bookingWithProfileColumns)
         .eq('id', bookingId)
         .single();
-    return LabBooking.fromMap(booking);
+    final map = Map<String, dynamic>.from(booking);
+    final bookingItems = await _fetchBookingItemsSnapshot(bookingId);
+    if (bookingItems.isNotEmpty) {
+      map['items_snapshot'] = bookingItems.map((item) => item.toMap()).toList();
+    }
+    return LabBooking.fromMap(map);
   }
 
   Future<String> confirmItemHandover(String rawCode) async {
@@ -724,6 +729,9 @@ class DashboardRepository {
       throw Exception('Status booking belum siap diproses: $status');
     }
 
+    if (nextStatus == 'active') {
+      await _decrementInventoryStockForBooking(bookingId);
+    }
     await _supabase
         .from('bookings')
         .update({'status': nextStatus})
@@ -823,7 +831,7 @@ class DashboardRepository {
           ? inventory['stok_tersedia'] as int? ?? 0
           : 0;
       if (quantity > currentStock) {
-        throw Exception('Stok inventaris tidak cukup untuk disetujui.');
+        throw Exception('Stok inventaris tidak cukup untuk diserahkan.');
       }
       final nextStock = currentStock - quantity;
       await _supabase
@@ -831,6 +839,27 @@ class DashboardRepository {
           .update({'stok_tersedia': nextStock})
           .eq('id', inventoryId);
     }
+  }
+
+  Future<List<BookingSnapshotItem>> _fetchBookingItemsSnapshot(
+    String bookingId,
+  ) async {
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id,jumlah,inventories(nama_alat,lab_id)')
+        .eq('booking_id', bookingId);
+    return rows.map<BookingSnapshotItem>((row) {
+      final inventory = row['inventories'];
+      final inventoryMap = inventory is Map
+          ? Map<String, dynamic>.from(inventory)
+          : const <String, dynamic>{};
+      return BookingSnapshotItem(
+        name: inventoryMap['nama_alat'] as String? ?? 'Item',
+        quantity: row['jumlah'] as int? ?? 1,
+        labId: inventoryMap['lab_id'] as String? ?? '',
+        inventoryId: row['inventory_id']?.toString(),
+      );
+    }).toList();
   }
 
   Future<Map<String, dynamic>> _fetchOptionalProfilePreferences(
@@ -867,7 +896,7 @@ class DashboardRepository {
   }
 
   bool _shouldDecrementStockOnApproval(String previousStatus) {
-    return previousStatus == 'approved_aslab';
+    return false;
   }
 
   String _bookingIdFromQr(String rawCode) {

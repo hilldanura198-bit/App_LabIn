@@ -21,7 +21,10 @@ class StatusTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentStatus = booking?.status ?? status ?? 'pending';
-    final activeIndex = _steps.indexWhere((step) => step.$1 == currentStatus);
+    final currentIndex = _steps.indexWhere((step) => step.$1 == currentStatus);
+    final doneIndex = currentStatus == 'approved_kalab'
+        ? _steps.length - 1
+        : currentIndex;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -52,7 +55,7 @@ class StatusTimeline extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             ...List.generate(_steps.length, (index) {
-              final done = activeIndex >= index;
+              final done = doneIndex >= index;
               final stepStatus = _steps[index].$2;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +106,7 @@ class StatusTimeline extends StatelessWidget {
                                   color: done ? AppTheme.ink : AppTheme.muted,
                                 ),
                           ),
-                          if (booking != null && done && index == activeIndex)
+                          if (booking != null && done && index == currentIndex)
                             Text(
                               booking!.reservationNo,
                               maxLines: 2,

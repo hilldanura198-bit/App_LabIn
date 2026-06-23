@@ -1374,30 +1374,41 @@ class _InventoryImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              inventory.isAvailable
-                  ? Icons.precision_manufacturing_outlined
-                  : Icons.warning_amber_rounded,
-              color: Colors.white,
-              size: 30,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'LabIn',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
+    final asset = inventory.isRoomStock
+        ? 'assets/images/facility_room.png'
+        : 'assets/images/facility_lab.png';
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          asset,
+          fit: BoxFit.cover,
+          errorBuilder: (context, _, _) => const DecoratedBox(
+            decoration: BoxDecoration(gradient: AppTheme.cyberGradient),
+          ),
         ),
-      ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.black.withValues(alpha: 0.10),
+                Colors.black.withValues(alpha: 0.34),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        Center(
+          child: Icon(
+            inventory.isAvailable
+                ? Icons.precision_manufacturing_outlined
+                : Icons.warning_amber_rounded,
+            color: Colors.white,
+            size: 30,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -55,6 +55,7 @@ class LabInventory {
         map['image_url'] ??
         map['gambar_url'] ??
         map['foto_url'] ??
+        map['foto'] ??
         map['photo_url'] ??
         map['image'] ??
         map['gambar'];

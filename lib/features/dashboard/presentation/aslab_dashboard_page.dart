@@ -259,7 +259,7 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
         builder: (_) => _QrHandoverSheet(
           booking: booking,
           onConfirm: () async {
-            await repository.confirmItemHandover(booking.id);
+            await repository.confirmItemHandover(rawCode);
             if (!context.mounted) return;
             context.read<DashboardBloc>().add(
               const DashboardStarted(
@@ -370,7 +370,7 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
               Text(
                 isReturn
                     ? 'Konfirmasi Pengembalian Barang'
-                    : 'Bukti Pengambilan Barang',
+                    : 'Cocokkan Barang Peminjaman',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -393,7 +393,7 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Daftar Item',
+                'Daftar Barang',
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
@@ -407,7 +407,11 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.inventory_2_outlined),
-                    title: Text(item.name),
+                    title: Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     trailing: Text(
                       'x${item.quantity}',
                       style: const TextStyle(fontWeight: FontWeight.w900),
@@ -428,9 +432,7 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
                             : Icons.handshake_outlined,
                       ),
                 label: Text(
-                  isReturn
-                      ? 'Konfirmasi Pengembalian'
-                      : 'Konfirmasi Serah Terima Barang',
+                  isReturn ? 'Konfirmasi Pengembalian' : 'Serahkan Barang',
                 ),
               ),
             ],
