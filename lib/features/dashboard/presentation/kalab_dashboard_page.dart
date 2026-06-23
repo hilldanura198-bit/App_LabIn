@@ -55,7 +55,9 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
     }
     final rows = await client
         .from('bookings')
-        .select('*, profiles(nama, nim_nip), laboratories(name)')
+        .select(
+          '*, laboratories(nama_lab), profiles(nama, nim_nip, program_studi)',
+        )
         .eq('status', 'approved_aslab')
         .order('tanggal_pinjam');
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
@@ -124,7 +126,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
                                     _KalabHero(
                                       approvalCount: approvals.length,
                                       criticalCount:
-                                          state.criticalInventories.length,
+                                          state.lowStockInventories.length,
                                     ),
                                     const SizedBox(height: 16),
                                     RoomStockStreamBanner(
@@ -178,7 +180,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
                             ),
                             const SizedBox(height: 16),
                             _InventoryAlert(
-                              inventories: state.criticalInventories,
+                              inventories: state.lowStockInventories,
                               onScan: () => _scanBarcode(context),
                             ),
                           ],
@@ -321,7 +323,6 @@ class _KalabApprovalCard extends StatelessWidget {
       'Unknown',
     ]);
     final labName = _firstNotEmpty([
-      laboratory['name'],
       laboratory['nama_lab'],
       booking['lab_name_snapshot'],
       booking['lab_id'],
@@ -504,26 +505,42 @@ class _InventoryAlert extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (inventories.isEmpty)
-              const Text('Tidak ada aset kritis saat ini.')
+              const Text('Tidak ada stok rendah saat ini.')
             else
               ...inventories.map(
                 (inventory) => Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppTheme.richBronze.withValues(alpha: 0.12),
+                    color: const Color(0xFFFFE4E6),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.richBronze),
+                    border: Border.all(color: const Color(0xFFE11D48)),
                   ),
-                  child: Row(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    alignment: WrapAlignment.spaceBetween,
                     children: [
-                      Expanded(
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 360),
                         child: Text(
                           inventory.namaAlat,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
-                      Text('Stok ${inventory.stokTersedia}'),
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text('Stok Rendah: ${inventory.stokTersedia}'),
+                        labelStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                        backgroundColor: const Color(0xFFE11D48),
+                        side: BorderSide.none,
+                      ),
                     ],
                   ),
                 ),

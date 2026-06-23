@@ -1475,17 +1475,6 @@ class _DynamicQrPass extends StatefulWidget {
 }
 
 class _DynamicQrPassState extends State<_DynamicQrPass> {
-  late Stream<int> _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Stream.periodic(
-      const Duration(seconds: 60),
-      (tick) => tick,
-    ).startWith(0);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (widget.booking.status != 'approved_kalab') {
@@ -1507,38 +1496,95 @@ class _DynamicQrPassState extends State<_DynamicQrPass> {
         ),
       );
     }
-    return StreamBuilder<int>(
-      stream: _ticker,
-      builder: (context, snapshot) {
-        final slot = DateTime.now().millisecondsSinceEpoch ~/ 60000;
-        final value = '${widget.booking.id}|${widget.booking.qrToken}|$slot';
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                QrImageView(data: value, version: QrVersions.auto, size: 118),
-                const SizedBox(width: 16),
+                const Icon(
+                  Icons.qr_code_2_rounded,
+                  color: AppTheme.electricBlue,
+                ),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Dynamic QR Pass',
+                        'Tiket QR Peminjaman',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 6),
-                      Text('Status: ${widget.booking.status}'),
-                      const Text('Token berubah tiap 60 detik.'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Status disetujui Kalab. Tunjukkan QR saat mengambil barang.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: _showQr,
+              icon: const Icon(Icons.qr_code_rounded),
+              label: const Text('Tampilkan QR'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showQr() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Tiket QR Peminjaman',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 16),
+            QrImageView(
+              data: widget.booking.id,
+              version: QrVersions.auto,
+              size: 220,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              widget.booking.reservationNo,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'QR ini berisi booking_id untuk validasi serah terima barang.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1672,13 +1718,6 @@ class _EmptyCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-extension _StartWith<T> on Stream<T> {
-  Stream<T> startWith(T value) async* {
-    yield value;
-    yield* this;
   }
 }
 

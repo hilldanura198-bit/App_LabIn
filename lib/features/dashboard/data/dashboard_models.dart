@@ -24,7 +24,7 @@ class LabInventory {
   final String? imageUrl;
 
   bool get isAvailable => stokTersedia > 0 && kondisi == 'bagus';
-  bool get isCritical => stokTersedia <= 1 || kondisi == 'rusak';
+  bool get isCritical => stokTersedia < 3 || kondisi == 'rusak';
   bool get isRoomStock {
     final normalizedType = type.toLowerCase();
     final normalizedName = namaAlat.toLowerCase();

@@ -341,6 +341,7 @@ class _InventoryTechIllustration extends StatelessWidget {
             ? availableWidth
             : availableHeight;
         final size = rawSize.clamp(0.0, 250.0);
+        final cubeSize = (size * 0.50 / 3).clamp(6.0, 30.0);
         return Center(
           child: SizedBox(
             width: size,
@@ -401,7 +402,7 @@ class _InventoryTechIllustration extends StatelessWidget {
                             3,
                             (col) => _InventoryCube(
                               color: _cubeColor(row, col, activeIndex),
-                              small: row == 2,
+                              size: row == 2 ? cubeSize * 0.8 : cubeSize,
                             ),
                           ),
                         ),
@@ -477,18 +478,16 @@ class _InventoryTechIllustration extends StatelessWidget {
 }
 
 class _InventoryCube extends StatelessWidget {
-  const _InventoryCube({required this.color, required this.small});
+  const _InventoryCube({required this.color, required this.size});
 
   final Color color;
-  final bool small;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    final size = small ? 24.0 : 30.0;
     return Container(
       width: size,
       height: size,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withValues(alpha: 0.82), color],

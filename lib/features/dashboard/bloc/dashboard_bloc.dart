@@ -142,6 +142,8 @@ class DashboardState {
   int get cartCount => cart.values.fold(0, (sum, item) => sum + item.quantity);
   List<LabInventory> get criticalInventories =>
       inventories.where((inventory) => inventory.isCritical).toList();
+  List<LabInventory> get lowStockInventories =>
+      inventories.where((inventory) => inventory.stokTersedia < 3).toList();
 
   DashboardState copyWith({
     List<LabInventory>? inventories,
@@ -393,11 +395,19 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardAuditScanRequested event,
     Emitter<DashboardState> emit,
   ) async {
+    emit(state.copyWith(isLoading: true, clearMessage: true));
     try {
-      await _repository.markAssetAudited(event.barcode);
-      emit(state.copyWith(message: 'Aset berhasil ditandai sudah diaudit.'));
+      final nextStatus = await _repository.confirmItemHandover(event.barcode);
+      emit(
+        state.copyWith(
+          isLoading: false,
+          message: nextStatus == 'returned'
+              ? 'Pengembalian barang berhasil dikonfirmasi.'
+              : 'Serah terima barang berhasil dikonfirmasi.',
+        ),
+      );
     } on Object catch (error) {
-      emit(state.copyWith(message: _message(error)));
+      emit(state.copyWith(isLoading: false, message: _message(error)));
     }
   }
 

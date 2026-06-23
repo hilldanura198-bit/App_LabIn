@@ -80,7 +80,7 @@ class BookingSuccessPage extends StatelessWidget {
                       ElevatedButton.icon(
                         onPressed: () => _showQrTicket(context),
                         icon: const Icon(Icons.qr_code_2_rounded),
-                        label: const Text('Lihat Tiket QR'),
+                        label: const Text('Tampilkan QR'),
                       )
                     else
                       Container(

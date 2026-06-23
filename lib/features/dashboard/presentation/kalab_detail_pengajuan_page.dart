@@ -24,7 +24,7 @@ class KalabDetailPengajuanPage extends StatefulWidget {
 class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
   final _noteController = TextEditingController();
   late final LabBooking _booking;
-  bool _submitting = false;
+  String? _submittingAction;
 
   @override
   void initState() {
@@ -163,21 +163,26 @@ class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _submitting ? null : _reject,
+                  onPressed: _submittingAction == null ? _reject : null,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFE11D48),
                     side: const BorderSide(color: Color(0xFFE11D48)),
                   ),
-                  icon: const Icon(Icons.close_rounded),
+                  icon: _submittingAction == 'reject'
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.close_rounded),
                   label: const Text('Tolak'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: CyberGradientButton(
-                  onPressed: _submitting ? null : _approveFinal,
+                  onPressed: _submittingAction == null ? _approveFinal : null,
                   borderRadius: 16,
-                  child: _submitting
+                  child: _submittingAction == 'approve'
                       ? const SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(
@@ -199,17 +204,9 @@ class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
   }
 
   Future<void> _approveFinal() async {
-    setState(() => _submitting = true);
+    setState(() => _submittingAction = 'approve');
     try {
-      final client = widget.repository.client;
-      if (client == null) {
-        throw Exception('Sistem backend belum dikonfigurasi.');
-      }
-      await _updateBookingStatus(
-        status: 'approved_kalab',
-        note: _noteController.text.trim(),
-      );
-      await _decrementStock();
+      await widget.repository.approveKalab(bookingId: _booking.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -222,19 +219,23 @@ class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
       Navigator.of(context).pop('approved');
     } catch (error) {
       if (!mounted) return;
-      setState(() => _submitting = false);
+      setState(() => _submittingAction = null);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(error))));
     }
   }
 
   Future<void> _reject() async {
-    setState(() => _submitting = true);
+    final reason = await _showRejectReasonDialog();
+    if (reason == null || reason.trim().isEmpty) {
+      return;
+    }
+    setState(() => _submittingAction = 'reject');
     try {
-      await _updateBookingStatus(
-        status: 'rejected',
-        note: _noteController.text.trim(),
+      await widget.repository.rejectKalab(
+        bookingId: _booking.id,
+        reason: reason,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -246,96 +247,46 @@ class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
       Navigator.of(context).pop('rejected');
     } catch (error) {
       if (!mounted) return;
-      setState(() => _submitting = false);
+      setState(() => _submittingAction = null);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(error))));
     }
   }
 
-  Future<void> _updateBookingStatus({
-    required String status,
-    required String note,
-  }) async {
-    final client = widget.repository.client;
-    if (client == null) {
-      throw Exception('Sistem backend belum dikonfigurasi.');
-    }
-    final payload = {
-      'status': status,
-      if (note.isNotEmpty) 'kalab_note': note,
-      if (status == 'rejected' && note.isNotEmpty) 'rejection_reason': note,
-    };
-    try {
-      await client.from('bookings').update(payload).eq('id', _booking.id);
-    } catch (_) {
-      payload.remove('kalab_note');
-      await client.from('bookings').update(payload).eq('id', _booking.id);
-    }
+  Future<String?> _showRejectReasonDialog() {
+    final controller = TextEditingController(text: _noteController.text);
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Alasan Penolakan'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 3,
+          maxLines: 5,
+          decoration: const InputDecoration(
+            hintText:
+                'Tuliskan alasan agar mahasiswa bisa memperbaiki pengajuan',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Tolak Pengajuan'),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> _decrementStock() async {
-    final client = widget.repository.client;
-    if (client == null) {
-      throw Exception('Sistem backend belum dikonfigurasi.');
-    }
-    final stockItems = await _stockItems();
-    for (final item in stockItems) {
-      final inventoryId = item.inventoryId;
-      final quantity = item.quantity;
-      if (inventoryId == null || quantity <= 0) continue;
-      final row = await client
-          .from('inventories')
-          .select('stok_tersedia')
-          .eq('id', inventoryId)
-          .single();
-      final current = row['stok_tersedia'] as int? ?? 0;
-      if (quantity > current) {
-        throw Exception('Stok tidak cukup untuk ${item.name}.');
-      }
-      await client
-          .from('inventories')
-          .update({'stok_tersedia': current - quantity})
-          .eq('id', inventoryId);
-    }
-  }
-
-  Future<List<_StockItem>> _stockItems() async {
-    final directItems = _jsonItems()
-        .map((item) {
-          final map = _asMap(item);
-          final id = _firstNotEmptyNullable([
-            map['inventory_id'],
-            map['inventoryId'],
-            map['id'],
-          ]);
-          final qty = _asInt(map['quantity'] ?? map['jumlah']);
-          final name = _firstNotEmpty([
-            map['name'],
-            map['nama'],
-            map['nama_alat'],
-            'Item',
-          ]);
-          return _StockItem(inventoryId: id, quantity: qty, name: name);
-        })
-        .where((item) => item.inventoryId != null)
-        .toList();
-    if (directItems.isNotEmpty) return directItems;
-
-    final client = widget.repository.client;
-    if (client == null) return const [];
-    final rows = await client
-        .from('booking_items')
-        .select('inventory_id,jumlah,inventories(nama_alat)')
-        .eq('booking_id', _booking.id);
-    return rows.map((row) {
-      final inventory = _asMap(row['inventories']);
-      return _StockItem(
-        inventoryId: row['inventory_id']?.toString(),
-        quantity: _asInt(row['jumlah']),
-        name: _firstNotEmpty([inventory['nama_alat'], 'Item']),
-      );
-    }).toList();
+  String _friendlyError(Object? error) {
+    final message = error?.toString() ?? 'Terjadi kendala.';
+    return message.replaceFirst('Exception: ', '').trim();
   }
 
   LabBooking _bookingFromMap(Map<String, dynamic> source) {
@@ -359,47 +310,11 @@ class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
     return LabBooking.fromMap(map);
   }
 
-  List<Object?> _jsonItems() {
-    final value = widget.booking['items'] ?? widget.booking['items_snapshot'];
-    if (value is List) return value;
-    return const [];
-  }
-
   Map<String, dynamic> _asMap(Object? value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value);
     return const {};
   }
-
-  String? _firstNotEmptyNullable(List<Object?> values) {
-    for (final value in values) {
-      final text = value?.toString().trim();
-      if (text != null && text.isNotEmpty) return text;
-    }
-    return null;
-  }
-
-  String _firstNotEmpty(List<Object?> values) {
-    return _firstNotEmptyNullable(values) ?? '-';
-  }
-
-  int _asInt(Object? value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
-}
-
-class _StockItem {
-  const _StockItem({
-    required this.inventoryId,
-    required this.quantity,
-    required this.name,
-  });
-
-  final String? inventoryId;
-  final int quantity;
-  final String name;
 }
 
 class _HeroCard extends StatelessWidget {

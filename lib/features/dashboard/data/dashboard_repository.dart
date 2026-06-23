@@ -12,7 +12,7 @@ class DashboardRepository {
 
   final SupabaseClient? _client;
   static const _bookingColumns =
-      'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no,created_at,aslab_note,rejection_reason,approved_by_aslab_id';
+      'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no,created_at,aslab_note,rejection_reason,approved_by_aslab_id,approved_by_kalab_id';
   static const _bookingWithProfileColumns =
       '$_bookingColumns,profiles(nama,nim_nip,program_studi),laboratories(nama_lab)';
 
@@ -569,34 +569,49 @@ class DashboardRepository {
 
   Future<void> approveKalab({
     required String bookingId,
-    required Uint8List signatureBytes,
+    Uint8List? signatureBytes,
   }) async {
     final booking = await _supabase
         .from('bookings')
         .select('user_id,reservation_no,status')
         .eq('id', bookingId)
         .single();
-    final path =
-        'kalab/$bookingId-${DateTime.now().millisecondsSinceEpoch}.png';
-    await _supabase.storage
-        .from('signatures')
-        .uploadBinary(
-          path,
-          signatureBytes,
-          fileOptions: const FileOptions(
-            upsert: true,
-            contentType: 'image/png',
-          ),
-        );
-    final signatureUrl = _supabase.storage
-        .from('signatures')
-        .getPublicUrl(path);
+    final previousStatus = booking['status'] as String? ?? 'pending';
+    if (previousStatus != 'approved_aslab') {
+      throw Exception('Pengajuan belum siap untuk persetujuan Kalab.');
+    }
+    final kalabId = currentUserId;
+    if (kalabId == null) {
+      throw Exception('Sesi Kalab tidak ditemukan. Silakan login ulang.');
+    }
 
+    String? signatureUrl;
+    if (signatureBytes != null) {
+      final path =
+          'kalab/$bookingId-${DateTime.now().millisecondsSinceEpoch}.png';
+      await _supabase.storage
+          .from('signatures')
+          .uploadBinary(
+            path,
+            signatureBytes,
+            fileOptions: const FileOptions(
+              upsert: true,
+              contentType: 'image/png',
+            ),
+          );
+      signatureUrl = _supabase.storage.from('signatures').getPublicUrl(path);
+    }
+
+    final payload = {
+      'status': 'approved_kalab',
+      'approved_by_kalab_id': kalabId,
+      'signature_url': ?signatureUrl,
+    };
     await _supabase
         .from('bookings')
-        .update({'status': 'approved_kalab', 'signature_url': signatureUrl})
-        .eq('id', bookingId);
-    final previousStatus = booking['status'] as String? ?? 'pending';
+        .update(payload)
+        .eq('id', bookingId)
+        .eq('status', 'approved_aslab');
     if (_shouldDecrementStockOnApproval(previousStatus)) {
       await _decrementInventoryStockForBooking(bookingId);
     }
@@ -611,13 +626,42 @@ class DashboardRepository {
     );
   }
 
-  Future<void> applyQrValidation(String rawCode) async {
-    final parts = rawCode.split('|');
-    if (parts.length < 2) {
-      throw Exception('QR tidak valid.');
+  Future<void> rejectKalab({
+    required String bookingId,
+    required String reason,
+  }) async {
+    final trimmedReason = reason.trim();
+    if (trimmedReason.isEmpty) {
+      throw Exception('Alasan penolakan wajib diisi.');
+    }
+    final booking = await _supabase
+        .from('bookings')
+        .select('user_id,reservation_no,status')
+        .eq('id', bookingId)
+        .single();
+    final previousStatus = booking['status'] as String? ?? 'pending';
+    if (previousStatus != 'approved_aslab') {
+      throw Exception('Pengajuan sudah tidak menunggu persetujuan Kalab.');
     }
 
-    final bookingId = parts.first;
+    await _supabase
+        .from('bookings')
+        .update({'status': 'rejected', 'rejection_reason': trimmedReason})
+        .eq('id', bookingId)
+        .eq('status', 'approved_aslab');
+    await _insertNotification(
+      userId: booking['user_id'] as String,
+      title: 'Reservasi ditolak Kalab',
+      message:
+          'Pengajuan ${booking['reservation_no'] as String? ?? bookingId} ditolak: $trimmedReason',
+      kind: 'booking_status',
+      targetType: 'booking',
+      targetId: bookingId,
+    );
+  }
+
+  Future<void> applyQrValidation(String rawCode) async {
+    final bookingId = _bookingIdFromQr(rawCode);
     final booking = await _supabase
         .from('bookings')
         .select('status')
@@ -657,15 +701,14 @@ class DashboardRepository {
     final bookingId = _bookingIdFromQr(rawCode);
     final booking = await _supabase
         .from('bookings')
-        .select(
-          'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,profiles(nim_nip)',
-        )
+        .select(_bookingWithProfileColumns)
         .eq('id', bookingId)
         .single();
     return LabBooking.fromMap(booking);
   }
 
-  Future<void> confirmItemHandover(String bookingId) async {
+  Future<String> confirmItemHandover(String rawCode) async {
+    final bookingId = _bookingIdFromQr(rawCode);
     final booking = await _supabase
         .from('bookings')
         .select('user_id,reservation_no,status')
@@ -696,6 +739,7 @@ class DashboardRepository {
       targetType: 'booking',
       targetId: bookingId,
     );
+    return nextStatus;
   }
 
   Future<void> markAssetAudited(String barcode) async {
