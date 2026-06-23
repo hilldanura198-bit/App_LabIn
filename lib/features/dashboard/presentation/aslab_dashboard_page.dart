@@ -90,7 +90,7 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
     final rows = await client
         .from('bookings')
         .select(
-          '*, profiles(nama, nim_nip, program_studi), laboratories(nama_lab)',
+          '*, peminjam:profiles!fk_bookings_profiles(*), kalab:profiles!bookings_approved_by_kalab_id_fkey(*), laboratories(nama_lab)',
         )
         .eq('status', 'pending')
         .order('tanggal_pinjam');
@@ -536,7 +536,7 @@ class _ApprovalRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = _asMap(booking['profiles']);
+    final profile = _asMap(booking['peminjam'] ?? booking['profiles']);
     final laboratory = _asMap(booking['laboratories']);
     final rawDate = booking['tanggal_pinjam']?.toString();
     final date = rawDate == null

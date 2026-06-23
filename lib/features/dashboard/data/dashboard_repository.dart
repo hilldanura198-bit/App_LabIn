@@ -14,7 +14,7 @@ class DashboardRepository {
   static const _bookingColumns =
       'id,user_id,lab_id,status,tanggal_pinjam,tanggal_kembali,reservation_no,qr_token,signature_url,borrower_name,whatsapp_number,faculty_code,purpose,request_date,start_time,end_time,items_snapshot,other_items,lab_name_snapshot,rating_review,desk_no,created_at,aslab_note,rejection_reason,approved_by_aslab_id,approved_by_kalab_id';
   static const _bookingWithProfileColumns =
-      '$_bookingColumns,profiles(nama,nim_nip,program_studi),laboratories(nama_lab)';
+      '$_bookingColumns,peminjam:profiles!fk_bookings_profiles(*),kalab:profiles!bookings_approved_by_kalab_id_fkey(*),laboratories(nama_lab)';
 
   SupabaseClient get _supabase {
     final client = _client;

@@ -292,7 +292,7 @@ class _KalabDetailPengajuanPageState extends State<KalabDetailPengajuanPage> {
   LabBooking _bookingFromMap(Map<String, dynamic> source) {
     final map = Map<String, dynamic>.from(source);
     final laboratory = _asMap(map['laboratories']);
-    final profile = _asMap(map['profiles']);
+    final profile = _asMap(map['peminjam'] ?? map['profiles']);
     if (map['lab_id'] == null && map['ruangan_id'] != null) {
       map['lab_id'] = map['ruangan_id'];
     }

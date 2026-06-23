@@ -386,7 +386,7 @@ class _AslabDetailPengajuanPageState extends State<AslabDetailPengajuanPage> {
     map['lab_name_snapshot'] ??=
         laboratory['name'] ?? laboratory['nama_lab'] ?? map['lab_name'];
     map['items_snapshot'] ??= map['items'] ?? const [];
-    map['borrower_name'] ??= _asMap(map['profiles'])['nama'];
+    map['borrower_name'] ??= _asMap(map['peminjam'] ?? map['profiles'])['nama'];
     map['reservation_no'] ??= 'Booking ${map['id'] ?? ''}';
     map['qr_token'] ??= '';
     map['whatsapp_number'] ??= '';

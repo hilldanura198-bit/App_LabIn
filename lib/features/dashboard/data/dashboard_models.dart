@@ -133,6 +133,9 @@ class LabBooking {
     this.ratingReview,
     this.borrowerIdentity,
     this.borrowerProgramStudi,
+    this.approvedByKalabName,
+    this.approvedByKalabIdentity,
+    this.approvedByKalabProgramStudi,
     this.aslabNote,
     this.rejectionReason,
   });
@@ -160,6 +163,9 @@ class LabBooking {
   final Map<String, dynamic>? ratingReview;
   final String? borrowerIdentity;
   final String? borrowerProgramStudi;
+  final String? approvedByKalabName;
+  final String? approvedByKalabIdentity;
+  final String? approvedByKalabProgramStudi;
   final String? aslabNote;
   final String? rejectionReason;
 
@@ -191,7 +197,7 @@ class LabBooking {
           'PMJ-${map['id'].toString().substring(0, 5).toUpperCase()}',
       qrToken: map['qr_token'] as String? ?? '',
       borrowerName:
-          _borrowerNameFromMap(map['profiles']) ??
+          _profileNameFromMap(_peminjamProfile(map)) ??
           map['borrower_name'] as String? ??
           'Mahasiswa',
       whatsappNumber: map['whatsapp_number'] as String? ?? '',
@@ -212,8 +218,11 @@ class LabBooking {
           map['lab_name_snapshot'] as String? ??
           _labNameFromMap(map['laboratories']),
       ratingReview: _ratingReviewFromMap(map['rating_review']),
-      borrowerIdentity: _borrowerIdentityFromMap(map['profiles']),
-      borrowerProgramStudi: _borrowerProgramStudiFromMap(map['profiles']),
+      borrowerIdentity: _profileIdentityFromMap(_peminjamProfile(map)),
+      borrowerProgramStudi: _profileProgramStudiFromMap(_peminjamProfile(map)),
+      approvedByKalabName: _profileNameFromMap(map['kalab']),
+      approvedByKalabIdentity: _profileIdentityFromMap(map['kalab']),
+      approvedByKalabProgramStudi: _profileProgramStudiFromMap(map['kalab']),
       aslabNote: map['aslab_note'] as String?,
       rejectionReason: map['rejection_reason'] as String?,
     );
@@ -271,19 +280,23 @@ class LabBooking {
     return null;
   }
 
-  static String? _borrowerIdentityFromMap(Object? value) {
+  static Object? _peminjamProfile(Map<String, dynamic> map) {
+    return map['peminjam'] ?? map['profiles'];
+  }
+
+  static String? _profileIdentityFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value['nim_nip'] as String?;
     if (value is Map) return value['nim_nip'] as String?;
     return null;
   }
 
-  static String? _borrowerNameFromMap(Object? value) {
+  static String? _profileNameFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value['nama'] as String?;
     if (value is Map) return value['nama'] as String?;
     return null;
   }
 
-  static String? _borrowerProgramStudiFromMap(Object? value) {
+  static String? _profileProgramStudiFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value['program_studi'] as String?;
     if (value is Map) return value['program_studi'] as String?;
     return null;
