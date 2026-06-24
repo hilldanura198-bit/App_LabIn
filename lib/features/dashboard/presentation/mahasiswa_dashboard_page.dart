@@ -1108,6 +1108,7 @@ class _StockCalendarState extends State<_StockCalendar> {
                       });
                     },
                     itemBuilder: (context, page) {
+                      final scheme = Theme.of(context).colorScheme;
                       final weekStart = _weekForPage(page);
                       return Row(
                         children: List.generate(7, (index) {
@@ -1137,15 +1138,15 @@ class _StockCalendarState extends State<_StockCalendar> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: selected
-                                        ? AppTheme.electricBlue.withValues(
-                                            alpha: 0.10,
-                                          )
+                                        ? scheme.primary
                                         : Colors.transparent,
                                     borderRadius: BorderRadius.circular(18),
                                     border: Border.all(
                                       color: selected
-                                          ? AppTheme.electricBlue
-                                          : Colors.transparent,
+                                          ? scheme.primary
+                                          : scheme.outlineVariant.withValues(
+                                              alpha: isToday ? 0.88 : 0,
+                                            ),
                                     ),
                                   ),
                                   child: Column(
@@ -1159,8 +1160,8 @@ class _StockCalendarState extends State<_StockCalendar> {
                                             .labelSmall
                                             ?.copyWith(
                                               color: selected
-                                                  ? AppTheme.electricBlue
-                                                  : AppTheme.muted,
+                                                  ? scheme.onPrimary
+                                                  : scheme.onSurfaceVariant,
                                               fontWeight: FontWeight.w700,
                                             ),
                                       ),
@@ -1171,9 +1172,9 @@ class _StockCalendarState extends State<_StockCalendar> {
                                             .textTheme
                                             .titleMedium
                                             ?.copyWith(
-                                              color: selected || isToday
-                                                  ? AppTheme.midnightNavy
-                                                  : AppTheme.darkCharcoal,
+                                              color: selected
+                                                  ? scheme.onPrimary
+                                                  : scheme.onSurface,
                                               fontWeight: FontWeight.w900,
                                             ),
                                       ),
@@ -1182,7 +1183,14 @@ class _StockCalendarState extends State<_StockCalendar> {
                                         width: 7,
                                         height: 7,
                                         decoration: BoxDecoration(
-                                          color: AppTheme.vibrantPurple,
+                                          color: selected
+                                              ? scheme.onPrimary
+                                              : (isToday
+                                                    ? scheme.primary
+                                                    : scheme.onSurfaceVariant
+                                                          .withValues(
+                                                            alpha: 0.56,
+                                                          )),
                                           shape: BoxShape.circle,
                                         ),
                                       ),

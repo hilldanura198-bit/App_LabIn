@@ -355,7 +355,7 @@ class _RealtimeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = imageUrl?.trim();
+    final url = _normalizedImageUrl(imageUrl);
     if (url == null || url.isEmpty) {
       return _ImagePlaceholder(height: height, icon: fallbackIcon);
     }
@@ -364,15 +364,61 @@ class _RealtimeImage extends StatelessWidget {
       height: height,
       width: double.infinity,
       fit: BoxFit.cover,
-      placeholder: (context, _) => Container(
-        height: height,
-        decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
-      ),
+      fadeInDuration: const Duration(milliseconds: 180),
+      memCacheWidth: 720,
+      placeholder: (context, _) => _ImageLoadingPlaceholder(height: height),
       errorWidget: (context, _, _) =>
           _ImagePlaceholder(height: height, icon: fallbackIcon),
+    );
+  }
+
+  String? _normalizedImageUrl(String? value) {
+    final raw = value?.trim();
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    final uri = Uri.tryParse(raw);
+    if (uri == null || !uri.hasScheme) {
+      return null;
+    }
+    if (uri.scheme != 'https' && uri.scheme != 'http') {
+      return null;
+    }
+    return Uri.encodeFull(raw);
+  }
+}
+
+class _ImageLoadingPlaceholder extends StatelessWidget {
+  const _ImageLoadingPlaceholder({required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      height: height,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            scheme.surfaceContainerHighest,
+            scheme.surfaceContainerHighest.withValues(alpha: 0.70),
+            scheme.surface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: SizedBox.square(
+          dimension: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.4,
+            color: scheme.primary,
+          ),
+        ),
+      ),
     );
   }
 }
