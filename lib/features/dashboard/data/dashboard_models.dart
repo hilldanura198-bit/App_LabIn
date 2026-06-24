@@ -36,21 +36,22 @@ class LabInventory {
   }
 
   factory LabInventory.fromMap(Map<String, dynamic> map) {
+    final name = map['nama_alat'] as String? ?? 'Alat Lab';
     return LabInventory(
       id: map['id'] as String,
       labId: map['lab_id'] as String,
-      namaAlat: map['nama_alat'] as String? ?? 'Alat Lab',
+      namaAlat: name,
       totalStok: map['total_stok'] as int? ?? map['total_stock'] as int? ?? 0,
       stokTersedia:
           map['stok_tersedia'] as int? ?? map['available_stock'] as int? ?? 0,
       kondisi: map['kondisi'] as String? ?? 'bagus',
       type: map['type'] as String? ?? map['jenis'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
-      imageUrl: _imageUrlFromMap(map),
+      imageUrl: _imageUrlFromMap(map, name),
     );
   }
 
-  static String? _imageUrlFromMap(Map<String, dynamic> map) {
+  static String _imageUrlFromMap(Map<String, dynamic> map, String name) {
     final value =
         map['image_url'] ??
         map['gambar_url'] ??
@@ -60,7 +61,10 @@ class LabInventory {
         map['image'] ??
         map['gambar'];
     final text = value?.toString().trim();
-    return text == null || text.isEmpty ? null : text;
+    if (text != null && text.isNotEmpty) {
+      return text;
+    }
+    return _fallbackNetworkImage(name);
   }
 }
 
@@ -326,16 +330,17 @@ class LabRoom {
   final String? imageUrl;
 
   factory LabRoom.fromMap(Map<String, dynamic> map) {
+    final name = map['nama_lab'] as String? ?? 'Ruang Lab';
     return LabRoom(
       id: map['id'] as String,
-      name: map['nama_lab'] as String? ?? 'Ruang Lab',
+      name: name,
       location: map['lokasi'] as String? ?? '-',
       status: map['status_operasional'] as String? ?? 'aktif',
-      imageUrl: _imageUrlFromMap(map),
+      imageUrl: _imageUrlFromMap(map, name),
     );
   }
 
-  static String? _imageUrlFromMap(Map<String, dynamic> map) {
+  static String _imageUrlFromMap(Map<String, dynamic> map, String name) {
     final value =
         map['image_url'] ??
         map['gambar_url'] ??
@@ -345,8 +350,17 @@ class LabRoom {
         map['image'] ??
         map['gambar'];
     final text = value?.toString().trim();
-    return text == null || text.isEmpty ? null : text;
+    if (text != null && text.isNotEmpty) {
+      return text;
+    }
+    return _fallbackNetworkImage(name);
   }
+}
+
+String _fallbackNetworkImage(String label) {
+  final normalized = label.trim().isEmpty ? 'LabIn' : label.trim();
+  final encoded = Uri.encodeComponent(normalized);
+  return 'https://placehold.co/640x420/e0f2fe/0369a1.png?text=$encoded';
 }
 
 class ProfileSettings {
