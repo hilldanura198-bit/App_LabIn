@@ -499,7 +499,10 @@ class _HomeScrollContent extends StatelessWidget {
                       const SizedBox(height: 16),
                       const _LiveUtilizationFeed(),
                       const SizedBox(height: 16),
-                      _MaintenanceReport(inventories: state.inventories),
+                      _MaintenanceReport(
+                        inventories: state.inventories,
+                        repository: repository,
+                      ),
                       const SizedBox(height: 16),
                       const _FaqAccordion(),
                     ],
@@ -602,10 +605,10 @@ class _QuickModuleGrid extends StatelessWidget {
   }
 
   String _moduleSubtitle(String title) {
-    if (title == 'loan_form'.tr()) return 'Reservasi cepat dan presisi';
-    if (title == 'download_docs'.tr()) return 'Dokumen terhubung cloud';
-    if (title == 'room_schedule'.tr()) return 'Jadwal ruang multi-lab';
-    return 'Katalog fasilitas kampus';
+    if (title == 'loan_form'.tr()) return 'fast_reservation'.tr();
+    if (title == 'download_docs'.tr()) return 'cloud_docs'.tr();
+    if (title == 'room_schedule'.tr()) return 'multi_lab_schedule'.tr();
+    return 'campus_facility_catalog'.tr();
   }
 }
 
@@ -629,7 +632,7 @@ class _CampusInsights extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Rangkuman singkat pemanfaatan fasilitas kampus yang bergerak dinamis dan relevan dengan kebutuhan mahasiswa.',
+              'facility_insight_body'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -807,16 +810,14 @@ class _LiveUtilizationFeed extends StatelessWidget {
             const SizedBox(height: 12),
             const _InsightTile(
               icon: Icons.handyman_outlined,
-              title: 'Rawat alat setelah digunakan',
-              subtitle:
-                  'Matikan perangkat, rapikan kabel, dan laporkan anomali sekecil apa pun melalui form maintenance.',
+              titleKey: 'maintenance_tip_title',
+              subtitleKey: 'maintenance_tip_body',
             ),
             const SizedBox(height: 10),
             const _InsightTile(
               icon: Icons.trending_up_rounded,
-              title: 'Ruang paling aktif minggu ini',
-              subtitle:
-                  'Lab RPL dan Lab Jaringan menjadi ruang paling sering dipakai untuk praktikum dan penelitian mahasiswa.',
+              titleKey: 'active_room_title',
+              subtitleKey: 'active_room_body',
             ),
           ],
         ),
@@ -828,13 +829,13 @@ class _LiveUtilizationFeed extends StatelessWidget {
 class _InsightTile extends StatelessWidget {
   const _InsightTile({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.titleKey,
+    required this.subtitleKey,
   });
 
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String titleKey;
+  final String subtitleKey;
 
   @override
   Widget build(BuildContext context) {
@@ -854,12 +855,12 @@ class _InsightTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  titleKey.tr(),
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  subtitle,
+                  subtitleKey.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppTheme.muted,
                     height: 1.4,
@@ -1531,9 +1532,13 @@ class _CartCheckout extends StatelessWidget {
 }
 
 class _MaintenanceReport extends StatefulWidget {
-  const _MaintenanceReport({required this.inventories});
+  const _MaintenanceReport({
+    required this.inventories,
+    required this.repository,
+  });
 
   final List<LabInventory> inventories;
+  final DashboardRepository repository;
 
   @override
   State<_MaintenanceReport> createState() => _MaintenanceReportState();
@@ -1553,6 +1558,30 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.inventories.isEmpty) {
+      return StreamBuilder<List<LabInventory>>(
+        stream: widget.repository.watchInventories(),
+        builder: (context, snapshot) {
+          final inventories = snapshot.data ?? const <LabInventory>[];
+          return _buildCard(
+            context,
+            inventories,
+            isLoading: snapshot.connectionState == ConnectionState.waiting,
+          );
+        },
+      );
+    }
+    return _buildCard(context, widget.inventories);
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    List<LabInventory> inventories, {
+    bool isLoading = false,
+  }) {
+    final selected = inventories.any((item) => item.id == _selected?.id)
+        ? _selected
+        : null;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1567,8 +1596,8 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<LabInventory>(
-              initialValue: _selected,
-              items: widget.inventories
+              initialValue: selected,
+              items: inventories
                   .map(
                     (inventory) => DropdownMenuItem(
                       value: inventory,
@@ -1578,7 +1607,9 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
                   .toList(),
               onChanged: (value) => setState(() => _selected = value),
               decoration: InputDecoration(
-                labelText: 'maintenance_item_label'.tr(),
+                labelText: isLoading
+                    ? 'loading_inventory'.tr()
+                    : 'maintenance_item_label'.tr(),
               ),
             ),
             const SizedBox(height: 12),
@@ -2005,8 +2036,9 @@ class _HeaderQuickTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.white.withValues(alpha: 0.92),
+      color: scheme.surface.withValues(alpha: 0.92),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -2026,7 +2058,7 @@ class _HeaderQuickTag extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppTheme.ink,
+                  color: scheme.onSurface,
                   fontWeight: FontWeight.w900,
                   height: 1,
                 ),
@@ -2050,6 +2082,7 @@ class _GlobalSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
       readOnly: true,
@@ -2071,7 +2104,7 @@ class _GlobalSearchField extends StatelessWidget {
           icon: const Icon(Icons.tune_rounded, color: AppTheme.electricBlue),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: scheme.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 13,
@@ -2146,6 +2179,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
   late final TextEditingController _controller;
   late String _query;
   late final Future<List<LabRoom>> _roomsFuture;
+  late Future<List<LabInventory>> _inventorySearchFuture;
 
   @override
   void initState() {
@@ -2153,6 +2187,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
     _query = widget.initialQuery;
     _controller = TextEditingController(text: _query);
     _roomsFuture = widget.repository.fetchLaboratories();
+    _inventorySearchFuture = widget.repository.searchInventories(_query);
   }
 
   @override
@@ -2179,80 +2214,97 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
               future: _roomsFuture,
               builder: (context, snapshot) {
                 final rooms = snapshot.data ?? const <LabRoom>[];
-                final results = _buildSearchResults(rooms);
-                return ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 46,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: AppTheme.muted.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'global_search'.tr(),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: _controller,
-                      textInputAction: TextInputAction.search,
-                      onChanged: (value) => setState(() => _query = value),
-                      decoration: InputDecoration(
-                        hintText: 'search_hint'.tr(),
-                        prefixIcon: const Icon(Icons.search_rounded),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() {
-                            _controller.clear();
-                            _query = '';
-                          }),
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: ['Alat', 'Ruangan', 'Modul', 'Jadwal']
-                          .map(
-                            (tag) => ChoiceChip(
-                              selected:
-                                  _query.toLowerCase() == tag.toLowerCase(),
-                              label: Text(tag),
-                              onSelected: (_) => setState(() {
-                                _query = tag;
-                                _controller.text = tag;
-                              }),
+                return FutureBuilder<List<LabInventory>>(
+                  future: _inventorySearchFuture,
+                  builder: (context, inventorySnapshot) {
+                    final remoteInventories =
+                        inventorySnapshot.data ?? const <LabInventory>[];
+                    final results = _buildSearchResults(
+                      rooms,
+                      remoteInventories,
+                    );
+                    final loading =
+                        snapshot.connectionState == ConnectionState.waiting ||
+                        inventorySnapshot.connectionState ==
+                            ConnectionState.waiting;
+                    return ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 46,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: AppTheme.muted.withValues(alpha: 0.28),
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                          )
-                          .toList(),
-                    ),
-                    const SizedBox(height: 18),
-                    if (snapshot.connectionState == ConnectionState.waiting)
-                      const Center(child: CircularProgressIndicator())
-                    else if (results.isEmpty)
-                      const _EmptyCard(
-                        text:
-                            'Belum ada hasil. Coba cari nama alat, ruang lab, atau modul seperti Jadwal dan Katalog.',
-                      )
-                    else
-                      ...results.map((result) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _GlobalSearchResultTile(result: result),
-                        );
-                      }),
-                  ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'global_search'.tr(),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _controller,
+                          textInputAction: TextInputAction.search,
+                          onChanged: _setQuery,
+                          decoration: InputDecoration(
+                            hintText: 'search_hint'.tr(),
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                _controller.clear();
+                                _setQuery('');
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children:
+                              [
+                                ('tools_tag'.tr(), 'alat'),
+                                ('rooms_tag'.tr(), 'ruangan'),
+                                ('modules_tag'.tr(), 'modul'),
+                                ('schedule_tag'.tr(), 'jadwal'),
+                              ].map((tag) {
+                                final selected =
+                                    _query.toLowerCase() == tag.$2 ||
+                                    _query.toLowerCase() ==
+                                        tag.$1.toLowerCase();
+                                return ChoiceChip(
+                                  selected: selected,
+                                  label: Text(tag.$1),
+                                  onSelected: (_) {
+                                    _controller.text = tag.$1;
+                                    _setQuery(tag.$2);
+                                  },
+                                );
+                              }).toList(),
+                        ),
+                        const SizedBox(height: 18),
+                        if (loading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (results.isEmpty)
+                          _EmptyCard(text: 'search_empty'.tr())
+                        else
+                          ...results.map((result) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _GlobalSearchResultTile(result: result),
+                            );
+                          }),
+                      ],
+                    );
+                  },
                 );
               },
             ),
@@ -2262,7 +2314,17 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
     );
   }
 
-  List<_GlobalSearchResult> _buildSearchResults(List<LabRoom> rooms) {
+  void _setQuery(String value) {
+    setState(() {
+      _query = value;
+      _inventorySearchFuture = widget.repository.searchInventories(value);
+    });
+  }
+
+  List<_GlobalSearchResult> _buildSearchResults(
+    List<LabRoom> rooms,
+    List<LabInventory> remoteInventories,
+  ) {
     final normalized = _query.trim().toLowerCase();
     final query = normalized.isEmpty ? 'alat' : normalized;
     final results = <_GlobalSearchResult>[];
@@ -2272,7 +2334,12 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
     bool wantsRooms = query == 'ruangan' || query == 'room' || query == 'lab';
     bool wantsModules = query == 'modul' || query == 'module';
 
-    for (final inventory in widget.inventories) {
+    final inventoriesById = <String, LabInventory>{
+      for (final item in widget.inventories) item.id: item,
+      for (final item in remoteInventories) item.id: item,
+    };
+
+    for (final inventory in inventoriesById.values) {
       final isRoom = inventory.isRoomStock;
       final shouldShow =
           matches(inventory.namaAlat) ||
@@ -2286,9 +2353,16 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
           icon: isRoom ? Icons.meeting_room_outlined : Icons.inventory_2,
           title: inventory.namaAlat,
           subtitle: isRoom
-              ? 'Ruangan | stok ${inventory.stokTersedia}'
-              : 'Alat | tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
-          tag: isRoom ? 'Ruangan' : 'Alat',
+              ? 'room_stock_label'.tr(
+                  namedArgs: {'count': '${inventory.stokTersedia}'},
+                )
+              : 'tool_stock_label'.tr(
+                  namedArgs: {
+                    'available': '${inventory.stokTersedia}',
+                    'total': '${inventory.totalStok}',
+                  },
+                ),
+          tag: isRoom ? 'rooms_tag'.tr() : 'tools_tag'.tr(),
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(context).push(
@@ -2314,7 +2388,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
           icon: Icons.location_city_outlined,
           title: room.name,
           subtitle: '${room.location} | ${room.status}',
-          tag: 'Ruangan',
+          tag: 'rooms_tag'.tr(),
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(context).push(
@@ -2336,7 +2410,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
           icon: module.icon,
           title: module.title,
           subtitle: module.subtitle,
-          tag: 'Modul',
+          tag: 'modules_tag'.tr(),
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(
@@ -2374,15 +2448,16 @@ class _GlobalSearchResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: result.onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE0E7FF)),
+          border: Border.all(color: scheme.outlineVariant),
         ),
         child: Row(
           children: [
@@ -2460,26 +2535,26 @@ List<_SearchableModule> _searchableModules(DashboardRepository repository) {
   return [
     _SearchableModule(
       icon: Icons.playlist_add_check_rounded,
-      title: 'Form Peminjaman',
-      subtitle: 'Ajukan peminjaman alat dan ruang',
+      title: 'loan_form'.tr(),
+      subtitle: 'fast_reservation'.tr(),
       page: BookingFormPage(repository: repository),
     ),
     _SearchableModule(
       icon: Icons.file_download_outlined,
-      title: 'Unduh Berkas',
-      subtitle: 'Dokumen dan bukti peminjaman',
+      title: 'download_docs'.tr(),
+      subtitle: 'cloud_docs'.tr(),
       page: DownloadDocsPage(repository: repository),
     ),
     _SearchableModule(
       icon: Icons.view_timeline_outlined,
-      title: 'Jadwal Ruangan',
-      subtitle: 'Lihat agenda ruang multi-lab',
+      title: 'room_schedule'.tr(),
+      subtitle: 'multi_lab_schedule'.tr(),
       page: RoomSchedulePage(repository: repository),
     ),
     _SearchableModule(
       icon: Icons.location_city_outlined,
-      title: 'SAPRAS Kampus',
-      subtitle: 'Katalog fasilitas dan inventaris',
+      title: 'sapras_campus'.tr(),
+      subtitle: 'campus_facility_catalog'.tr(),
       page: SaprasFacilityPage(repository: repository),
     ),
   ];

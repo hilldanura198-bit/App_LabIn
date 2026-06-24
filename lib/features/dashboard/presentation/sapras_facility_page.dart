@@ -808,6 +808,7 @@ class _CampusDenahPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final rooms = campus.rooms;
     return Container(
       decoration: BoxDecoration(
@@ -830,7 +831,7 @@ class _CampusDenahPreview extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FBFF),
+                color: scheme.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: campus.accent.withValues(alpha: 0.18),
@@ -915,10 +916,11 @@ class _CampusInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: campus.accent.withValues(alpha: 0.16)),
         boxShadow: [
@@ -943,7 +945,7 @@ class _CampusInfoCard extends StatelessWidget {
             campus.address,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           FilledButton.icon(
@@ -991,6 +993,7 @@ class _RoomBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final zoneColor = switch (type) {
       _BlueprintZoneType.entry => AppTheme.electricBlue,
       _BlueprintZoneType.locker => AppTheme.cleanCyan,
@@ -1046,7 +1049,7 @@ class _RoomBlock extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppTheme.ink,
+              color: scheme.onSurface,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1091,6 +1094,7 @@ class _LegendChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
@@ -1110,7 +1114,7 @@ class _LegendChip extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppTheme.ink,
+              color: scheme.onSurface,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1125,9 +1129,10 @@ class _FacilityReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final testimonials = ['testimonial_1'.tr(), 'testimonial_2'.tr()];
     return Card(
-      color: const Color(0xFFFFFBEB),
+      color: scheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
@@ -1163,7 +1168,7 @@ class _FacilityReviewCard extends StatelessWidget {
                         'satisfaction_title'.tr(),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              color: AppTheme.ink,
+                              color: scheme.onSurface,
                               fontWeight: FontWeight.w900,
                             ),
                       ),
@@ -1171,7 +1176,7 @@ class _FacilityReviewCard extends StatelessWidget {
                       Text(
                         'satisfaction_subtitle'.tr(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.muted,
+                          color: scheme.onSurfaceVariant,
                           height: 1.35,
                         ),
                       ),
@@ -1184,9 +1189,9 @@ class _FacilityReviewCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: scheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE0E7FF)),
+                border: Border.all(color: scheme.outlineVariant),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1206,7 +1211,7 @@ class _FacilityReviewCard extends StatelessWidget {
                       'average_rating'.tr(),
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppTheme.ink,
+                        color: scheme.onSurface,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1221,7 +1226,7 @@ class _FacilityReviewCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    color: scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -1238,7 +1243,7 @@ class _FacilityReviewCard extends StatelessWidget {
                           text,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: AppTheme.ink,
+                                color: scheme.onSurface,
                                 height: 1.4,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1545,12 +1550,13 @@ class _ReviewQuoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE0E7FF)),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: [
           BoxShadow(
             color: AppTheme.electricBlue.withValues(alpha: 0.06),
@@ -1593,9 +1599,9 @@ class _ReviewQuoteCard extends StatelessWidget {
                     const Spacer(),
                     Text(
                       _dateLabel(review.createdAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: AppTheme.muted),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -1603,7 +1609,7 @@ class _ReviewQuoteCard extends StatelessWidget {
                 Text(
                   review.message,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.ink,
+                    color: scheme.onSurface,
                     height: 1.4,
                     fontWeight: FontWeight.w600,
                   ),

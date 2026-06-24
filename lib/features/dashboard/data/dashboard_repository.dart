@@ -140,9 +140,29 @@ class DashboardRepository {
   Future<List<LabRoom>> fetchLaboratories() async {
     final rows = await _supabase
         .from('laboratories')
-        .select('id,nama_lab,lokasi,status_operasional,image_url,foto_url,foto')
+        .select('id,nama_lab,lokasi,status_operasional')
         .order('nama_lab');
     return rows.map(LabRoom.fromMap).toList();
+  }
+
+  Future<List<LabInventory>> searchInventories(String query) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      final rows = await _supabase
+          .from('inventories')
+          .select()
+          .order('nama_alat')
+          .limit(20);
+      return rows.map(LabInventory.fromMap).toList();
+    }
+    final safeQuery = normalized.replaceAll('%', r'\%').replaceAll('_', r'\_');
+    final rows = await _supabase
+        .from('inventories')
+        .select()
+        .ilike('nama_alat', '%$safeQuery%')
+        .order('nama_alat')
+        .limit(30);
+    return rows.map(LabInventory.fromMap).toList();
   }
 
   Stream<List<LabRoom>> watchLaboratories() {

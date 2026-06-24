@@ -1,5 +1,5 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/lab_catalog.dart';
 import '../../../core/theme/app_theme.dart';
@@ -269,28 +269,36 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                       )
                                                     : Text(
                                                         isLast
-                                                            ? 'Kirim'
-                                                            : 'Lanjut',
+                                                            ? 'send'.tr()
+                                                            : 'continue'.tr(),
                                                       ),
                                               ),
                                             ),
-                                            if (_step > 0) ...[
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: OutlinedButton(
-                                                  onPressed:
-                                                      details.onStepCancel,
-                                                  child: const Text('Kembali'),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: OutlinedButton(
+                                                onPressed: _submitting
+                                                    ? null
+                                                    : (_step == 0
+                                                          ? () => Navigator.of(
+                                                              context,
+                                                            ).maybePop()
+                                                          : details
+                                                                .onStepCancel),
+                                                child: Text(
+                                                  _step == 0
+                                                      ? 'cancel'.tr()
+                                                      : 'back'.tr(),
                                                 ),
                                               ),
-                                            ],
+                                            ),
                                           ],
                                         ),
                                       );
                                     },
                                     steps: [
                                       Step(
-                                        title: const Text('Identitas & Jadwal'),
+                                        title: Text('identity_schedule'.tr()),
                                         isActive: _step >= 0,
                                         content: Form(
                                           key: _stepOneKey,
