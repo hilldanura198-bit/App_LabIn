@@ -99,6 +99,7 @@ flutter:
   # example:
   assets:
     - assets/images/
+    - assets/images/inventory/
     - assets/translations/
 
   # fonts:
