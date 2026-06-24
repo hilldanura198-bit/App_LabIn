@@ -303,7 +303,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Role aktif: $_role',
+                            'active_role'.tr(namedArgs: {'role': _role}),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: AppTheme.muted),
@@ -540,9 +540,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                       return null;
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Nama',
-                      prefixIcon: Icon(Icons.person_outline),
+                    decoration: InputDecoration(
+                      labelText: 'name'.tr(),
+                      prefixIcon: const Icon(Icons.person_outline),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -557,9 +557,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                       return null;
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'NIM/NIP',
-                      prefixIcon: Icon(Icons.badge_outlined),
+                    decoration: InputDecoration(
+                      labelText: 'student_id'.tr(),
+                      prefixIcon: const Icon(Icons.badge_outlined),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -575,9 +575,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                       return null;
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.mail_outline_rounded),
+                    decoration: InputDecoration(
+                      labelText: 'email'.tr(),
+                      prefixIcon: const Icon(Icons.mail_outline_rounded),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -592,9 +592,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                       return null;
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'No WhatsApp',
-                      prefixIcon: Icon(Icons.phone_outlined),
+                    decoration: InputDecoration(
+                      labelText: 'whatsapp'.tr(),
+                      prefixIcon: const Icon(Icons.phone_outlined),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -605,7 +605,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         Navigator.of(sheetContext).pop();
                       }
                     },
-                    child: const Text('Simpan Perubahan'),
+                    child: Text('save_changes'.tr()),
                   ),
                 ],
               ),
@@ -679,7 +679,7 @@ class _SettingsPageState extends State<SettingsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Ganti Password',
+                'change_password_action'.tr(),
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -689,9 +689,9 @@ class _SettingsPageState extends State<SettingsPage> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password baru',
-                  prefixIcon: Icon(Icons.lock_outline),
+                decoration: InputDecoration(
+                  labelText: 'new_password'.tr(),
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
               ),
               const SizedBox(height: 16),
@@ -702,7 +702,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     Navigator.of(sheetContext).pop();
                   }
                 },
-                child: const Text('Ganti Password'),
+                child: Text('change_password_action'.tr()),
               ),
             ],
           ),
@@ -723,18 +723,16 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Hapus Akun'),
-          content: const Text(
-            'Penghapusan akun membutuhkan verifikasi admin agar data peminjaman dan riwayat lab tetap aman.',
-          ),
+          title: Text('delete_account'.tr()),
+          content: Text('delete_account_body'.tr()),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Batal'),
+              child: Text('cancel'.tr()),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Ajukan'),
+              child: Text('submit'.tr()),
             ),
           ],
         );
@@ -743,13 +741,9 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed != true || !mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Permintaan hapus akun dikirim untuk diverifikasi admin.',
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('delete_account_body'.tr())));
   }
 
   void _updatePreference(VoidCallback update) {
@@ -795,9 +789,9 @@ class _SettingsPageState extends State<SettingsPage> {
       await prefs.setBool('feature_location', _locationEnabled);
       await prefs.setBool('feature_device_security', _deviceSecurityEnabled);
       if (mounted && showSnackBar) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pengaturan berhasil disimpan.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('settings_saved'.tr())));
       }
       return true;
     } on Object catch (error) {
@@ -924,9 +918,9 @@ class _SettingsPageState extends State<SettingsPage> {
       await widget.repository.updatePassword(_passwordController.text);
       _passwordController.clear();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password berhasil diperbarui.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('password_updated'.tr())));
       }
       return true;
     } on Object catch (error) {

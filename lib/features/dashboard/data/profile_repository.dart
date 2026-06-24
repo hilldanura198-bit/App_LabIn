@@ -21,10 +21,23 @@ class ProfileRepository {
     }
 
     final bytes = await image.readAsBytes();
-    final extension = image.name.split('.').last.toLowerCase();
-    final safeExtension = extension.isEmpty ? 'jpg' : extension;
+    final rawExtension = image.name.split('.').last.toLowerCase();
+    final safeExtension = switch (rawExtension) {
+      'png' => 'png',
+      'webp' => 'webp',
+      'heic' => 'heic',
+      'heif' => 'heif',
+      _ => 'jpg',
+    };
+    final contentType = switch (safeExtension) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'heic' => 'image/heic',
+      'heif' => 'image/heif',
+      _ => 'image/jpeg',
+    };
     final path =
-        '$userId/avatar-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
+        '$userId/profile/avatar-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
 
     await _supabase.storage
         .from('avatars')
@@ -33,7 +46,7 @@ class ProfileRepository {
           bytes,
           fileOptions: FileOptions(
             upsert: true,
-            contentType: image.mimeType ?? 'image/$safeExtension',
+            contentType: image.mimeType ?? contentType,
           ),
         );
 

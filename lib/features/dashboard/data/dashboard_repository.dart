@@ -161,6 +161,14 @@ class DashboardRepository {
         .map((rows) => rows.map(SatisfactionScore.fromMap).toList());
   }
 
+  Stream<List<FeedbackEntry>> watchFeedbackEntries() {
+    return _supabase
+        .from('feedback')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((rows) => rows.map(FeedbackEntry.fromMap).toList());
+  }
+
   Stream<List<LabBooking>> watchBookingsByStatus(List<String> statuses) {
     return _supabase
         .from('bookings')

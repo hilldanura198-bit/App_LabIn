@@ -453,6 +453,14 @@ class _HomeScrollContent extends StatelessWidget {
                       const SizedBox(height: 16),
                       const _CampusInsights(),
                       const SizedBox(height: 16),
+                      Text(
+                        'inventory_section_title'.tr(),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       if (state.isLoading && state.inventories.isEmpty)
                         const Center(child: CircularProgressIndicator())
                       else
@@ -869,27 +877,14 @@ class _InsightTile extends StatelessWidget {
 class _FaqAccordion extends StatelessWidget {
   const _FaqAccordion();
 
-  static const _items = [
-    (
-      'Siapa saja yang bisa menggunakan LabIn?',
-      'LabIn dapat digunakan oleh mahasiswa, asisten laboratorium, dan kepala laboratorium sesuai hak akses masing-masing.',
-    ),
-    (
-      'Apakah bisa meminjam lebih dari satu barang?',
-      'Bisa. Sistem mendukung peminjaman banyak alat sekaligus melalui keranjang atau formulir multi-step.',
-    ),
-    (
-      'Batas waktu pengajuan H-2',
-      'Pengajuan idealnya dilakukan minimal H-2 sebelum jadwal penggunaan agar proses approval berjalan tertib.',
-    ),
-    (
-      'Apa yang dilakukan jika barang rusak?',
-      'Gunakan form laporan kerusakan dan sertakan foto bukti agar laboratorium dapat memproses maintenance.',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final items = [
+      ('faq_who_q'.tr(), 'faq_who_a'.tr()),
+      ('faq_multi_q'.tr(), 'faq_multi_a'.tr()),
+      ('faq_deadline_q'.tr(), 'faq_deadline_a'.tr()),
+      ('faq_damage_q'.tr(), 'faq_damage_a'.tr()),
+    ];
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -897,7 +892,7 @@ class _FaqAccordion extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Frequently Asked Questions',
+              'faq_title'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: AppTheme.deepTeal,
@@ -905,7 +900,7 @@ class _FaqAccordion extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            ..._items.map(
+            ...items.map(
               (item) => Theme(
                 data: Theme.of(
                   context,
@@ -1493,7 +1488,11 @@ class _CartCheckout extends StatelessWidget {
                 (item) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(item.inventory.namaAlat),
-                  subtitle: Text('Jumlah ${item.quantity}'),
+                  subtitle: Text(
+                    'cart_quantity'.tr(
+                      namedArgs: {'count': '${item.quantity}'},
+                    ),
+                  ),
                   trailing: IconButton(
                     onPressed: () => context.read<DashboardBloc>().add(
                       DashboardCartItemRemoved(item.inventory.id),
@@ -1561,7 +1560,7 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Crowdsourced Maintenance Report',
+              'maintenance_title'.tr(),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -1578,8 +1577,8 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
                   )
                   .toList(),
               onChanged: (value) => setState(() => _selected = value),
-              decoration: const InputDecoration(
-                labelText: 'Pilih alat/fasilitas',
+              decoration: InputDecoration(
+                labelText: 'maintenance_item_label'.tr(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1587,8 +1586,8 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
               controller: _controller,
               minLines: 3,
               maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Deskripsi kerusakan',
+              decoration: InputDecoration(
+                labelText: 'maintenance_description_label'.tr(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1613,7 +1612,7 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
                       setState(() => _photo = null);
                     },
               icon: const Icon(Icons.send_rounded),
-              label: const Text('Kirim Laporan'),
+              label: Text('send_report'.tr()),
             ),
           ],
         ),

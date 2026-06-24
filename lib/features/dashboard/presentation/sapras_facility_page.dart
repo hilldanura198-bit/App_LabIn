@@ -21,7 +21,7 @@ class SaprasFacilityPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: GlassAppBar(
           title: 'sapras_campus'.tr(),
@@ -31,6 +31,7 @@ class SaprasFacilityPage extends StatelessWidget {
               Tab(text: 'facility'.tr()),
               Tab(text: 'infrastructure'.tr()),
               Tab(text: 'blueprint'.tr()),
+              Tab(text: 'satisfaction_tab'.tr()),
             ],
           ),
         ),
@@ -40,6 +41,7 @@ class SaprasFacilityPage extends StatelessWidget {
               _FacilityList(repository: repository),
               _InfrastructureList(repository: repository),
               _CampusMapTabs(selectedCampus: selectedCampus),
+              _SatisfactionReviewTab(repository: repository),
             ],
           ),
         ),
@@ -950,7 +952,7 @@ class _CampusInfoCard extends StatelessWidget {
               await launchUrl(uri, mode: LaunchMode.externalApplication);
             },
             icon: const Icon(Icons.map_outlined),
-            label: const Text('Buka Google Maps'),
+            label: Text('maps_open'.tr()),
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -1254,6 +1256,371 @@ class _FacilityReviewCard extends StatelessWidget {
   }
 }
 
+class _SatisfactionReviewTab extends StatefulWidget {
+  const _SatisfactionReviewTab({required this.repository});
+
+  final DashboardRepository repository;
+
+  @override
+  State<_SatisfactionReviewTab> createState() => _SatisfactionReviewTabState();
+}
+
+class _SatisfactionReviewTabState extends State<_SatisfactionReviewTab> {
+  final _controller = TextEditingController();
+  int _rating = 5;
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    final message = _controller.text.trim();
+    if (message.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('review_required'.tr())));
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await widget.repository.submitFeedback(rating: _rating, message: message);
+      if (!mounted) return;
+      _controller.clear();
+      setState(() {
+        _rating = 5;
+        _submitting = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('review_sent'.tr())));
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('review_failed'.tr(args: ['$error']))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<FeedbackEntry>>(
+      stream: widget.repository.watchFeedbackEntries(),
+      builder: (context, snapshot) {
+        final reviews = snapshot.data ?? const <FeedbackEntry>[];
+        final average = reviews.isEmpty
+            ? 4.8
+            : reviews.fold<double>(0, (sum, item) => sum + item.rating) /
+                  reviews.length;
+        final displayReviews = reviews.isEmpty
+            ? _fallbackReviews()
+            : reviews.take(12).toList();
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(18),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _ReviewSummaryCard(
+                    average: average,
+                    totalReviews: reviews.isEmpty ? 24 : reviews.length,
+                  ),
+                  const SizedBox(height: 14),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'write_review'.tr(),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 12),
+                          _StarInput(
+                            rating: _rating,
+                            onChanged: (value) =>
+                                setState(() => _rating = value),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: _controller,
+                            minLines: 3,
+                            maxLines: 5,
+                            decoration: InputDecoration(
+                              labelText: 'review_field_label'.tr(),
+                              hintText: 'review_field_hint'.tr(),
+                              prefixIcon: const Icon(
+                                Icons.rate_review_outlined,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.cyberGradient,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: FilledButton.icon(
+                              onPressed: _submitting ? null : _submit,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.transparent,
+                                minimumSize: const Size.fromHeight(48),
+                              ),
+                              icon: _submitting
+                                  ? const SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.send_rounded),
+                              label: Text('send_review'.tr()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'student_reviews'.tr(),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...displayReviews.map(
+                    (review) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _ReviewQuoteCard(review: review),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<FeedbackEntry> _fallbackReviews() {
+    final now = DateTime.now();
+    return [
+      FeedbackEntry(
+        id: 'fallback-1',
+        userId: 'sample',
+        rating: 5,
+        message: 'testimonial_1'.tr(),
+        createdAt: now,
+      ),
+      FeedbackEntry(
+        id: 'fallback-2',
+        userId: 'sample',
+        rating: 5,
+        message: 'testimonial_2'.tr(),
+        createdAt: now,
+      ),
+    ];
+  }
+}
+
+class _ReviewSummaryCard extends StatelessWidget {
+  const _ReviewSummaryCard({required this.average, required this.totalReviews});
+
+  final double average;
+  final int totalReviews;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppTheme.cyberGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.vibrantPurple.withValues(alpha: 0.20),
+            blurRadius: 24,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 74,
+            height: 74,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+            ),
+            child: const Icon(
+              Icons.star_rounded,
+              color: Color(0xFFFFD166),
+              size: 52,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'average_rating'.tr(),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${average.toStringAsFixed(1)}/5',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  'review_count'.tr(args: ['$totalReviews']),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StarInput extends StatelessWidget {
+  const _StarInput({required this.rating, required this.onChanged});
+
+  final int rating;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        final value = index + 1;
+        final active = value <= rating;
+        return IconButton(
+          onPressed: () => onChanged(value),
+          icon: Icon(
+            active ? Icons.star_rounded : Icons.star_border_rounded,
+            color: active ? const Color(0xFFFFB020) : AppTheme.muted,
+            size: 34,
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _ReviewQuoteCard extends StatelessWidget {
+  const _ReviewQuoteCard({required this.review});
+
+  final FeedbackEntry review;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE0E7FF)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.electricBlue.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppTheme.vibrantPurple.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.format_quote_rounded,
+              color: AppTheme.vibrantPurple,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ...List.generate(5, (index) {
+                      return Icon(
+                        index < review.rating
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: const Color(0xFFFFB020),
+                        size: 18,
+                      );
+                    }),
+                    const Spacer(),
+                    Text(
+                      _dateLabel(review.createdAt),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: AppTheme.muted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  review.message,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.ink,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _dateLabel(DateTime value) {
+    return '${_twoDigits(value.day)}/${_twoDigits(value.month)}/${value.year}';
+  }
+}
+
 enum _BlueprintZoneType { room, locker, entry }
 
 class _SatisfactionAnalytics extends StatefulWidget {
@@ -1315,8 +1682,8 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
                           .toList(),
                       onChanged: (value) =>
                           setState(() => _period = value ?? _period),
-                      decoration: const InputDecoration(
-                        labelText: 'Pilih Periode',
+                      decoration: InputDecoration(
+                        labelText: 'period_choose'.tr(),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1563,7 +1930,7 @@ class _ImageDialog extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Tutup'),
+              child: Text('close'.tr()),
             ),
           ],
         ),
