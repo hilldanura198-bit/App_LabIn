@@ -358,9 +358,67 @@ class LabRoom {
 }
 
 String _fallbackNetworkImage(String label) {
-  final normalized = label.trim().isEmpty ? 'LabIn' : label.trim();
-  final encoded = Uri.encodeComponent(normalized);
-  return 'https://placehold.co/640x420/e0f2fe/0369a1.png?text=$encoded';
+  final normalized = label.toLowerCase();
+  final config = switch (normalized) {
+    final value when value.contains('tablet') => ('tablet,technology', 241),
+    final value when value.contains('ultrasonik') || value.contains('sensor') =>
+      ('electronics,sensor', 242),
+    final value
+        when value.contains('pc workstation') ||
+            value.contains('workstation') ||
+            value.contains('server') =>
+      ('computer,workstation', 243),
+    final value
+        when value.contains('microphone') || value.contains('mikrofon') =>
+      ('microphone,conference', 244),
+    final value when value.contains('webcam') => ('webcam,conference', 245),
+    final value when value.contains('switch') => ('network,switch', 246),
+    final value when value.contains('router') => ('router,network', 247),
+    final value when value.contains('access point') || value.contains('wifi') =>
+      ('wifi,router', 248),
+    final value when value.contains('arduino') => ('arduino,electronics', 249),
+    final value when value.contains('esp32') => (
+      'microcontroller,electronics',
+      250,
+    ),
+    final value when value.contains('multimeter') => (
+      'multimeter,electronics',
+      251,
+    ),
+    final value when value.contains('hdmi') || value.contains('kabel') => (
+      'hdmi,cable',
+      252,
+    ),
+    final value
+        when value.contains('projector') || value.contains('proyektor') =>
+      ('projector,classroom', 253),
+    final value when value.contains('laptop') => ('laptop,computer', 254),
+    final value when value.contains('printer') => ('printer,office', 255),
+    final value when value.contains('monitor') => ('monitor,computer', 256),
+    final value when value.contains('scanner') => ('document,scanner', 257),
+    final value when value.contains('kamera') || value.contains('camera') => (
+      'camera,conference',
+      258,
+    ),
+    final value
+        when value.contains('smart tv') || value.contains('television') =>
+      ('television,meeting', 259),
+    final value when value.contains('manekin') || value.contains('cpr') => (
+      'medical,training',
+      260,
+    ),
+    final value
+        when value.contains('tensimeter') || value.contains('blood pressure') =>
+      ('medical,equipment', 261),
+    final value when value.contains('antropometri') || value.contains('ukur') =>
+      ('measuring,equipment', 262),
+    final value when value.contains('lab') || value.contains('ruang') => (
+      'laboratory,classroom',
+      263,
+    ),
+    _ => ('technology,equipment', 264),
+  };
+  return 'https://loremflickr.com/640/420/${config.$1}?lock=${config.$2}';
 }
 
 class ProfileSettings {
