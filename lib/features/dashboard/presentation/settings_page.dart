@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -147,7 +146,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: widget.showAppBar ? const GlassAppBar(title: 'Profil') : null,
+      appBar: widget.showAppBar ? GlassAppBar(title: 'profile'.tr()) : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Container(
@@ -518,7 +517,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Edit Profil',
+                    'edit_profile'.tr(),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w900,
@@ -529,7 +528,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: OutlinedButton.icon(
                       onPressed: _pickAvatar,
                       icon: const Icon(Icons.photo_camera_outlined),
-                      label: const Text('Edit Foto Profil'),
+                      label: Text('edit_profile_photo'.tr()),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -850,40 +849,23 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) {
         return;
       }
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: image.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        compressQuality: 82,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Potong Foto Profil',
-            toolbarColor: AppTheme.electricBlue,
-            toolbarWidgetColor: Colors.white,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Potong Foto Profil',
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
-          WebUiSettings(context: context),
-        ],
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
+        SnackBar(content: Text('uploading_profile_photo'.tr())),
       );
-      if (cropped == null) {
-        return;
-      }
-      final croppedImage = XFile(cropped.path, mimeType: image.mimeType);
-      // Supabase Storage: pastikan RLS Policy INSERT/UPDATE bucket avatars
-      // mengizinkan user mengunggah dan memperbarui file miliknya sendiri.
+      final oldAvatarUrl = _avatarUrl;
       final url = await ProfileRepository(
         widget.repository.client,
-      ).uploadProfilePicture(croppedImage);
+      ).uploadProfilePicture(image);
       if (!mounted) {
         return;
       }
+      if (oldAvatarUrl != null && oldAvatarUrl.isNotEmpty) {
+        await CachedNetworkImage.evictFromCache(oldAvatarUrl);
+      }
       setState(() => _avatarUrl = url);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Avatar profil berhasil diperbarui.')),
+      messenger.showSnackBar(
+        SnackBar(content: Text('profile_photo_updated'.tr())),
       );
     } on Object catch (error) {
       if (mounted) {
@@ -910,9 +892,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icons.photo_library_outlined,
                     AppTheme.electricBlue,
                   ),
-                  title: const Text(
-                    'Pilih dari Galeri',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  title: Text(
+                    'pick_from_gallery'.tr(),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   onTap: () =>
                       Navigator.of(sheetContext).pop(ImageSource.gallery),
@@ -922,9 +904,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icons.photo_camera_outlined,
                     AppTheme.vibrantPurple,
                   ),
-                  title: const Text(
-                    'Ambil dari Kamera',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  title: Text(
+                    'take_from_camera'.tr(),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   onTap: () =>
                       Navigator.of(sheetContext).pop(ImageSource.camera),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -40,7 +41,7 @@ class StatusTimeline extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Timeline Peminjaman',
+                  'timeline_title'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -49,7 +50,7 @@ class StatusTimeline extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Status mengikuti perubahan real-time dari dashboard laboratorium.',
+              'timeline_subtitle'.tr(),
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
@@ -130,7 +131,7 @@ class StatusTimeline extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: () => _showQrDialog(context, booking!),
                   icon: const Icon(Icons.qr_code_2_rounded),
-                  label: const Text('Lihat QR Scan'),
+                  label: Text('view_qr_scan'.tr()),
                 ),
               ),
             ],
@@ -148,66 +149,109 @@ class StatusTimeline extends StatelessWidget {
   }
 
   Future<void> _showQrDialog(BuildContext context, LabBooking booking) {
-    return showDialog<void>(
+    return showModalBottomSheet<void>(
       context: context,
-      barrierColor: Colors.transparent,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          title: const Text(
-            'QR Scan Peminjaman',
-            style: TextStyle(color: AppTheme.ink, fontWeight: FontWeight.w900),
-          ),
-          content: SingleChildScrollView(
+      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.05),
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
             child: Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.electricBlue.withValues(alpha: 0.12),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final size = constraints.maxWidth < 260 ? 190.0 : 220.0;
-                      return QrImageView(
-                        data: booking.id,
-                        version: QrVersions.auto,
-                        size: size,
-                        backgroundColor: Colors.white,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: Colors.black,
-                        ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
-                          color: Colors.black,
-                        ),
-                      );
-                    },
+                  Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
+                  Text(
+                    'qr_scan_title'.tr(),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(sheetContext).textTheme.titleLarge
+                        ?.copyWith(
+                          color: AppTheme.vibrantPurple,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     booking.reservationNo,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontWeight: FontWeight.w900,
+                    style: Theme.of(sheetContext).textTheme.bodyMedium
+                        ?.copyWith(
+                          color: AppTheme.ink,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE0E7FF)),
+                    ),
+                    child: QrImageView(
+                      data: booking.id,
+                      version: QrVersions.auto,
+                      size: 224,
+                      backgroundColor: Colors.white,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Colors.black,
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.cyberGradient,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        icon: const Icon(Icons.qr_code_scanner_rounded),
+                        label: Text('scan_qr_code'.tr()),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Tutup'),
-            ),
-          ],
         );
       },
     );
