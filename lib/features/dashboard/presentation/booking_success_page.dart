@@ -143,6 +143,8 @@ class BookingSuccessPage extends StatelessWidget {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.white,
       builder: (context) {
         return SafeArea(
           child: SingleChildScrollView(

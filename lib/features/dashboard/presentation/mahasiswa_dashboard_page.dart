@@ -446,12 +446,15 @@ class _HomeScrollContent extends StatelessWidget {
                       const SizedBox(height: 16),
                       const _CampusInsights(),
                       const SizedBox(height: 16),
-                      _InventoryGrid(
-                        inventories: previewInventories,
-                        columns: gridColumns,
-                        cart: state.cart,
-                        repository: repository,
-                      ),
+                      if (state.isLoading && state.inventories.isEmpty)
+                        const Center(child: CircularProgressIndicator())
+                      else
+                        _InventoryGrid(
+                          inventories: previewInventories,
+                          columns: gridColumns,
+                          cart: state.cart,
+                          repository: repository,
+                        ),
                       const SizedBox(height: 10),
                       Center(
                         child: ConstrainedBox(
