@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -72,7 +72,8 @@ class LabInApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               locale: localization?.locale ?? const Locale('id'),
               supportedLocales:
-                  localization?.supportedLocales ?? const [Locale('id')],
+                  localization?.supportedLocales ??
+                  const [Locale('id'), Locale('en')],
               localizationsDelegates:
                   localization?.delegates ??
                   const [

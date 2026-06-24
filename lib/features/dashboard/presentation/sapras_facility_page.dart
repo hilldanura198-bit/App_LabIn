@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,14 +23,14 @@ class SaprasFacilityPage extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: const GlassAppBar(
-          title: 'SAPRAS Kampus',
+        appBar: GlassAppBar(
+          title: 'sapras_campus'.tr(),
           bottom: TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Sarana'),
-              Tab(text: 'Prasarana'),
-              Tab(text: 'Denah'),
+              Tab(text: 'facility'.tr()),
+              Tab(text: 'infrastructure'.tr()),
+              Tab(text: 'blueprint'.tr()),
             ],
           ),
         ),
@@ -70,9 +71,12 @@ class _FacilityList extends StatelessWidget {
             final bookings = bookingSnapshot.data ?? const <LabBooking>[];
             return ListView.separated(
               padding: const EdgeInsets.all(18),
-              itemCount: items.length,
+              itemCount: items.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
+                if (index == items.length) {
+                  return const _FacilityReviewCard();
+                }
                 final item = items[index];
                 final code = _assetCode(index);
                 final booking = _latestBookingForLab(bookings, item.labId);
@@ -223,10 +227,10 @@ class _FacilityDetail extends StatelessWidget {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _DataPill(label: 'Kode Aset', value: code),
-            _DataPill(label: 'Nama Sarana', value: item.namaAlat),
-            _DataPill(label: 'Nama Ruangan', value: _roomName(item.labId)),
-            const _DataPill(label: 'Gedung', value: 'Gedung Teknologi'),
+            _DataPill(label: 'asset_code'.tr(), value: code),
+            _DataPill(label: 'facility_name'.tr(), value: item.namaAlat),
+            _DataPill(label: 'room_name'.tr(), value: _roomName(item.labId)),
+            _DataPill(label: 'building'.tr(), value: 'Gedung Teknologi'),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
@@ -241,7 +245,7 @@ class _FacilityDetail extends StatelessWidget {
                 ),
               ),
               child: Text(
-                good ? 'Baik' : 'Rusak',
+                good ? 'good'.tr() : 'broken'.tr(),
                 style: TextStyle(
                   color: good
                       ? const Color(0xFF22F55E)
@@ -251,7 +255,7 @@ class _FacilityDetail extends StatelessWidget {
               ),
             ),
             _DataPill(
-              label: 'Jumlah Stok',
+              label: 'stock_total'.tr(),
               value: '${item.stokTersedia}/${item.totalStok}',
             ),
           ],
@@ -263,7 +267,7 @@ class _FacilityDetail extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _UsageStatusChip(status: booking?.status ?? 'available'),
-            _UsageScheduleChip(bookings: bookings, seed: item.id),
+            _UsageScheduleChip(bookings: bookings),
           ],
         ),
       ],
@@ -407,7 +411,7 @@ class _DetailButton extends StatelessWidget {
     return FilledButton.tonalIcon(
       onPressed: onPressed,
       icon: const Icon(Icons.open_in_full_rounded),
-      label: const Text('Detail'),
+      label: Text('detail'.tr()),
     );
   }
 }
@@ -432,17 +436,16 @@ class _UsageStatusChip extends StatelessWidget {
 }
 
 class _UsageScheduleChip extends StatelessWidget {
-  const _UsageScheduleChip({required this.bookings, this.seed = ''});
+  const _UsageScheduleChip({required this.bookings});
 
   final List<LabBooking> bookings;
-  final String seed;
 
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
       return Chip(
         avatar: const Icon(Icons.event_available_outlined, size: 18),
-        label: Text(_operationalHours(seed)),
+        label: Text('operational_fallback'.tr()),
         labelStyle: const TextStyle(fontWeight: FontWeight.w800),
         backgroundColor: Colors.white.withValues(alpha: 0.10),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
@@ -456,7 +459,7 @@ class _UsageScheduleChip extends StatelessWidget {
           final start = _timeLabel(booking.tanggalPinjam);
           final end = _timeLabel(booking.tanggalKembali);
           final label = start == end || (start == '00:00' && end == '00:00')
-              ? _operationalHours('${booking.id}$seed')
+              ? 'operational_fallback'.tr()
               : '$start-$end';
           return Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -475,19 +478,6 @@ class _UsageScheduleChip extends StatelessWidget {
 
   String _timeLabel(DateTime value) {
     return '${_twoDigits(value.hour)}:${_twoDigits(value.minute)}';
-  }
-
-  String _operationalHours(String seed) {
-    const slots = [
-      '08:00-16:00',
-      '07:30-15:30',
-      '08:30-16:30',
-      '09:00-17:00',
-      '07:00-15:00',
-    ];
-    final index =
-        seed.codeUnits.fold<int>(0, (sum, code) => sum + code) % slots.length;
-    return slots[index];
   }
 }
 
@@ -511,11 +501,11 @@ IconData _statusIcon(String status) {
 
 String _statusLabel(String status) {
   return switch (status) {
-    'approved_aslab' || 'approved_kalab' => 'Disetujui',
-    'active' => 'Sedang Dipakai',
+    'approved_aslab' || 'approved_kalab' => 'approved'.tr(),
+    'active' => 'in_use'.tr(),
     'pending' => 'Pending',
-    'rejected' => 'Ditolak',
-    _ => 'Tersedia',
+    'rejected' => 'rejected'.tr(),
+    _ => 'available'.tr(),
   };
 }
 
@@ -797,6 +787,8 @@ class _CampusMapPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [denah, const SizedBox(height: 16), info],
                     ),
+                  const SizedBox(height: 16),
+                  const _FacilityReviewCard(),
                 ],
               ),
             ),
@@ -1126,6 +1118,142 @@ class _LegendChip extends StatelessWidget {
   }
 }
 
+class _FacilityReviewCard extends StatelessWidget {
+  const _FacilityReviewCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final testimonials = ['testimonial_1'.tr(), 'testimonial_2'.tr()];
+    return Card(
+      color: const Color(0xFFFFFBEB),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.26),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDBEAFE),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFF59E0B),
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'satisfaction_title'.tr(),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: AppTheme.ink,
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'satisfaction_subtitle'.tr(),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.muted,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE0E7FF)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
+                  const SizedBox(width: 8),
+                  Text(
+                    '4.8/5',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.vibrantPurple,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'average_rating'.tr(),
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppTheme.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            ...testimonials.map(
+              (text) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.format_quote_rounded,
+                        color: AppTheme.electricBlue,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          text,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.ink,
+                                height: 1.4,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 enum _BlueprintZoneType { room, locker, entry }
 
 class _SatisfactionAnalytics extends StatefulWidget {
@@ -1429,10 +1557,7 @@ class _ImageDialog extends StatelessWidget {
               runSpacing: 10,
               children: [
                 _UsageStatusChip(status: booking?.status ?? 'available'),
-                _UsageScheduleChip(
-                  bookings: booking == null ? [] : [booking!],
-                  seed: title,
-                ),
+                _UsageScheduleChip(bookings: booking == null ? [] : [booking!]),
               ],
             ),
             const SizedBox(height: 16),

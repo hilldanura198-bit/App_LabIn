@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -219,14 +220,20 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                   tabBackgroundColor: Theme.of(
                     context,
                   ).colorScheme.primary.withValues(alpha: 0.22),
-                  tabs: const [
-                    GButton(icon: Icons.home_outlined, text: 'Beranda'),
-                    GButton(icon: Icons.search_rounded, text: 'Reservasi'),
+                  tabs: [
+                    GButton(icon: Icons.home_outlined, text: 'home'.tr()),
+                    GButton(
+                      icon: Icons.search_rounded,
+                      text: 'reservation'.tr(),
+                    ),
                     GButton(
                       icon: Icons.notifications_outlined,
-                      text: 'Notifikasi',
+                      text: 'notifications'.tr(),
                     ),
-                    GButton(icon: Icons.settings_outlined, text: 'Pengaturan'),
+                    GButton(
+                      icon: Icons.settings_outlined,
+                      text: 'settings'.tr(),
+                    ),
                   ],
                 ),
               ),
@@ -311,7 +318,7 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Checkout Keranjang',
+                      'checkout_cart'.tr(),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -469,7 +476,7 @@ class _HomeScrollContent extends StatelessWidget {
                               ),
                             ),
                             icon: const Icon(Icons.storefront_outlined),
-                            label: const Text('Buka Katalog Lengkap'),
+                            label: Text('open_full_catalog'.tr()),
                           ),
                         ),
                       ),
@@ -513,25 +520,25 @@ class _QuickModuleGrid extends StatelessWidget {
     final items = [
       _MenuItem(
         icon: Icons.playlist_add_check_rounded,
-        title: 'Form Peminjaman',
+        title: 'loan_form'.tr(),
         color: AppTheme.richBronze.withValues(alpha: 0.16),
         page: BookingFormPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.file_download_outlined,
-        title: 'Unduh Berkas',
+        title: 'download_docs'.tr(),
         color: AppTheme.richBronze.withValues(alpha: 0.20),
         page: DownloadDocsPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.view_timeline_outlined,
-        title: 'Jadwal Ruangan',
+        title: 'room_schedule'.tr(),
         color: AppTheme.richBronze.withValues(alpha: 0.14),
         page: RoomSchedulePage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.location_city_outlined,
-        title: 'SAPRAS Kampus',
+        title: 'sapras_campus'.tr(),
         color: AppTheme.richBronze.withValues(alpha: 0.22),
         page: SaprasFacilityPage(
           repository: repository,
@@ -547,7 +554,7 @@ class _QuickModuleGrid extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Modul LabIn & Sarpras',
+              'labin_modules'.tr(),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
@@ -587,12 +594,10 @@ class _QuickModuleGrid extends StatelessWidget {
   }
 
   String _moduleSubtitle(String title) {
-    return switch (title) {
-      'Form Peminjaman' => 'Reservasi cepat dan presisi',
-      'Unduh Berkas' => 'Dokumen terhubung cloud',
-      'Jadwal Ruangan' => 'Jadwal ruang multi-lab',
-      _ => 'Katalog fasilitas kampus',
-    };
+    if (title == 'loan_form'.tr()) return 'Reservasi cepat dan presisi';
+    if (title == 'download_docs'.tr()) return 'Dokumen terhubung cloud';
+    if (title == 'room_schedule'.tr()) return 'Jadwal ruang multi-lab';
+    return 'Katalog fasilitas kampus';
   }
 }
 
@@ -608,7 +613,7 @@ class _CampusInsights extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Fasilitas Kampus Insight',
+              'campus_facility_insight'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -1283,11 +1288,7 @@ class _InventoryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (inventories.isEmpty) {
-      return _EmptyCard(
-        text: 'Inventaris belum tersedia.',
-        actionLabel: 'Buka Katalog Lengkap',
-        onAction: () => _openCatalog(context),
-      );
+      return _EmptyCard(text: 'inventory_empty'.tr());
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1346,7 +1347,11 @@ class _InventoryGrid extends StatelessWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          available ? 'Sisa $remaining' : 'Stok Habis',
+                          available
+                              ? 'remaining_stock'.tr(
+                                  namedArgs: {'count': '$remaining'},
+                                )
+                              : 'out_of_stock'.tr(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -1360,7 +1365,12 @@ class _InventoryGrid extends StatelessWidget {
                     ),
                     SizedBox(height: compact ? 6 : 8),
                     Text(
-                      'Tersedia ${inventory.stokTersedia}/${inventory.totalStok}',
+                      'available_stock'.tr(
+                        namedArgs: {
+                          'available': '${inventory.stokTersedia}',
+                          'total': '${inventory.totalStok}',
+                        },
+                      ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1392,7 +1402,9 @@ class _InventoryGrid extends StatelessWidget {
                       ),
                       label: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(available ? 'Pinjam' : 'Stok Habis'),
+                        child: Text(
+                          available ? 'borrow'.tr() : 'out_of_stock'.tr(),
+                        ),
                       ),
                     ),
                   ],
@@ -1402,14 +1414,6 @@ class _InventoryGrid extends StatelessWidget {
           },
         );
       },
-    );
-  }
-
-  void _openCatalog(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => SaprasFacilityPage(repository: repository),
-      ),
     );
   }
 }
@@ -1476,14 +1480,14 @@ class _CartCheckout extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Keranjang Peminjaman',
+              'borrow_cart'.tr(),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 10),
             if (state.cart.isEmpty)
-              const Text('Tambahkan beberapa alat sebelum checkout.')
+              Text('empty_cart'.tr())
             else
               ...state.cart.values.map(
                 (item) => ListTile(
@@ -1518,7 +1522,7 @@ class _CartCheckout extends StatelessWidget {
                     }
                   : null,
               icon: const Icon(Icons.task_alt_rounded),
-              label: const Text('Checkout Pengajuan'),
+              label: Text('checkout_submission'.tr()),
             ),
           ],
         ),
@@ -1629,11 +1633,9 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
 }
 
 class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.text, this.actionLabel, this.onAction});
+  const _EmptyCard({required this.text});
 
   final String text;
-  final String? actionLabel;
-  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -1642,17 +1644,7 @@ class _EmptyCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(text, textAlign: TextAlign.center),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.storefront_outlined),
-                label: Text(actionLabel!),
-              ),
-            ],
-          ],
+          children: [Text(text, textAlign: TextAlign.center)],
         ),
       ),
     );
@@ -1859,7 +1851,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'Lokasi',
+                                  'location'.tr(),
                                   style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
                                         color: Colors.white.withValues(
@@ -1973,7 +1965,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
             children: [
               Text(
-                'Pilih Kampus',
+                'choose_campus'.tr(),
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   sheetContext,
@@ -2069,7 +2061,7 @@ class _GlobalSearchField extends StatelessWidget {
         context,
       ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
       decoration: InputDecoration(
-        hintText: 'Cari alat, ruangan, atau modul...',
+        hintText: 'search_hint'.tr(),
         hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: AppTheme.muted,
           fontWeight: FontWeight.w600,
@@ -2205,7 +2197,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Pencarian Global',
+                      'global_search'.tr(),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -2217,7 +2209,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
                       textInputAction: TextInputAction.search,
                       onChanged: (value) => setState(() => _query = value),
                       decoration: InputDecoration(
-                        hintText: 'Cari alat, ruangan, modul...',
+                        hintText: 'search_hint'.tr(),
                         prefixIcon: const Icon(Icons.search_rounded),
                         suffixIcon: IconButton(
                           onPressed: () => setState(() {
