@@ -114,6 +114,8 @@
   "room_stock_label": "Ruangan | stok {count}",
   "tool_stock_label": "Alat | tersedia {available}/{total}",
   "loading_inventory": "Memuat inventaris...",
+  "loading_room_stock": "Memuat stok ruangan real-time...",
+  "rooms_stock_available": "{count} stok ruangan tersedia saat ini",
   "facility_insight_body": "Rangkuman singkat pemanfaatan fasilitas kampus yang bergerak dinamis dan relevan dengan kebutuhan mahasiswa.",
   "maintenance_tip_title": "Rawat alat setelah digunakan",
   "maintenance_tip_body": "Matikan perangkat, rapikan kabel, dan laporkan anomali sekecil apa pun melalui form maintenance.",

@@ -114,6 +114,8 @@
   "room_stock_label": "Room | stock {count}",
   "tool_stock_label": "Tool | available {available}/{total}",
   "loading_inventory": "Loading inventory...",
+  "loading_room_stock": "Loading real-time room stock...",
+  "rooms_stock_available": "{count} room stocks available right now",
   "facility_insight_body": "A short summary of campus facility usage that stays dynamic and relevant to student needs.",
   "maintenance_tip_title": "Care for tools after use",
   "maintenance_tip_body": "Turn off devices, tidy cables, and report any anomaly through the maintenance form.",

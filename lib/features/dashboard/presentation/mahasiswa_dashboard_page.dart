@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/local_notification_service.dart';
@@ -301,49 +302,61 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.62,
-          minChildSize: 0.34,
-          maxChildSize: 0.90,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(30),
-                ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 46,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: AppTheme.muted.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(999),
+        return BlocProvider.value(
+          value: context.read<DashboardBloc>(),
+          child: BlocListener<DashboardBloc, DashboardState>(
+            listenWhen: (previous, current) =>
+                previous.message != current.message,
+            listener: (context, current) {
+              if (current.message == 'checkout_success' &&
+                  Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: DraggableScrollableSheet(
+              initialChildSize: 0.62,
+              minChildSize: 0.34,
+              maxChildSize: 0.90,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 46,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: AppTheme.muted.withValues(alpha: 0.28),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'checkout_cart'.tr(),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 14),
+                        _CartCheckout(state: state),
+                      ],
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'checkout_cart'.tr(),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _CartCheckout(state: state),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
     );
@@ -1081,7 +1094,10 @@ class _StockCalendarState extends State<_StockCalendar> {
                     ),
                     Expanded(
                       child: Text(
-                        _weekLabel(_visibleWeekStart),
+                        _weekLabel(
+                          _visibleWeekStart,
+                          Localizations.localeOf(context).toString(),
+                        ),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           fontWeight: FontWeight.w800,
@@ -1154,7 +1170,12 @@ class _StockCalendarState extends State<_StockCalendar> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        _weekdayShort(day.weekday),
+                                        _weekdayShort(
+                                          day,
+                                          Localizations.localeOf(
+                                            context,
+                                          ).toString(),
+                                        ),
                                         textAlign: TextAlign.center,
                                         style: Theme.of(context)
                                             .textTheme
@@ -1223,39 +1244,14 @@ class _StockCalendarState extends State<_StockCalendar> {
     return _baseWeekStart.add(Duration(days: (page - _weekAnchor) * 7));
   }
 
-  String _weekLabel(DateTime weekStart) {
+  String _weekLabel(DateTime weekStart, String locale) {
     final end = weekStart.add(const Duration(days: 6));
-    return '${_dayLabel(weekStart)} - ${_dayLabel(end)}';
+    final formatter = DateFormat.yMMMMd(locale);
+    return '${formatter.format(weekStart)} - ${formatter.format(end)}';
   }
 
-  String _dayLabel(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    return '${date.day} ${months[date.month - 1]}';
-  }
-
-  String _weekdayShort(int weekday) {
-    return switch (weekday) {
-      DateTime.monday => 'Sen',
-      DateTime.tuesday => 'Sel',
-      DateTime.wednesday => 'Rab',
-      DateTime.thursday => 'Kam',
-      DateTime.friday => 'Jum',
-      DateTime.saturday => 'Sab',
-      _ => 'Min',
-    };
+  String _weekdayShort(DateTime date, String locale) {
+    return DateFormat.E(locale).format(date);
   }
 
   Future<void> _goToPreviousWeek() async {
@@ -1519,9 +1515,6 @@ class _CartCheckout extends StatelessWidget {
                           endDateTime: end,
                         ),
                       );
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
                     }
                   : null,
               icon: const Icon(Icons.task_alt_rounded),

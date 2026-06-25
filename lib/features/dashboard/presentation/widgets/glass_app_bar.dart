@@ -31,7 +31,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = Theme.of(context).colorScheme.onSurface;
+    final foreground = Theme.of(context).colorScheme.onBackground;
     final hasTrailingControls = actions.isNotEmpty || showProfileAvatar;
 
     return AppBar(
@@ -44,6 +44,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       foregroundColor: foreground,
+      iconTheme: IconThemeData(color: foreground),
       titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
         color: foreground,
         fontWeight: FontWeight.w800,

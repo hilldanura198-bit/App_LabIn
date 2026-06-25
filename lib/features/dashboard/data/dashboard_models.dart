@@ -332,11 +332,14 @@ class DashboardModel {
   const DashboardModel._();
 
   static const fallbackAssetPath = 'assets/images/labin.jpg';
+  static const _localLabRplId = '00000000-0000-0000-0000-000000001101';
+  static const _localLabHealthId = '00000000-0000-0000-0000-000000001102';
+  static const _localLabNetworkId = '00000000-0000-0000-0000-000000001103';
 
   static const localFacilityCatalog = <LabInventory>[
     LabInventory(
-      id: 'local-acces-point-wifi',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000001',
+      labId: _localLabNetworkId,
       namaAlat: 'Acces point wifi',
       totalStok: 9,
       stokTersedia: 9,
@@ -345,8 +348,8 @@ class DashboardModel {
       imageUrl: 'assets/images/acces point wifi.jpg',
     ),
     LabInventory(
-      id: 'local-alat-ukur-antrometri',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000002',
+      labId: _localLabHealthId,
       namaAlat: 'Alat ukur antrometri',
       totalStok: 9,
       stokTersedia: 9,
@@ -355,8 +358,8 @@ class DashboardModel {
       imageUrl: 'assets/images/alat ukur antrometri.jpg',
     ),
     LabInventory(
-      id: 'local-arduino-ide',
-      labId: '2222-local',
+      id: '00000000-0000-0000-0000-000000000003',
+      labId: _localLabNetworkId,
       namaAlat: 'Arduino ide',
       totalStok: 9,
       stokTersedia: 9,
@@ -365,8 +368,8 @@ class DashboardModel {
       imageUrl: 'assets/images/arduino ide.jpg',
     ),
     LabInventory(
-      id: 'local-esp32-development-board',
-      labId: '2222-local',
+      id: '00000000-0000-0000-0000-000000000004',
+      labId: _localLabNetworkId,
       namaAlat: 'Esp32 development board',
       totalStok: 9,
       stokTersedia: 9,
@@ -375,8 +378,8 @@ class DashboardModel {
       imageUrl: 'assets/images/esp32 development board.jpg',
     ),
     LabInventory(
-      id: 'local-hdmi',
-      labId: '3333-local',
+      id: '00000000-0000-0000-0000-000000000005',
+      labId: _localLabRplId,
       namaAlat: 'Hdmi',
       totalStok: 9,
       stokTersedia: 9,
@@ -385,8 +388,8 @@ class DashboardModel {
       imageUrl: 'assets/images/hdmi.jpg',
     ),
     LabInventory(
-      id: 'local-kamera-sidang',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000006',
+      labId: _localLabRplId,
       namaAlat: 'Kamera sidang',
       totalStok: 9,
       stokTersedia: 9,
@@ -395,8 +398,8 @@ class DashboardModel {
       imageUrl: 'assets/images/kamera sidang.jpg',
     ),
     LabInventory(
-      id: 'local-lan-kabel',
-      labId: '3333-local',
+      id: '00000000-0000-0000-0000-000000000007',
+      labId: _localLabNetworkId,
       namaAlat: 'Lan kabel',
       totalStok: 9,
       stokTersedia: 9,
@@ -405,8 +408,8 @@ class DashboardModel {
       imageUrl: 'assets/images/lan  kabel.jpg',
     ),
     LabInventory(
-      id: 'local-laptop-akutansi',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000008',
+      labId: _localLabRplId,
       namaAlat: 'Laptop akutansi',
       totalStok: 9,
       stokTersedia: 9,
@@ -415,8 +418,8 @@ class DashboardModel {
       imageUrl: 'assets/images/laptop akutansi.jpg',
     ),
     LabInventory(
-      id: 'local-manekin-cpr',
-      labId: '2222-local',
+      id: '00000000-0000-0000-0000-000000000009',
+      labId: _localLabHealthId,
       namaAlat: 'Manekin cpr',
       totalStok: 9,
       stokTersedia: 9,
@@ -425,8 +428,8 @@ class DashboardModel {
       imageUrl: 'assets/images/manekin cpr.jpg',
     ),
     LabInventory(
-      id: 'local-microphone-meeting',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000010',
+      labId: _localLabRplId,
       namaAlat: 'Microphone meeting',
       totalStok: 9,
       stokTersedia: 9,
@@ -435,8 +438,8 @@ class DashboardModel {
       imageUrl: 'assets/images/microphone meeting.jpg',
     ),
     LabInventory(
-      id: 'local-monitor-ultrawide',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000011',
+      labId: _localLabRplId,
       namaAlat: 'Monitor ultrawide',
       totalStok: 9,
       stokTersedia: 9,
@@ -445,8 +448,8 @@ class DashboardModel {
       imageUrl: 'assets/images/monitor ultrawide.jpg',
     ),
     LabInventory(
-      id: 'local-multimeter-digital',
-      labId: '2222-local',
+      id: '00000000-0000-0000-0000-000000000012',
+      labId: _localLabHealthId,
       namaAlat: 'Multimeter digital',
       totalStok: 9,
       stokTersedia: 9,
@@ -455,8 +458,8 @@ class DashboardModel {
       imageUrl: 'assets/images/multimeter digital.jpg',
     ),
     LabInventory(
-      id: 'local-pc',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000013',
+      labId: _localLabRplId,
       namaAlat: 'Pc',
       totalStok: 9,
       stokTersedia: 9,
@@ -465,8 +468,8 @@ class DashboardModel {
       imageUrl: 'assets/images/pc.jpg',
     ),
     LabInventory(
-      id: 'local-pc-server',
-      labId: '3333-local',
+      id: '00000000-0000-0000-0000-000000000014',
+      labId: _localLabNetworkId,
       namaAlat: 'Pc server',
       totalStok: 9,
       stokTersedia: 9,
@@ -475,8 +478,8 @@ class DashboardModel {
       imageUrl: 'assets/images/pc server.jpg',
     ),
     LabInventory(
-      id: 'local-printer',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000015',
+      labId: _localLabRplId,
       namaAlat: 'Printer',
       totalStok: 9,
       stokTersedia: 9,
@@ -485,8 +488,8 @@ class DashboardModel {
       imageUrl: 'assets/images/printer.jpg',
     ),
     LabInventory(
-      id: 'local-proyektor',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000016',
+      labId: _localLabRplId,
       namaAlat: 'Proyektor',
       totalStok: 9,
       stokTersedia: 9,
@@ -495,8 +498,8 @@ class DashboardModel {
       imageUrl: 'assets/images/proyektor.jpg',
     ),
     LabInventory(
-      id: 'local-router-cisco',
-      labId: '3333-local',
+      id: '00000000-0000-0000-0000-000000000017',
+      labId: _localLabNetworkId,
       namaAlat: 'Router cisco',
       totalStok: 9,
       stokTersedia: 9,
@@ -505,8 +508,8 @@ class DashboardModel {
       imageUrl: 'assets/images/router cisco.jpg',
     ),
     LabInventory(
-      id: 'local-scanner-dokumen',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000018',
+      labId: _localLabRplId,
       namaAlat: 'Scanner dokumen',
       totalStok: 9,
       stokTersedia: 9,
@@ -515,8 +518,8 @@ class DashboardModel {
       imageUrl: 'assets/images/scanner dokumen.jpg',
     ),
     LabInventory(
-      id: 'local-sensor-ultrasonik',
-      labId: '2222-local',
+      id: '00000000-0000-0000-0000-000000000019',
+      labId: _localLabHealthId,
       namaAlat: 'Sensor Ultrasonik',
       totalStok: 9,
       stokTersedia: 9,
@@ -525,8 +528,8 @@ class DashboardModel {
       imageUrl: 'assets/images/sensor ultrasonic.jpg',
     ),
     LabInventory(
-      id: 'local-smart-tv',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000020',
+      labId: _localLabRplId,
       namaAlat: 'Smart tv',
       totalStok: 9,
       stokTersedia: 9,
@@ -535,8 +538,8 @@ class DashboardModel {
       imageUrl: 'assets/images/smart tv.jpg',
     ),
     LabInventory(
-      id: 'local-switch-manageable',
-      labId: '3333-local',
+      id: '00000000-0000-0000-0000-000000000021',
+      labId: _localLabNetworkId,
       namaAlat: 'Switch manageable',
       totalStok: 9,
       stokTersedia: 9,
@@ -545,8 +548,8 @@ class DashboardModel {
       imageUrl: 'assets/images/switch manageable.jpg',
     ),
     LabInventory(
-      id: 'local-tablet-survey',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000022',
+      labId: _localLabRplId,
       namaAlat: 'Tablet survey',
       totalStok: 9,
       stokTersedia: 9,
@@ -555,8 +558,8 @@ class DashboardModel {
       imageUrl: 'assets/images/tablet survey.jpg',
     ),
     LabInventory(
-      id: 'local-tensi-meter',
-      labId: '2222-local',
+      id: '00000000-0000-0000-0000-000000000023',
+      labId: _localLabHealthId,
       namaAlat: 'Tensi meter',
       totalStok: 9,
       stokTersedia: 9,
@@ -565,8 +568,8 @@ class DashboardModel {
       imageUrl: 'assets/images/tensi meter.jpg',
     ),
     LabInventory(
-      id: 'local-webcam',
-      labId: '1111-local',
+      id: '00000000-0000-0000-0000-000000000024',
+      labId: _localLabRplId,
       namaAlat: 'Webcam',
       totalStok: 9,
       stokTersedia: 9,
