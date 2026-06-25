@@ -348,7 +348,7 @@ class DashboardModel {
       imageUrl: 'assets/images/acces point wifi.jpg',
     ),
     LabInventory(
-      id: '00000000-0000-0000-0000-000000000002',
+      id: '33333333-1001-4101-8101-333333331001',
       labId: _localLabHealthId,
       namaAlat: 'Alat ukur antrometri',
       totalStok: 9,
@@ -378,7 +378,7 @@ class DashboardModel {
       imageUrl: 'assets/images/esp32 development board.jpg',
     ),
     LabInventory(
-      id: '00000000-0000-0000-0000-000000000005',
+      id: '00000000-0000-0000-0000-000000000009',
       labId: _localLabRplId,
       namaAlat: 'Hdmi',
       totalStok: 9,
@@ -418,7 +418,7 @@ class DashboardModel {
       imageUrl: 'assets/images/laptop akutansi.jpg',
     ),
     LabInventory(
-      id: '00000000-0000-0000-0000-000000000009',
+      id: '22222222-1001-4101-8101-222222221001',
       labId: _localLabHealthId,
       namaAlat: 'Manekin cpr',
       totalStok: 9,
@@ -548,7 +548,7 @@ class DashboardModel {
       imageUrl: 'assets/images/switch manageable.jpg',
     ),
     LabInventory(
-      id: '00000000-0000-0000-0000-000000000022',
+      id: '33333333-1002-4102-8102-333333331002',
       labId: _localLabRplId,
       namaAlat: 'Tablet survey',
       totalStok: 9,
