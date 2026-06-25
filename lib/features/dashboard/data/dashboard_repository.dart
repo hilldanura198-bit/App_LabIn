@@ -578,7 +578,7 @@ class DashboardRepository {
     if (aslabId == null) {
       throw Exception('Sesi Aslab tidak ditemukan. Silakan login ulang.');
     }
-    await _supabase
+    final updated = await _supabase
         .from('bookings')
         .update({
           'status': 'approved_aslab',
@@ -586,7 +586,12 @@ class DashboardRepository {
           'approved_by_aslab_id': aslabId,
         })
         .eq('id', bookingId)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .select('id')
+        .maybeSingle();
+    if (updated == null) {
+      throw Exception('Pengajuan sudah tidak berstatus pending.');
+    }
     if (_shouldDecrementStockOnApproval(previousStatus)) {
       await _decrementInventoryStockForBooking(bookingId);
     }
@@ -807,9 +812,6 @@ class DashboardRepository {
       throw Exception('Status booking belum siap diproses: $status');
     }
 
-    if (nextStatus == 'active') {
-      await _decrementInventoryStockForBooking(bookingId);
-    }
     await _supabase
         .from('bookings')
         .update({'status': nextStatus})
@@ -974,7 +976,7 @@ class DashboardRepository {
   }
 
   bool _shouldDecrementStockOnApproval(String previousStatus) {
-    return false;
+    return previousStatus == 'pending';
   }
 
   String _bookingIdFromQr(String rawCode) {

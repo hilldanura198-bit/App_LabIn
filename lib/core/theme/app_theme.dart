@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   const AppTheme._();
 
   static const electricBlue = Color(0xFF007AFF);
   static const vibrantPurple = Color(0xFFAF52DE);
+  static const emeraldGreen = Color(0xFF10B981);
+  static const brightTeal = Color(0xFF14B8A6);
+  static const warmAmber = Color(0xFFF59E0B);
+  static const deepMaroon = Color(0xFF7F1D1D);
   static const cyberInk = Color(0xFF101828);
   static const coolMist = Color(0xFFF4F7FF);
   static const slateMuted = Color(0xFF64748B);
   static const deepSpace = Color(0xFF080B1A);
   static const nightPanel = Color(0xFF111827);
-  static const richBronze = vibrantPurple;
+  static const richBronze = warmAmber;
   static const warmSand = coolMist;
   static const espresso = cyberInk;
   static const sepia = slateMuted;
-  static const deepTeal = electricBlue;
-  static const emerald = vibrantPurple;
+  static const deepTeal = brightTeal;
+  static const emerald = emeraldGreen;
   static const cleanCyan = electricBlue;
   static const offWhite = coolMist;
   static const ink = cyberInk;
@@ -28,6 +33,86 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static CampusPalette campusPalette(String campusName) {
+    final normalized = campusName.toLowerCase();
+    if (normalized.contains('kampus 1')) {
+      return const CampusPalette(
+        primary: emeraldGreen,
+        secondary: brightTeal,
+        tertiary: Color(0xFF22D3EE),
+        darkSurface: Color(0xFF061A17),
+        gradient: LinearGradient(
+          colors: [Color(0xFF047857), Color(0xFF0D9488), Color(0xFF14B8A6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
+    }
+    if (normalized.contains('kampus 2')) {
+      return const CampusPalette(
+        primary: warmAmber,
+        secondary: deepMaroon,
+        tertiary: Color(0xFFF97316),
+        darkSurface: Color(0xFF1C0B0B),
+        gradient: LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFB45309), Color(0xFF7F1D1D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
+    }
+    return const CampusPalette(
+      primary: electricBlue,
+      secondary: vibrantPurple,
+      tertiary: Color(0xFF22D3EE),
+      darkSurface: deepSpace,
+      gradient: cyberGradient,
+    );
+  }
+
+  static ThemeData campusTheme(ThemeData base, String campusName) {
+    final palette = campusPalette(campusName);
+    final dark = base.brightness == Brightness.dark;
+    final scheme = ColorScheme.fromSeed(
+      seedColor: palette.primary,
+      brightness: base.brightness,
+      primary: palette.primary,
+      secondary: palette.secondary,
+      tertiary: palette.tertiary,
+      surface: dark ? const Color(0xFF111827) : Colors.white,
+      error: dark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+    );
+    return base.copyWith(
+      colorScheme: scheme,
+      scaffoldBackgroundColor: dark ? palette.darkSurface : coolMist,
+      appBarTheme: base.appBarTheme.copyWith(
+        foregroundColor: scheme.onSurface,
+        titleTextStyle: base.textTheme.titleLarge?.copyWith(
+          color: scheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: base.elevatedButtonTheme.style?.copyWith(
+          backgroundColor: WidgetStatePropertyAll(palette.primary),
+          foregroundColor: const WidgetStatePropertyAll(Colors.white),
+          textStyle: WidgetStatePropertyAll(
+            base.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: base.filledButtonTheme.style?.copyWith(
+          backgroundColor: WidgetStatePropertyAll(palette.secondary),
+          foregroundColor: const WidgetStatePropertyAll(Colors.white),
+          textStyle: WidgetStatePropertyAll(
+            base.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
 
   static BoxDecoration cyberGradientButtonDecoration({
     double borderRadius = 16,
@@ -61,52 +146,22 @@ class AppTheme {
     required Color bodyColor,
     required Color displayColor,
   }) {
-    final base = ThemeData.light().textTheme.apply(
-      fontFamily: 'Nexa',
+    final base = GoogleFonts.poppinsTextTheme().apply(
       bodyColor: bodyColor,
       displayColor: displayColor,
     );
     return base.copyWith(
-      displayLarge: base.displayLarge?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      displayMedium: base.displayMedium?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      displaySmall: base.displaySmall?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      headlineLarge: base.headlineLarge?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
+      displayLarge: base.displayLarge?.copyWith(fontWeight: FontWeight.bold),
+      displayMedium: base.displayMedium?.copyWith(fontWeight: FontWeight.bold),
+      displaySmall: base.displaySmall?.copyWith(fontWeight: FontWeight.bold),
+      headlineLarge: base.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
       headlineMedium: base.headlineMedium?.copyWith(
-        fontFamily: 'Coolvetica',
         fontWeight: FontWeight.bold,
       ),
-      headlineSmall: base.headlineSmall?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      titleLarge: base.titleLarge?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      titleMedium: base.titleMedium?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      titleSmall: base.titleSmall?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
-      labelLarge: base.labelLarge?.copyWith(
-        fontFamily: 'Coolvetica',
-        fontWeight: FontWeight.bold,
-      ),
+      headlineSmall: base.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+      titleLarge: base.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+      titleMedium: base.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      titleSmall: base.titleSmall?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -125,8 +180,9 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      fontFamily: 'Nexa',
       scaffoldBackgroundColor: offWhite,
+      fontFamily: GoogleFonts.poppins().fontFamily,
+      fontFamilyFallback: const ['Tahoma', 'Arial', 'sans-serif'],
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: offWhite,
@@ -257,8 +313,9 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      fontFamily: 'Nexa',
       scaffoldBackgroundColor: const Color(0xFF070A16),
+      fontFamily: GoogleFonts.poppins().fontFamily,
+      fontFamilyFallback: const ['Tahoma', 'Arial', 'sans-serif'],
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: const Color(0xFF070A16),
@@ -362,6 +419,22 @@ class AppTheme {
       ),
     );
   }
+}
+
+class CampusPalette {
+  const CampusPalette({
+    required this.primary,
+    required this.secondary,
+    required this.tertiary,
+    required this.darkSurface,
+    required this.gradient,
+  });
+
+  final Color primary;
+  final Color secondary;
+  final Color tertiary;
+  final Color darkSurface;
+  final LinearGradient gradient;
 }
 
 class CyberGradientButton extends StatelessWidget {

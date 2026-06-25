@@ -380,7 +380,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           ],
           cart: const {},
           isLoading: false,
-          message: 'Checkout berhasil dikirim! Menunggu verifikasi lab.',
+          message: 'checkout_success',
         ),
       );
     } on Object catch (error) {

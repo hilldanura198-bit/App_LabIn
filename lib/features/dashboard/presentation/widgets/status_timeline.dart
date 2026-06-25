@@ -13,11 +13,11 @@ class StatusTimeline extends StatelessWidget {
   final String? status;
 
   static const _steps = [
-    ('pending', 'Pending'),
-    ('approved_aslab', 'Approved Aslab'),
-    ('approved_kalab', 'Approved Kalab'),
-    ('active', 'Active'),
-    ('returned', 'Returned'),
+    ('pending', 'status_pending'),
+    ('approved_aslab', 'status_approved_aslab'),
+    ('approved_kalab', 'status_approved_kalab'),
+    ('active', 'status_active'),
+    ('returned', 'status_returned'),
   ];
 
   @override
@@ -58,7 +58,7 @@ class StatusTimeline extends StatelessWidget {
             const SizedBox(height: 14),
             ...List.generate(_steps.length, (index) {
               final done = doneIndex >= index;
-              final stepStatus = _steps[index].$2;
+              final stepStatus = _steps[index].$2.tr();
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

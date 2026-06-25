@@ -61,7 +61,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   ];
 
   int _selectedIndex = 0;
-  String _selectedCampus = 'Kampus Rektorat';
   String? _lastCheckoutBookingId;
   bool _isRatingSheetOpen = false;
   bool _notificationListenerStarted = false;
@@ -119,16 +118,17 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       listener: (context, state) {
         final message = state.message;
         if (message != null) {
+          final displayMessage = _localizedDashboardMessage(message);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(message),
-              backgroundColor: message.contains('Checkout berhasil')
+              content: Text(displayMessage),
+              backgroundColor: message == 'checkout_success'
                   ? Colors.green.shade600
                   : null,
             ),
           );
         }
-        if (message?.contains('Checkout berhasil') == true &&
+        if (message == 'checkout_success' &&
             state.activeHomeBooking != null &&
             state.activeHomeBooking!.id != _lastCheckoutBookingId) {
           _lastCheckoutBookingId = state.activeHomeBooking!.id;
@@ -148,98 +148,104 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           }
         }
       },
-      child: Scaffold(
-        body: BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, state) {
-            return Column(
-              children: [
-                _ModernFloatingHeader(
-                  cartCount: state.cartCount,
-                  selectedCampus: _selectedCampus,
-                  campuses: _campusOptions,
-                  onCampusChanged: (campus) {
-                    setState(() => _selectedCampus = campus);
-                    context.read<DashboardBloc>().add(
-                      DashboardCampusSelected(campus),
-                    );
-                  },
-                  onCartPressed: () => _openCart(context, state),
-                  onProfilePressed: () => _openSettings(context),
-                  onNotifPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => NotificationCenterPage(
-                        repository: _repository(context),
+      child: BlocBuilder<DashboardBloc, DashboardState>(
+        builder: (context, state) {
+          final campusTheme = AppTheme.campusTheme(
+            Theme.of(context),
+            state.selectedCampus,
+          );
+          return Theme(
+            data: campusTheme,
+            child: Scaffold(
+              body: Column(
+                children: [
+                  _ModernFloatingHeader(
+                    cartCount: state.cartCount,
+                    selectedCampus: state.selectedCampus,
+                    campuses: _campusOptions,
+                    onCampusChanged: (campus) {
+                      context.read<DashboardBloc>().add(
+                        DashboardCampusSelected(campus),
+                      );
+                    },
+                    onCartPressed: () => _openCart(context, state),
+                    onProfilePressed: () => _openSettings(context),
+                    onNotifPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => NotificationCenterPage(
+                          repository: _repository(context),
+                        ),
+                      ),
+                    ),
+                    onSearchSubmitted: (query) => _showGlobalSearch(
+                      context,
+                      query: query,
+                      state: state,
+                      repository: _repository(context),
+                    ),
+                  ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 320),
+                      transitionBuilder: (child, animation) {
+                        final slide = Tween<Offset>(
+                          begin: const Offset(0.06, 0),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(position: slide, child: child),
+                        );
+                      },
+                      child: _buildTab(context, state),
+                    ),
+                  ),
+                ],
+              ),
+              bottomNavigationBar: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: GNav(
+                        selectedIndex: _selectedIndex,
+                        onTabChange: (index) =>
+                            setState(() => _selectedIndex = index),
+                        gap: 8,
+                        tabBorderRadius: 16,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        activeColor: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        tabBackgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.22),
+                        tabs: [
+                          GButton(icon: Icons.home_outlined, text: 'home'.tr()),
+                          GButton(
+                            icon: Icons.search_rounded,
+                            text: 'reservation'.tr(),
+                          ),
+                          GButton(
+                            icon: Icons.notifications_outlined,
+                            text: 'notifications'.tr(),
+                          ),
+                          GButton(
+                            icon: Icons.settings_outlined,
+                            text: 'settings'.tr(),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  onSearchSubmitted: (query) => _showGlobalSearch(
-                    context,
-                    query: query,
-                    state: state,
-                    repository: _repository(context),
-                  ),
-                ),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 320),
-                    transitionBuilder: (child, animation) {
-                      final slide = Tween<Offset>(
-                        begin: const Offset(0.06, 0),
-                        end: Offset.zero,
-                      ).animate(animation);
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(position: slide, child: child),
-                      );
-                    },
-                    child: _buildTab(context, state),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: GNav(
-                  selectedIndex: _selectedIndex,
-                  onTabChange: (index) =>
-                      setState(() => _selectedIndex = index),
-                  gap: 8,
-                  tabBorderRadius: 16,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  tabBackgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.22),
-                  tabs: [
-                    GButton(icon: Icons.home_outlined, text: 'home'.tr()),
-                    GButton(
-                      icon: Icons.search_rounded,
-                      text: 'reservation'.tr(),
-                    ),
-                    GButton(
-                      icon: Icons.notifications_outlined,
-                      text: 'notifications'.tr(),
-                    ),
-                    GButton(
-                      icon: Icons.settings_outlined,
-                      text: 'settings'.tr(),
-                    ),
-                  ],
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -259,13 +265,21 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
       _ => _HomeScrollContent(
         state: state,
         repository: repository,
-        selectedCampus: _selectedCampus,
+        selectedCampus: state.selectedCampus,
       ),
     };
   }
 
   DashboardRepository _repository(BuildContext context) {
     return DashboardRepository(context.read<AuthRepository>().client);
+  }
+
+  String _localizedDashboardMessage(String message) {
+    const keys = {'checkout_success', 'stock_not_enough'};
+    if (keys.contains(message)) {
+      return message.tr();
+    }
+    return message;
   }
 
   void _openSettings(BuildContext context) {
@@ -663,8 +677,8 @@ class _InsightCarouselState extends State<_InsightCarousel> {
     (
       AppTheme.cyberGradient,
       Icons.auto_awesome_outlined,
-      'Standarisasi Ruang Praktikum',
-      'Setiap ruang lab dikelompokkan berdasarkan fungsi, kapasitas, dan kesiapan alat agar proses belajar lebih presisi.',
+      'insight_standardized_rooms_title',
+      'insight_standardized_rooms_body',
     ),
     (
       LinearGradient(
@@ -673,8 +687,8 @@ class _InsightCarouselState extends State<_InsightCarousel> {
         end: Alignment.bottomRight,
       ),
       Icons.workspace_premium_outlined,
-      'Modernisasi Sarana Prasarana',
-      'Inventaris digital membantu kampus memantau kebutuhan perawatan, audit aset, dan pemanfaatan ruang secara berkala.',
+      'insight_modern_facilities_title',
+      'insight_modern_facilities_body',
     ),
     (
       LinearGradient(
@@ -683,8 +697,8 @@ class _InsightCarouselState extends State<_InsightCarousel> {
         end: Alignment.bottomRight,
       ),
       Icons.explore_outlined,
-      'Akses Insight Cepat',
-      'Slider ringkas memudahkan mahasiswa membaca pola fasilitas tanpa menghabiskan banyak ruang di layar.',
+      'insight_fast_access_title',
+      'insight_fast_access_body',
     ),
   ];
 
@@ -740,7 +754,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          card.$3,
+                          card.$3.tr(),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
@@ -750,7 +764,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          card.$4,
+                          card.$4.tr(),
                           textAlign: TextAlign.center,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
@@ -802,7 +816,7 @@ class _LiveUtilizationFeed extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Live Lab Utilization Feed',
+              'live_utilization_feed'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -1449,6 +1463,17 @@ class _InventoryRealtimeImage extends StatelessWidget {
     if (url == null || url.isEmpty) {
       return _InventoryImageFallback(inventory: inventory);
     }
+    if (_isLocalAsset(url)) {
+      final assetPath = _assetPath(url);
+      return Image.asset(
+        assetPath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, _, _) =>
+            _InventoryImageFallback(inventory: inventory),
+      );
+    }
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
@@ -1461,6 +1486,23 @@ class _InventoryRealtimeImage extends StatelessWidget {
       errorWidget: (context, _, _) =>
           _InventoryImageFallback(inventory: inventory),
     );
+  }
+
+  bool _isLocalAsset(String value) {
+    return value.startsWith('assets/') ||
+        value.startsWith('asset://') ||
+        value.endsWith('.jpg') ||
+        value.endsWith('.jpeg') ||
+        value.endsWith('.png') ||
+        value.endsWith('.webp');
+  }
+
+  String _assetPath(String value) {
+    final cleaned = value.replaceFirst('asset://', '');
+    if (cleaned.startsWith('assets/')) {
+      return cleaned;
+    }
+    return 'assets/img/$cleaned';
   }
 }
 
@@ -1846,7 +1888,12 @@ class _ModernFloatingHeader extends StatefulWidget {
 class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
   final _searchController = TextEditingController();
 
-  static const _quickTags = ['Alat', 'Ruangan', 'Modul', 'Proyektor'];
+  static const _quickTagKeys = [
+    'tools_tag',
+    'rooms_tag',
+    'modules_tag',
+    'projector_tag',
+  ];
 
   @override
   void dispose() {
@@ -1861,12 +1908,8 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF00A3FF), Color(0xFF6C5CE7), Color(0xFFAF52DE)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        decoration: BoxDecoration(
+          gradient: AppTheme.campusPalette(widget.selectedCampus).gradient,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1970,7 +2013,8 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: _quickTags.map((tag) {
+                    children: _quickTagKeys.map((tagKey) {
+                      final tag = tagKey.tr();
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 3),
                         child: _HeaderQuickTag(
@@ -1995,7 +2039,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
 
   void _submitSearch(String value) {
     final query = value.trim();
-    widget.onSearchSubmitted(query.isEmpty ? 'Alat' : query);
+    widget.onSearchSubmitted(query.isEmpty ? 'tools_tag'.tr() : query);
   }
 
   IconData _iconForTag(String tag) {

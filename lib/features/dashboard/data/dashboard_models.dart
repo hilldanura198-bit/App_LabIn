@@ -72,22 +72,9 @@ class LabInventory {
         .toString()
         .toLowerCase();
     if (name.contains('webcam')) {
-      return 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80';
+      return _fallbackLocalImage(name);
     }
-    if (name.contains('tablet')) {
-      return 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1200&q=80';
-    }
-    if (name.contains('sensor') ||
-        name.contains('arduino') ||
-        name.contains('esp32')) {
-      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80';
-    }
-    if (name.contains('laptop') ||
-        name.contains('pc') ||
-        name.contains('workstation')) {
-      return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
+    return _fallbackLocalImage(name);
   }
 }
 
@@ -382,83 +369,40 @@ class LabRoom {
   static String _fallbackRoomImage(Map<String, dynamic> map) {
     final name = (map['nama_lab'] ?? '').toString().toLowerCase();
     if (name.contains('rpl')) {
-      return 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1200&q=80';
+      return _fallbackLocalImage(name);
     }
-    if (name.contains('jaringan')) {
-      return 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=1200&q=80';
-    }
-    if (name.contains('iot')) {
-      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80';
-    }
-    if (name.contains('klinik') || name.contains('kesehatan')) {
-      return 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=1200&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80';
+    return _fallbackLocalImage(name);
   }
 }
 
-String _fallbackNetworkImage(String label) {
+String _fallbackLocalImage(String label) {
   final normalized = label.toLowerCase();
-  final config = switch (normalized) {
-    final value when value.contains('tablet') => ('tablet,technology', 241),
+  return switch (normalized) {
+    final value when value.contains('tablet') =>
+      'assets/images/inventory/tablet-survey.png',
     final value when value.contains('ultrasonik') || value.contains('sensor') =>
-      ('electronics,sensor', 242),
+      'assets/images/inventory/sensor-ultrasonik-hc-sr04.png',
     final value
         when value.contains('pc workstation') ||
             value.contains('workstation') ||
             value.contains('server') =>
-      ('computer,workstation', 243),
+      'assets/images/inventory/pc-workstation-rpl.png',
     final value
         when value.contains('microphone') || value.contains('mikrofon') =>
-      ('microphone,conference', 244),
-    final value when value.contains('webcam') => ('webcam,conference', 245),
-    final value when value.contains('switch') => ('network,switch', 246),
-    final value when value.contains('router') => ('router,network', 247),
-    final value when value.contains('access point') || value.contains('wifi') =>
-      ('wifi,router', 248),
-    final value when value.contains('arduino') => ('arduino,electronics', 249),
-    final value when value.contains('esp32') => (
-      'microcontroller,electronics',
-      250,
-    ),
-    final value when value.contains('multimeter') => (
-      'multimeter,electronics',
-      251,
-    ),
-    final value when value.contains('hdmi') || value.contains('kabel') => (
-      'hdmi,cable',
-      252,
-    ),
-    final value
-        when value.contains('projector') || value.contains('proyektor') =>
-      ('projector,classroom', 253),
-    final value when value.contains('laptop') => ('laptop,computer', 254),
-    final value when value.contains('printer') => ('printer,office', 255),
-    final value when value.contains('monitor') => ('monitor,computer', 256),
-    final value when value.contains('scanner') => ('document,scanner', 257),
-    final value when value.contains('kamera') || value.contains('camera') => (
-      'camera,conference',
-      258,
-    ),
-    final value
-        when value.contains('smart tv') || value.contains('television') =>
-      ('television,meeting', 259),
-    final value when value.contains('manekin') || value.contains('cpr') => (
-      'medical,training',
-      260,
-    ),
+      'assets/images/inventory/microphone-meeting.png',
+    final value when value.contains('webcam') =>
+      'assets/images/inventory/webcam-conference.png',
+    final value when value.contains('switch') =>
+      'assets/images/inventory/switch-manageable-24-port.png',
+    final value when value.contains('scanner') =>
+      'assets/images/inventory/scanner-dokumen.png',
     final value
         when value.contains('tensimeter') || value.contains('blood pressure') =>
-      ('medical,equipment', 261),
-    final value when value.contains('antropometri') || value.contains('ukur') =>
-      ('measuring,equipment', 262),
-    final value when value.contains('lab') || value.contains('ruang') => (
-      'laboratory,classroom',
-      263,
-    ),
-    _ => ('technology,equipment', 264),
+      'assets/images/inventory/tensimeter-digital.png',
+    final value when value.contains('lab') || value.contains('ruang') =>
+      'assets/images/facility_lab.png',
+    _ => 'assets/images/facility_room.png',
   };
-  return 'https://loremflickr.com/640/420/${config.$1}?lock=${config.$2}';
 }
 
 class ProfileSettings {

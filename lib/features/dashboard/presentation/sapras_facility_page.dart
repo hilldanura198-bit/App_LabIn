@@ -20,29 +20,35 @@ class SaprasFacilityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: GlassAppBar(
-          title: 'sapras_campus'.tr(),
-          bottom: TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'facility'.tr()),
-              Tab(text: 'infrastructure'.tr()),
-              Tab(text: 'blueprint'.tr()),
-              Tab(text: 'satisfaction_tab'.tr()),
-            ],
+    return Theme(
+      data: AppTheme.campusTheme(Theme.of(context), selectedCampus),
+      child: DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: GlassAppBar(
+            title: 'sapras_campus'.tr(),
+            bottom: TabBar(
+              isScrollable: true,
+              tabs: [
+                Tab(text: 'facility'.tr()),
+                Tab(text: 'infrastructure'.tr()),
+                Tab(text: 'blueprint'.tr()),
+                Tab(text: 'satisfaction_tab'.tr()),
+              ],
+            ),
           ),
-        ),
-        body: SafeArea(
-          child: TabBarView(
-            children: [
-              _FacilityList(repository: repository),
-              _InfrastructureList(repository: repository),
-              _CampusMapTabs(selectedCampus: selectedCampus),
-              _SatisfactionReviewTab(repository: repository),
-            ],
+          body: SafeArea(
+            child: TabBarView(
+              children: [
+                _FacilityList(
+                  repository: repository,
+                  selectedCampus: selectedCampus,
+                ),
+                _InfrastructureList(repository: repository),
+                _CampusMapTabs(selectedCampus: selectedCampus),
+                _SatisfactionReviewTab(repository: repository),
+              ],
+            ),
           ),
         ),
       ),
@@ -51,14 +57,15 @@ class SaprasFacilityPage extends StatelessWidget {
 }
 
 class _FacilityList extends StatelessWidget {
-  const _FacilityList({required this.repository});
+  const _FacilityList({required this.repository, required this.selectedCampus});
 
   final DashboardRepository repository;
+  final String selectedCampus;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<LabInventory>>(
-      stream: repository.watchInventories(),
+      stream: repository.watchInventoriesByCampus(selectedCampus),
       builder: (context, inventorySnapshot) {
         if (inventorySnapshot.hasError) {
           return Center(child: Text(inventorySnapshot.error.toString()));
@@ -236,7 +243,10 @@ class _FacilityDetail extends StatelessWidget {
             _DataPill(label: 'asset_code'.tr(), value: code),
             _DataPill(label: 'facility_name'.tr(), value: item.namaAlat),
             _DataPill(label: 'room_name'.tr(), value: _roomName(item.labId)),
-            _DataPill(label: 'building'.tr(), value: 'Gedung Teknologi'),
+            _DataPill(
+              label: 'building'.tr(),
+              value: 'technology_building'.tr(),
+            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
@@ -363,6 +373,16 @@ class _RealtimeImage extends StatelessWidget {
     if (url == null || url.isEmpty) {
       return _ImagePlaceholder(height: height, icon: fallbackIcon);
     }
+    if (_isLocalAsset(url)) {
+      return Image.asset(
+        _assetPath(url),
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, _, _) =>
+            _ImagePlaceholder(height: height, icon: fallbackIcon),
+      );
+    }
     return CachedNetworkImage(
       imageUrl: url,
       height: height,
@@ -381,6 +401,9 @@ class _RealtimeImage extends StatelessWidget {
     if (raw == null || raw.isEmpty) {
       return null;
     }
+    if (_isLocalAsset(raw)) {
+      return raw;
+    }
     final uri = Uri.tryParse(raw);
     if (uri == null || !uri.hasScheme) {
       return null;
@@ -389,6 +412,23 @@ class _RealtimeImage extends StatelessWidget {
       return null;
     }
     return Uri.encodeFull(raw);
+  }
+
+  bool _isLocalAsset(String value) {
+    return value.startsWith('assets/') ||
+        value.startsWith('asset://') ||
+        value.endsWith('.jpg') ||
+        value.endsWith('.jpeg') ||
+        value.endsWith('.png') ||
+        value.endsWith('.webp');
+  }
+
+  String _assetPath(String value) {
+    final cleaned = value.replaceFirst('asset://', '');
+    if (cleaned.startsWith('assets/')) {
+      return cleaned;
+    }
+    return 'assets/img/$cleaned';
   }
 }
 
@@ -553,9 +593,12 @@ IconData _statusIcon(String status) {
 
 String _statusLabel(String status) {
   return switch (status) {
-    'approved_aslab' || 'approved_kalab' => 'approved'.tr(),
-    'active' => 'in_use'.tr(),
-    'pending' => 'Pending',
+    'approved_aslab' => 'status_approved_aslab'.tr(),
+    'approved_kalab' => 'status_approved_kalab'.tr(),
+    'active' => 'status_active'.tr(),
+    'returned' => 'status_returned'.tr(),
+    'late' => 'status_late'.tr(),
+    'pending' => 'status_pending'.tr(),
     'rejected' => 'rejected'.tr(),
     _ => 'available'.tr(),
   };
@@ -894,7 +937,9 @@ class _CampusDenahPreview extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Denah ${campus.title}',
+                          'blueprint_campus_title'.tr(
+                            namedArgs: {'campus': campus.title},
+                          ),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
@@ -904,7 +949,7 @@ class _CampusDenahPreview extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Layout blueprint terstruktur untuk ruang, koridor, dan loker alat.',
+                    'blueprint_body'.tr(),
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
@@ -938,7 +983,7 @@ class _CampusDenahPreview extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _RoomBlock(
-                    label: 'Loker Alat Utama',
+                    label: 'main_equipment_locker'.tr(),
                     accent: AppTheme.cleanCyan,
                     type: _BlueprintZoneType.locker,
                     wide: true,
@@ -985,7 +1030,7 @@ class _CampusInfoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Informasi ${campus.title}',
+            'campus_info_title'.tr(namedArgs: {'campus': campus.title}),
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
@@ -1055,9 +1100,9 @@ class _RoomBlock extends StatelessWidget {
       _BlueprintZoneType.room => Icons.meeting_room_outlined,
     };
     final typeLabel = switch (type) {
-      _BlueprintZoneType.entry => 'Akses',
-      _BlueprintZoneType.locker => 'Loker Alat',
-      _BlueprintZoneType.room => 'Ruangan',
+      _BlueprintZoneType.entry => 'access_zone'.tr(),
+      _BlueprintZoneType.locker => 'equipment_locker'.tr(),
+      _BlueprintZoneType.room => 'rooms_tag'.tr(),
     };
     return Container(
       constraints: wide
@@ -1127,10 +1172,10 @@ class _BlueprintLegend extends StatelessWidget {
       alignment: WrapAlignment.center,
       spacing: 8,
       runSpacing: 8,
-      children: const [
-        _LegendChip(color: AppTheme.vibrantPurple, label: 'Ruangan'),
-        _LegendChip(color: AppTheme.cleanCyan, label: 'Loker Alat'),
-        _LegendChip(color: AppTheme.electricBlue, label: 'Akses'),
+      children: [
+        _LegendChip(color: AppTheme.vibrantPurple, label: 'rooms_tag'.tr()),
+        _LegendChip(color: AppTheme.cleanCyan, label: 'equipment_locker'.tr()),
+        _LegendChip(color: AppTheme.electricBlue, label: 'access_zone'.tr()),
       ],
     );
   }
@@ -1717,7 +1762,7 @@ class _SatisfactionAnalyticsState extends State<_SatisfactionAnalytics> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Analisis Kepuasan Pengguna',
+                      'satisfaction_analysis'.tr(),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
