@@ -89,16 +89,14 @@ class _FacilityList extends StatelessWidget {
                 final code = _assetCode(index);
                 final booking = _latestBookingForLab(bookings, item.labId);
                 final labBookings = _bookingsForLab(bookings, item.labId);
-                final odd = index.isOdd;
-                final accent = odd
-                    ? AppTheme.vibrantPurple
-                    : AppTheme.electricBlue;
+                final scheme = Theme.of(context).colorScheme;
+                final accent = index.isOdd ? scheme.secondary : scheme.primary;
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
                         accent.withValues(alpha: 0.14),
-                        AppTheme.cleanCyan.withValues(alpha: 0.08),
+                        scheme.tertiary.withValues(alpha: 0.08),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -498,7 +496,7 @@ Color _statusColor(String status) {
     'approved_aslab' || 'approved_kalab' || 'active' => const Color(0xFF22F55E),
     'pending' => const Color(0xFFFFB020),
     'rejected' => const Color(0xFFFF4D6D),
-    _ => AppTheme.electricBlue,
+    _ => const Color(0xFF22D3EE),
   };
 }
 
@@ -828,7 +826,7 @@ class _CampusDenahPreview extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             campus.accent.withValues(alpha: 0.16),
-            AppTheme.vibrantPurple.withValues(alpha: 0.10),
+            campus.secondaryAccent.withValues(alpha: 0.10),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -904,7 +902,7 @@ class _CampusDenahPreview extends StatelessWidget {
                   const SizedBox(height: 10),
                   _RoomBlock(
                     label: 'main_equipment_locker'.tr(),
-                    accent: AppTheme.cleanCyan,
+                    accent: campus.secondaryAccent,
                     type: _BlueprintZoneType.locker,
                     wide: true,
                   ),
@@ -1010,8 +1008,8 @@ class _RoomBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final zoneColor = switch (type) {
-      _BlueprintZoneType.entry => AppTheme.electricBlue,
-      _BlueprintZoneType.locker => AppTheme.cleanCyan,
+      _BlueprintZoneType.entry => scheme.primary,
+      _BlueprintZoneType.locker => scheme.secondary,
       _BlueprintZoneType.room => accent,
     };
     final icon = switch (type) {
@@ -1093,9 +1091,18 @@ class _BlueprintLegend extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _LegendChip(color: AppTheme.vibrantPurple, label: 'rooms_tag'.tr()),
-        _LegendChip(color: AppTheme.cleanCyan, label: 'equipment_locker'.tr()),
-        _LegendChip(color: AppTheme.electricBlue, label: 'access_zone'.tr()),
+        _LegendChip(
+          color: Theme.of(context).colorScheme.primary,
+          label: 'rooms_tag'.tr(),
+        ),
+        _LegendChip(
+          color: Theme.of(context).colorScheme.secondary,
+          label: 'equipment_locker'.tr(),
+        ),
+        _LegendChip(
+          color: Theme.of(context).colorScheme.tertiary,
+          label: 'access_zone'.tr(),
+        ),
       ],
     );
   }
@@ -1386,7 +1393,7 @@ class _SatisfactionReviewTabState extends State<_SatisfactionReviewTab> {
                           const SizedBox(height: 14),
                           DecoratedBox(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cyberGradient,
+                              gradient: AppTheme.campusGradientOf(context),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: FilledButton.icon(
@@ -1469,11 +1476,13 @@ class _ReviewSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppTheme.cyberGradient,
+        gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.vibrantPurple.withValues(alpha: 0.20),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.20),
             blurRadius: 24,
             offset: const Offset(0, 14),
           ),
@@ -1740,11 +1749,13 @@ class _SatisfactionSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppTheme.cyberGradient,
+        gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.vibrantPurple.withValues(alpha: 0.20),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.20),
             blurRadius: 24,
             offset: const Offset(0, 14),
           ),
@@ -1980,13 +1991,9 @@ class _CampusMapData {
   String get mapUrl =>
       'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}';
 
-  Color get accent {
-    return switch (layout) {
-      _CampusLayout.rektorat => AppTheme.electricBlue,
-      _CampusLayout.campus1 => AppTheme.vibrantPurple,
-      _CampusLayout.campus2 => AppTheme.emerald,
-      _CampusLayout.campus3 => AppTheme.deepTeal,
-      _CampusLayout.campus4 => AppTheme.richBronze,
-    };
-  }
+  CampusPalette get palette => AppTheme.campusPalette(title);
+
+  Color get accent => palette.primary;
+
+  Color get secondaryAccent => palette.secondary;
 }

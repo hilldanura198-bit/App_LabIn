@@ -91,12 +91,12 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                             height: 34,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: AppTheme.cyberGradient,
+                              gradient: AppTheme.campusGradientOf(context),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.vibrantPurple.withValues(
-                                    alpha: 0.18,
-                                  ),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.18),
                                   blurRadius: 12,
                                   offset: const Offset(0, 5),
                                 ),
@@ -148,11 +148,13 @@ class HeaderActionButton extends StatelessWidget {
               height: 42,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                gradient: AppTheme.cyberGradient,
+                gradient: AppTheme.campusGradientOf(context),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.electricBlue.withValues(alpha: 0.18),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.18),
                     blurRadius: 14,
                     offset: const Offset(0, 6),
                   ),

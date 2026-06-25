@@ -19,8 +19,15 @@ class RoomStockStreamBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             gradient: isAvailable
-                ? AppTheme.cyberGradient
-                : LinearGradient(colors: [AppTheme.sepia, AppTheme.richBronze]),
+                ? AppTheme.campusGradientOf(context)
+                : LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.outline,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Text(

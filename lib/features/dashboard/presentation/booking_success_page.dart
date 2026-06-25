@@ -13,7 +13,7 @@ class BookingSuccessPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.cyberGradient),
+        decoration: BoxDecoration(gradient: AppTheme.campusGradientOf(context)),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(

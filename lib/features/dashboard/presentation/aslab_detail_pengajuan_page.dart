@@ -423,7 +423,7 @@ class _DetailHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: AppTheme.cyberGradient,
+        gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(

@@ -27,6 +27,7 @@ class StatusTimeline extends StatelessWidget {
     final doneIndex = currentStatus == 'approved_kalab'
         ? _steps.length - 1
         : currentIndex;
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -35,10 +36,7 @@ class StatusTimeline extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.timeline_outlined,
-                  color: AppTheme.electricBlue,
-                ),
+                Icon(Icons.timeline_outlined, color: scheme.primary),
                 const SizedBox(width: 10),
                 Text(
                   'timeline_title'.tr(),
@@ -69,8 +67,8 @@ class StatusTimeline extends StatelessWidget {
                         height: 24,
                         decoration: BoxDecoration(
                           color: done
-                              ? AppTheme.emerald
-                              : AppTheme.richBronze.withValues(alpha: 0.18),
+                              ? scheme.primary
+                              : scheme.secondary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                         ),
                         child: done
@@ -86,8 +84,8 @@ class StatusTimeline extends StatelessWidget {
                           width: 2,
                           height: 30,
                           color: done
-                              ? AppTheme.emerald
-                              : AppTheme.richBronze.withValues(alpha: 0.18),
+                              ? scheme.primary
+                              : scheme.secondary.withValues(alpha: 0.18),
                         ),
                     ],
                   ),
@@ -155,6 +153,7 @@ class StatusTimeline extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: 0.05),
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
         return SafeArea(
           top: false,
           child: Padding(
@@ -167,7 +166,7 @@ class StatusTimeline extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFE5E7EB)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.electricBlue.withValues(alpha: 0.12),
+                    color: scheme.primary.withValues(alpha: 0.12),
                     blurRadius: 28,
                     offset: const Offset(0, 14),
                   ),
@@ -190,7 +189,7 @@ class StatusTimeline extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: Theme.of(sheetContext).textTheme.titleLarge
                         ?.copyWith(
-                          color: AppTheme.vibrantPurple,
+                          color: scheme.secondary,
                           fontWeight: FontWeight.w900,
                         ),
                   ),
@@ -232,7 +231,7 @@ class StatusTimeline extends StatelessWidget {
                     width: double.infinity,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cyberGradient,
+                        gradient: AppTheme.campusGradientOf(sheetContext),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: FilledButton.icon(

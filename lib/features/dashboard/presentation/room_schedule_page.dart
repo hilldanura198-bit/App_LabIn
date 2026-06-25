@@ -171,6 +171,7 @@ class _CalendarPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -208,23 +209,23 @@ class _CalendarPanel extends StatelessWidget {
           calendarStyle: CalendarStyle(
             outsideDaysVisible: false,
             todayDecoration: BoxDecoration(
-              color: AppTheme.electricBlue.withValues(alpha: 0.16),
+              color: scheme.primary.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            selectedDecoration: const BoxDecoration(
-              gradient: AppTheme.cyberGradient,
+            selectedDecoration: BoxDecoration(
+              gradient: AppTheme.campusGradientOf(context),
               shape: BoxShape.circle,
             ),
-            markerDecoration: const BoxDecoration(
-              color: AppTheme.vibrantPurple,
+            markerDecoration: BoxDecoration(
+              color: scheme.secondary,
               shape: BoxShape.circle,
             ),
             selectedTextStyle: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w900,
             ),
-            todayTextStyle: const TextStyle(
-              color: AppTheme.electricBlue,
+            todayTextStyle: TextStyle(
+              color: scheme.primary,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -303,7 +304,10 @@ class _ScheduleCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [accentColor, AppTheme.vibrantPurple],
+                  colors: [
+                    accentColor,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -416,8 +420,12 @@ class _EmptyScheduleCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.electricBlue.withValues(alpha: 0.16),
-                    AppTheme.vibrantPurple.withValues(alpha: 0.14),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.16),
+                    Theme.of(
+                      context,
+                    ).colorScheme.secondary.withValues(alpha: 0.14),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,

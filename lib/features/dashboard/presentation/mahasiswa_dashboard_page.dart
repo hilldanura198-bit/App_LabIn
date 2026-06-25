@@ -52,11 +52,11 @@ class _MahasiswaDashboardView extends StatefulWidget {
 
 class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   static const _campusOptions = [
+    'Kampus Rektorat',
     'Kampus 1',
     'Kampus 2',
     'Kampus 3',
     'Kampus 4',
-    'Kampus Rektorat',
   ];
 
   int _selectedIndex = 0;
@@ -546,25 +546,21 @@ class _QuickModuleGrid extends StatelessWidget {
       _MenuItem(
         icon: Icons.playlist_add_check_rounded,
         title: 'loan_form'.tr(),
-        color: AppTheme.richBronze.withValues(alpha: 0.16),
         page: BookingFormPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.file_download_outlined,
         title: 'download_docs'.tr(),
-        color: AppTheme.richBronze.withValues(alpha: 0.20),
         page: DownloadDocsPage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.view_timeline_outlined,
         title: 'room_schedule'.tr(),
-        color: AppTheme.richBronze.withValues(alpha: 0.14),
         page: RoomSchedulePage(repository: repository),
       ),
       _MenuItem(
         icon: Icons.location_city_outlined,
         title: 'sapras_campus'.tr(),
-        color: AppTheme.richBronze.withValues(alpha: 0.22),
         page: SaprasFacilityPage(
           repository: repository,
           selectedCampus: selectedCampus,
@@ -674,27 +670,16 @@ class _InsightCarouselState extends State<_InsightCarousel> {
 
   static const _cards = [
     (
-      AppTheme.cyberGradient,
       Icons.auto_awesome_outlined,
       'insight_standardized_rooms_title',
       'insight_standardized_rooms_body',
     ),
     (
-      LinearGradient(
-        colors: [Color(0xFF0EA5E9), Color(0xFF7C3AED)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
       Icons.workspace_premium_outlined,
       'insight_modern_facilities_title',
       'insight_modern_facilities_body',
     ),
     (
-      LinearGradient(
-        colors: [Color(0xFF38BDF8), Color(0xFFAF52DE)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
       Icons.explore_outlined,
       'insight_fast_access_title',
       'insight_fast_access_body',
@@ -725,7 +710,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                 child: Container(
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    gradient: card.$1,
+                    gradient: AppTheme.campusGradientOf(context),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -749,11 +734,11 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                             color: Colors.white.withValues(alpha: 0.14),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(card.$2, color: Colors.white, size: 26),
+                          child: Icon(card.$1, color: Colors.white, size: 26),
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          card.$3.tr(),
+                          card.$2.tr(),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
@@ -763,7 +748,7 @@ class _InsightCarouselState extends State<_InsightCarousel> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          card.$4.tr(),
+                          card.$3.tr(),
                           textAlign: TextAlign.center,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
@@ -792,7 +777,9 @@ class _InsightCarouselState extends State<_InsightCarousel> {
               width: active ? 18 : 8,
               height: 8,
               decoration: BoxDecoration(
-                color: active ? AppTheme.vibrantPurple : AppTheme.muted,
+                color: active
+                    ? Theme.of(context).colorScheme.primary
+                    : AppTheme.muted,
                 borderRadius: BorderRadius.circular(999),
               ),
             );
@@ -853,16 +840,17 @@ class _InsightTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.richBronze.withValues(alpha: 0.12),
+        color: scheme.primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppTheme.richBronze),
+          Icon(icon, color: scheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -910,7 +898,7 @@ class _FaqAccordion extends StatelessWidget {
               'faq_title'.tr(),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppTheme.deepTeal,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -922,8 +910,8 @@ class _FaqAccordion extends StatelessWidget {
                 ).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-                  iconColor: AppTheme.deepTeal,
-                  collapsedIconColor: AppTheme.deepTeal,
+                  iconColor: Theme.of(context).colorScheme.primary,
+                  collapsedIconColor: Theme.of(context).colorScheme.primary,
                   title: Text(
                     item.$1,
                     style: const TextStyle(fontWeight: FontWeight.w800),
@@ -954,13 +942,11 @@ class _MenuItem {
   const _MenuItem({
     required this.icon,
     required this.title,
-    required this.color,
     required this.page,
   });
 
   final IconData icon;
   final String title;
-  final Color color;
   final Widget page;
 }
 
@@ -979,17 +965,18 @@ class _QuickModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          gradient: AppTheme.cyberGradient,
+          gradient: AppTheme.campusGradientOf(context),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.electricBlue.withValues(alpha: 0.16),
+              color: scheme.primary.withValues(alpha: 0.18),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -1375,7 +1362,9 @@ class _InventoryGrid extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: available
-                              ? AppTheme.cleanCyan.withValues(alpha: 0.12)
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.12)
                               : Colors.redAccent.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
@@ -1389,7 +1378,7 @@ class _InventoryGrid extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: available
-                                ? AppTheme.deepTeal
+                                ? Theme.of(context).colorScheme.primary
                                 : Colors.redAccent,
                             fontWeight: FontWeight.w800,
                           ),
@@ -1420,7 +1409,7 @@ class _InventoryGrid extends StatelessWidget {
                           : null,
                       style: FilledButton.styleFrom(
                         backgroundColor: available
-                            ? AppTheme.vibrantPurple
+                            ? Theme.of(context).colorScheme.secondary
                             : Colors.grey.shade500,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey.shade500,
@@ -1854,9 +1843,7 @@ class _ModernFloatingHeaderState extends State<_ModernFloatingHeader> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-        decoration: BoxDecoration(
-          gradient: AppTheme.campusPalette(widget.selectedCampus).gradient,
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.campusGradientOf(context)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2067,7 +2054,7 @@ class _HeaderQuickTag extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppTheme.electricBlue, size: 14),
+              Icon(icon, color: scheme.primary, size: 14),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -2115,7 +2102,7 @@ class _GlobalSearchField extends StatelessWidget {
         prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.muted),
         suffixIcon: IconButton(
           onPressed: () => onSubmitted(controller.text),
-          icon: const Icon(Icons.tune_rounded, color: AppTheme.electricBlue),
+          icon: Icon(Icons.tune_rounded, color: scheme.primary),
         ),
         filled: true,
         fillColor: scheme.surface,
@@ -2479,7 +2466,7 @@ class _GlobalSearchResultTile extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                gradient: AppTheme.cyberGradient,
+                gradient: AppTheme.campusGradientOf(context),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(result.icon, color: Colors.white),
@@ -2513,13 +2500,13 @@ class _GlobalSearchResultTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               decoration: BoxDecoration(
-                color: AppTheme.electricBlue.withValues(alpha: 0.10),
+                color: scheme.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 result.tag,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppTheme.electricBlue,
+                  color: scheme.primary,
                   fontWeight: FontWeight.w900,
                 ),
               ),

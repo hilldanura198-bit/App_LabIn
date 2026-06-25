@@ -329,7 +329,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppTheme.cyberGradient,
+        gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(

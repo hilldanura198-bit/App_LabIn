@@ -178,7 +178,7 @@ class _BookingResultCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cyberGradient,
+                    gradient: AppTheme.campusGradientOf(context),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(

@@ -110,7 +110,7 @@ class _BookingPdfCard extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cyberGradient,
+                    gradient: AppTheme.campusGradientOf(context),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(

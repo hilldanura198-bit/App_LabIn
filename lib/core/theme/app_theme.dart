@@ -9,6 +9,11 @@ class AppTheme {
   static const emeraldGreen = Color(0xFF10B981);
   static const brightTeal = Color(0xFF14B8A6);
   static const warmAmber = Color(0xFFF59E0B);
+  static const warmOrange = Color(0xFFF97316);
+  static const crimsonRed = Color(0xFFB91C1C);
+  static const coralRose = Color(0xFFFB7185);
+  static const deepIndigo = Color(0xFF312E81);
+  static const orchidViolet = Color(0xFFC084FC);
   static const deepMaroon = Color(0xFF7F1D1D);
   static const cyberInk = Color(0xFF101828);
   static const coolMist = Color(0xFFF4F7FF);
@@ -36,6 +41,15 @@ class AppTheme {
 
   static CampusPalette campusPalette(String campusName) {
     final normalized = campusName.toLowerCase();
+    if (normalized.contains('rektorat') || normalized.contains('rektor')) {
+      return const CampusPalette(
+        primary: electricBlue,
+        secondary: vibrantPurple,
+        tertiary: Color(0xFF22D3EE),
+        darkSurface: deepSpace,
+        gradient: cyberGradient,
+      );
+    }
     if (normalized.contains('kampus 1')) {
       return const CampusPalette(
         primary: emeraldGreen,
@@ -52,11 +66,37 @@ class AppTheme {
     if (normalized.contains('kampus 2')) {
       return const CampusPalette(
         primary: warmAmber,
-        secondary: deepMaroon,
+        secondary: warmOrange,
         tertiary: Color(0xFFF97316),
-        darkSurface: Color(0xFF1C0B0B),
+        darkSurface: Color(0xFF1F1300),
         gradient: LinearGradient(
-          colors: [Color(0xFFF59E0B), Color(0xFFB45309), Color(0xFF7F1D1D)],
+          colors: [Color(0xFFF59E0B), Color(0xFFF97316), Color(0xFFEA580C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
+    }
+    if (normalized.contains('kampus 3')) {
+      return const CampusPalette(
+        primary: crimsonRed,
+        secondary: coralRose,
+        tertiary: Color(0xFFF43F5E),
+        darkSurface: Color(0xFF1F0A0A),
+        gradient: LinearGradient(
+          colors: [Color(0xFF991B1B), Color(0xFFE11D48), Color(0xFFFB7185)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
+    }
+    if (normalized.contains('kampus 4')) {
+      return const CampusPalette(
+        primary: deepIndigo,
+        secondary: orchidViolet,
+        tertiary: Color(0xFFA78BFA),
+        darkSurface: Color(0xFF111033),
+        gradient: LinearGradient(
+          colors: [Color(0xFF312E81), Color(0xFF7C3AED), Color(0xFFC084FC)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -84,6 +124,14 @@ class AppTheme {
       error: dark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
     );
     return base.copyWith(
+      extensions: [
+        CampusThemeExtension(
+          primary: palette.primary,
+          secondary: palette.secondary,
+          tertiary: palette.tertiary,
+          gradient: palette.gradient,
+        ),
+      ],
       colorScheme: scheme,
       scaffoldBackgroundColor: dark ? palette.darkSurface : coolMist,
       appBarTheme: base.appBarTheme.copyWith(
@@ -112,6 +160,25 @@ class AppTheme {
         ),
       ),
     );
+  }
+
+  static CampusThemeExtension campusColorsOf(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Theme.of(context).extension<CampusThemeExtension>() ??
+        CampusThemeExtension(
+          primary: scheme.primary,
+          secondary: scheme.secondary,
+          tertiary: scheme.tertiary,
+          gradient: LinearGradient(
+            colors: [scheme.primary, scheme.secondary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        );
+  }
+
+  static LinearGradient campusGradientOf(BuildContext context) {
+    return campusColorsOf(context).gradient;
   }
 
   static BoxDecoration cyberGradientButtonDecoration({
@@ -437,6 +504,58 @@ class CampusPalette {
   final LinearGradient gradient;
 }
 
+class CampusThemeExtension extends ThemeExtension<CampusThemeExtension> {
+  const CampusThemeExtension({
+    required this.primary,
+    required this.secondary,
+    required this.tertiary,
+    required this.gradient,
+  });
+
+  final Color primary;
+  final Color secondary;
+  final Color tertiary;
+  final LinearGradient gradient;
+
+  @override
+  CampusThemeExtension copyWith({
+    Color? primary,
+    Color? secondary,
+    Color? tertiary,
+    LinearGradient? gradient,
+  }) {
+    return CampusThemeExtension(
+      primary: primary ?? this.primary,
+      secondary: secondary ?? this.secondary,
+      tertiary: tertiary ?? this.tertiary,
+      gradient: gradient ?? this.gradient,
+    );
+  }
+
+  @override
+  CampusThemeExtension lerp(
+    ThemeExtension<CampusThemeExtension>? other,
+    double t,
+  ) {
+    if (other is! CampusThemeExtension) {
+      return this;
+    }
+    return CampusThemeExtension(
+      primary: Color.lerp(primary, other.primary, t) ?? primary,
+      secondary: Color.lerp(secondary, other.secondary, t) ?? secondary,
+      tertiary: Color.lerp(tertiary, other.tertiary, t) ?? tertiary,
+      gradient: LinearGradient(
+        colors: [
+          Color.lerp(primary, other.primary, t) ?? primary,
+          Color.lerp(secondary, other.secondary, t) ?? secondary,
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+  }
+}
+
 class CyberGradientButton extends StatelessWidget {
   const CyberGradientButton({
     super.key,
@@ -455,9 +574,29 @@ class CyberGradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
     return DecoratedBox(
-      decoration: AppTheme.cyberGradientButtonDecoration(
-        borderRadius: borderRadius,
-        enabled: enabled,
+      decoration: BoxDecoration(
+        gradient: enabled
+            ? AppTheme.campusGradientOf(context)
+            : LinearGradient(
+                colors: [
+                  AppTheme.slateMuted.withValues(alpha: 0.45),
+                  AppTheme.slateMuted.withValues(alpha: 0.30),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.28),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ]
+            : null,
       ),
       child: ElevatedButton(
         onPressed: onPressed,

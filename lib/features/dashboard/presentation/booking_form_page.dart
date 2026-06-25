@@ -1216,7 +1216,7 @@ class _LabPreviewCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppTheme.cyberGradient,
+        gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -1429,7 +1429,7 @@ class _ReviewPanel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: AppTheme.cyberGradient,
+            gradient: AppTheme.campusGradientOf(context),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Wrap(
