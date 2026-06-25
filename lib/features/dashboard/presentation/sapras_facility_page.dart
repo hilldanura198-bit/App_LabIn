@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -113,7 +112,7 @@ class _FacilityList extends StatelessWidget {
                       builder: (context, constraints) {
                         final compact = constraints.maxWidth < 620;
                         final image = _FacilityImage(
-                          imageUrl: item.imageUrl,
+                          assetName: item.namaAlat,
                           height: compact ? 150 : 112,
                           fallbackIcon: Icons.inventory_2_rounded,
                         );
@@ -208,7 +207,7 @@ class _FacilityList extends StatelessWidget {
       builder: (_) => _ImageDialog(
         title: item.namaAlat,
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
-        imageUrl: item.imageUrl,
+        imageUrl: item.namaAlat,
         booking: booking,
         icon: Icons.inventory_2_rounded,
       ),
@@ -334,12 +333,12 @@ class _DataPill extends StatelessWidget {
 
 class _FacilityImage extends StatelessWidget {
   const _FacilityImage({
-    required this.imageUrl,
+    required this.assetName,
     required this.height,
     required this.fallbackIcon,
   });
 
-  final String? imageUrl;
+  final String assetName;
   final double height;
   final IconData fallbackIcon;
 
@@ -348,7 +347,7 @@ class _FacilityImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: _RealtimeImage(
-        imageUrl: imageUrl,
+        assetName: assetName,
         height: height,
         fallbackIcon: fallbackIcon,
       ),
@@ -358,111 +357,32 @@ class _FacilityImage extends StatelessWidget {
 
 class _RealtimeImage extends StatelessWidget {
   const _RealtimeImage({
-    required this.imageUrl,
+    required this.assetName,
     required this.height,
     this.fallbackIcon = Icons.image_outlined,
   });
 
-  final String? imageUrl;
+  final String assetName;
   final double height;
   final IconData fallbackIcon;
 
   @override
   Widget build(BuildContext context) {
-    final url = _normalizedImageUrl(imageUrl);
-    if (url == null || url.isEmpty) {
-      return _ImagePlaceholder(height: height, icon: fallbackIcon);
-    }
-    if (_isLocalAsset(url)) {
-      return Image.asset(
-        _assetPath(url),
-        height: height,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, _, _) =>
-            _ImagePlaceholder(height: height, icon: fallbackIcon),
-      );
-    }
-    return CachedNetworkImage(
-      imageUrl: url,
+    return Image.asset(
+      DashboardModel.getLocalAssetPath(assetName),
       height: height,
       width: double.infinity,
       fit: BoxFit.cover,
-      fadeInDuration: const Duration(milliseconds: 180),
-      memCacheWidth: 720,
-      placeholder: (context, _) => _ImageLoadingPlaceholder(height: height),
-      errorWidget: (context, _, _) =>
-          _ImagePlaceholder(height: height, icon: fallbackIcon),
-    );
-  }
-
-  String? _normalizedImageUrl(String? value) {
-    final raw = value?.trim();
-    if (raw == null || raw.isEmpty) {
-      return null;
-    }
-    if (_isLocalAsset(raw)) {
-      return raw;
-    }
-    final uri = Uri.tryParse(raw);
-    if (uri == null || !uri.hasScheme) {
-      return null;
-    }
-    if (uri.scheme != 'https' && uri.scheme != 'http') {
-      return null;
-    }
-    return Uri.encodeFull(raw);
-  }
-
-  bool _isLocalAsset(String value) {
-    return value.startsWith('assets/') ||
-        value.startsWith('asset://') ||
-        value.endsWith('.jpg') ||
-        value.endsWith('.jpeg') ||
-        value.endsWith('.png') ||
-        value.endsWith('.webp');
-  }
-
-  String _assetPath(String value) {
-    final cleaned = value.replaceFirst('asset://', '');
-    if (cleaned.startsWith('assets/')) {
-      return cleaned;
-    }
-    return 'assets/img/$cleaned';
-  }
-}
-
-class _ImageLoadingPlaceholder extends StatelessWidget {
-  const _ImageLoadingPlaceholder({required this.height});
-
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            scheme.surfaceContainerHighest,
-            scheme.surfaceContainerHighest.withValues(alpha: 0.70),
-            scheme.surface,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: SizedBox.square(
-          dimension: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.4,
-            color: scheme.primary,
-          ),
-        ),
-      ),
+      errorBuilder: (context, _, _) {
+        return Image.asset(
+          DashboardModel.fallbackAssetPath,
+          height: height,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, _, _) =>
+              _ImagePlaceholder(height: height, icon: fallbackIcon),
+        );
+      },
     );
   }
 }
@@ -685,7 +605,7 @@ class _InfrastructureList extends StatelessWidget {
                     builder: (_) => _ImageDialog(
                       title: room.name,
                       subtitle: '${room.location} - Status ${room.status}',
-                      imageUrl: room.imageUrl,
+                      imageUrl: room.name,
                       booking: null,
                       icon: Icons.apartment_rounded,
                     ),
@@ -701,7 +621,7 @@ class _InfrastructureList extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(14),
                               child: _RealtimeImage(
-                                imageUrl: room.imageUrl,
+                                assetName: room.name,
                                 height: double.infinity,
                                 fallbackIcon: Icons.apartment_rounded,
                               ),
@@ -1997,7 +1917,7 @@ class _ImageDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: _RealtimeImage(
-                imageUrl: imageUrl,
+                assetName: imageUrl ?? title,
                 height: 220,
                 fallbackIcon: icon,
               ),

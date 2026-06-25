@@ -98,9 +98,7 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   assets:
-    - assets/img/
     - assets/images/
-    - assets/images/inventory/
     - assets/translations/
 
   # fonts:

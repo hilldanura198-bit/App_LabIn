@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1459,69 +1458,16 @@ class _InventoryRealtimeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = inventory.imageUrl?.trim();
-    if (url == null || url.isEmpty) {
-      return _InventoryImageFallback(inventory: inventory);
-    }
-    if (_isLocalAsset(url)) {
-      final assetPath = _assetPath(url);
-      return Image.asset(
-        assetPath,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, _, _) =>
-            _InventoryImageFallback(inventory: inventory),
-      );
-    }
-    return CachedNetworkImage(
-      imageUrl: url,
+    return Image.asset(
+      DashboardModel.getLocalAssetPath(inventory.namaAlat),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      placeholder: (context, _) => const DecoratedBox(
-        decoration: BoxDecoration(color: Color(0xFFE5E7EB)),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      errorWidget: (context, _, _) =>
-          _InventoryImageFallback(inventory: inventory),
-    );
-  }
-
-  bool _isLocalAsset(String value) {
-    return value.startsWith('assets/') ||
-        value.startsWith('asset://') ||
-        value.endsWith('.jpg') ||
-        value.endsWith('.jpeg') ||
-        value.endsWith('.png') ||
-        value.endsWith('.webp');
-  }
-
-  String _assetPath(String value) {
-    final cleaned = value.replaceFirst('asset://', '');
-    if (cleaned.startsWith('assets/')) {
-      return cleaned;
-    }
-    return 'assets/img/$cleaned';
-  }
-}
-
-class _InventoryImageFallback extends StatelessWidget {
-  const _InventoryImageFallback({required this.inventory});
-
-  final LabInventory inventory;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.9),
-      child: Center(
-        child: Icon(
-          Icons.inventory_2_rounded,
-          color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
-          size: 34,
-        ),
+      errorBuilder: (context, _, _) => Image.asset(
+        DashboardModel.fallbackAssetPath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
       ),
     );
   }

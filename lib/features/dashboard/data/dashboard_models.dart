@@ -47,35 +47,12 @@ class LabInventory {
       kondisi: map['kondisi'] as String? ?? 'bagus',
       type: map['type'] as String? ?? map['jenis'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
-      imageUrl: _imageUrlFromMap(map, fallback: _fallbackInventoryImage(map)),
+      imageUrl: getLocalAssetPath(name),
     );
   }
 
-  static String? _imageUrlFromMap(
-    Map<String, dynamic> map, {
-    required String fallback,
-  }) {
-    final value =
-        map['foto_url'] ??
-        map['image_url'] ??
-        map['gambar_url'] ??
-        map['foto'] ??
-        map['photo_url'] ??
-        map['image'] ??
-        map['gambar'];
-    final text = value?.toString().trim();
-    return text == null || text.isEmpty ? fallback : text;
-  }
-
-  static String _fallbackInventoryImage(Map<String, dynamic> map) {
-    final name = (map['nama_alat'] ?? map['nama_sarana'] ?? '')
-        .toString()
-        .toLowerCase();
-    if (name.contains('webcam')) {
-      return _fallbackLocalImage(name);
-    }
-    return _fallbackLocalImage(name);
-  }
+  static String getLocalAssetPath(String name) =>
+      DashboardModel.getLocalAssetPath(name);
 }
 
 class BookingItemDraft {
@@ -346,63 +323,99 @@ class LabRoom {
       name: name,
       location: map['lokasi'] as String? ?? '-',
       status: map['status_operasional'] as String? ?? 'aktif',
-      imageUrl: _imageUrlFromMap(map, fallback: _fallbackRoomImage(map)),
+      imageUrl: DashboardModel.getLocalAssetPath(name),
     );
-  }
-
-  static String? _imageUrlFromMap(
-    Map<String, dynamic> map, {
-    required String fallback,
-  }) {
-    final value =
-        map['foto_url'] ??
-        map['image_url'] ??
-        map['gambar_url'] ??
-        map['foto'] ??
-        map['photo_url'] ??
-        map['image'] ??
-        map['gambar'];
-    final text = value?.toString().trim();
-    return text == null || text.isEmpty ? fallback : text;
-  }
-
-  static String _fallbackRoomImage(Map<String, dynamic> map) {
-    final name = (map['nama_lab'] ?? '').toString().toLowerCase();
-    if (name.contains('rpl')) {
-      return _fallbackLocalImage(name);
-    }
-    return _fallbackLocalImage(name);
   }
 }
 
-String _fallbackLocalImage(String label) {
-  final normalized = label.toLowerCase();
-  return switch (normalized) {
-    final value when value.contains('tablet') =>
-      'assets/images/inventory/tablet-survey.png',
-    final value when value.contains('ultrasonik') || value.contains('sensor') =>
-      'assets/images/inventory/sensor-ultrasonik-hc-sr04.png',
-    final value
-        when value.contains('pc workstation') ||
-            value.contains('workstation') ||
-            value.contains('server') =>
-      'assets/images/inventory/pc-workstation-rpl.png',
-    final value
-        when value.contains('microphone') || value.contains('mikrofon') =>
-      'assets/images/inventory/microphone-meeting.png',
-    final value when value.contains('webcam') =>
-      'assets/images/inventory/webcam-conference.png',
-    final value when value.contains('switch') =>
-      'assets/images/inventory/switch-manageable-24-port.png',
-    final value when value.contains('scanner') =>
-      'assets/images/inventory/scanner-dokumen.png',
-    final value
-        when value.contains('tensimeter') || value.contains('blood pressure') =>
-      'assets/images/inventory/tensimeter-digital.png',
-    final value when value.contains('lab') || value.contains('ruang') =>
-      'assets/images/facility_lab.png',
-    _ => 'assets/images/facility_room.png',
-  };
+class DashboardModel {
+  const DashboardModel._();
+
+  static const fallbackAssetPath = 'assets/images/labin.jpg';
+
+  static String getLocalAssetPath(String name) {
+    final normalized = name.toLowerCase();
+    return switch (normalized) {
+      final value when value.contains('tablet survey') =>
+        'assets/images/tablet survey.jpg',
+      final value when value.contains('sensor ultrasonic') =>
+        'assets/images/sensor ultrasonic.jpg',
+      final value
+          when value.contains('pc workstation') ||
+              value.contains('pc server') =>
+        value.contains('server')
+            ? 'assets/images/pc server.jpg'
+            : 'assets/images/pc.jpg',
+      final value when value.contains('pc') => 'assets/images/pc.jpg',
+      final value when value.contains('microphone meeting') =>
+        'assets/images/microphone meeting.jpg',
+      final value when value.contains('webcam') => 'assets/images/webcam.jpg',
+      final value when value.contains('switch manageable') =>
+        'assets/images/switch manageable.jpg',
+      final value
+          when value.contains('tensimeter digital') ||
+              value.contains('tensi meter') =>
+        'assets/images/tensi meter.jpg',
+      final value when value.contains('scanner dokumen') =>
+        'assets/images/scanner dokumen.jpg',
+      final value when value.contains('smart tv') =>
+        'assets/images/smart tv.jpg',
+      final value when value.contains('router cisco') =>
+        'assets/images/router cisco.jpg',
+      final value when value.contains('proyektor') =>
+        'assets/images/proyektor.jpg',
+      final value when value.contains('printer') => 'assets/images/printer.jpg',
+      final value when value.contains('access point') =>
+        'assets/images/acces point wifi.jpg',
+      final value when value.contains('arduino') =>
+        'assets/images/arduino ide.jpg',
+      final value
+          when value.contains('antropometri') || value.contains('antrometri') =>
+        'assets/images/alat ukur antrometri.jpg',
+      final value when value.contains('esp32') =>
+        'assets/images/esp32 development board.jpg',
+      final value when value.contains('hdmi') => 'assets/images/hdmi.jpg',
+      final value when value.contains('kamera sidang') =>
+        'assets/images/kamera sidang.jpg',
+      final value when value.contains('multimeter') =>
+        'assets/images/multimeter digital.jpg',
+      final value
+          when value.contains('laptop akuntansi') ||
+              value.contains('laptop akutansi') =>
+        'assets/images/laptop akutansi.jpg',
+      final value when value.contains('manekin') =>
+        'assets/images/manekin cpr.jpg',
+      final value when value.contains('lan') && value.contains('kabel') =>
+        'assets/images/lan  kabel.jpg',
+      final value when value.contains('monitor ultrawide') =>
+        'assets/images/monitor ultrawide.jpg',
+      final value when value.contains('area luar ruangan') =>
+        'assets/images/area luar ruangan.jpg',
+      final value when value.contains('ruangan rektor') =>
+        'assets/images/ruangan rektor.jpg',
+      final value when value.contains('simulasi klinik') =>
+        'assets/images/lab simulasi klinik.jpg',
+      final value
+          when value.contains('jaringan komputer') ||
+              value.contains('komputer') =>
+        'assets/images/lab jaringan komputer.jpg',
+      final value when value.contains('mediasi digital') =>
+        'assets/images/lab mediasi digital.jpg',
+      final value when value.contains('legal tech') =>
+        'assets/images/lab legal tech.jpg',
+      final value when value.contains('kesehatan masyarakat') =>
+        'assets/images/lab kesehatan masyarakat.jpg',
+      final value when value.contains('rpl') => 'assets/images/lab rpl.jpg',
+      final value when value.contains('iot') => 'assets/images/lab iot.jpg',
+      final value
+          when value.contains('business analytic') ||
+              value.contains('bussines') =>
+        'assets/images/lab bussines analytic.jpg',
+      final value when value.contains('akuntansi') =>
+        'assets/images/lab akuntansi.jpg',
+      _ => fallbackAssetPath,
+    };
+  }
 }
 
 class ProfileSettings {
