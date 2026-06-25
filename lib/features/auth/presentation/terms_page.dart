@@ -45,7 +45,7 @@ class _TermsPageState extends State<TermsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Ketentuan Penggunaan LabIn'),
         centerTitle: true,
@@ -83,14 +83,7 @@ class _TermsPageState extends State<TermsPage> {
                               Container(
                                 padding: const EdgeInsets.all(18),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      AppTheme.deepTeal,
-                                      AppTheme.emerald,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  gradient: AppTheme.cyberGradient,
                                   borderRadius: BorderRadius.circular(22),
                                 ),
                                 child: Column(

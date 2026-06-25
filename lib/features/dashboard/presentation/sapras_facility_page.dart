@@ -75,7 +75,9 @@ class _FacilityList extends StatelessWidget {
         return StreamBuilder<List<LabBooking>>(
           stream: repository.watchRoomSchedule(),
           builder: (context, bookingSnapshot) {
-            final items = inventorySnapshot.data!;
+            final items = DashboardModel.mergeWithLocalFacilities(
+              inventorySnapshot.data!,
+            );
             final bookings = bookingSnapshot.data ?? const <LabBooking>[];
             return ListView.separated(
               padding: const EdgeInsets.all(18),
@@ -126,7 +128,7 @@ class _FacilityList extends StatelessWidget {
                             children: [
                               image,
                               const SizedBox(height: 14),
-                              detail,
+                              _FacilityTextPanel(child: detail),
                               const SizedBox(height: 12),
                               Align(
                                 alignment: Alignment.centerRight,
@@ -145,7 +147,7 @@ class _FacilityList extends StatelessWidget {
                           children: [
                             SizedBox(width: 150, child: image),
                             const SizedBox(width: 14),
-                            Expanded(child: detail),
+                            Expanded(child: _FacilityTextPanel(child: detail)),
                             const SizedBox(width: 12),
                             _DetailButton(
                               onPressed: () =>
@@ -203,7 +205,7 @@ class _FacilityList extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (_) => _ImageDialog(
-        title: item.namaAlat,
+        title: item.namaAlat.capitalize(),
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
         imageUrl: item.namaAlat,
         booking: booking,
@@ -229,6 +231,7 @@ class _FacilityDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final good = item.kondisi == 'bagus';
+    final positiveColor = Theme.of(context).colorScheme.tertiary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -238,7 +241,10 @@ class _FacilityDetail extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _DataPill(label: 'asset_code'.tr(), value: code),
-            _DataPill(label: 'facility_name'.tr(), value: item.namaAlat),
+            _DataPill(
+              label: 'facility_name'.tr(),
+              value: item.namaAlat.capitalize(),
+            ),
             _DataPill(label: 'room_name'.tr(), value: _roomName(item.labId)),
             _DataPill(
               label: 'building'.tr(),
@@ -247,29 +253,29 @@ class _FacilityDetail extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color:
-                    (good ? const Color(0xFF22F55E) : const Color(0xFFFF4D6D))
-                        .withValues(alpha: 0.14),
+                color: (good ? positiveColor : const Color(0xFFFF4D6D))
+                    .withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: good
-                      ? const Color(0xFF22F55E)
-                      : const Color(0xFFFF4D6D),
+                  color: good ? positiveColor : const Color(0xFFFF4D6D),
                 ),
               ),
               child: Text(
                 good ? 'good'.tr() : 'broken'.tr(),
                 style: TextStyle(
-                  color: good
-                      ? const Color(0xFF22F55E)
-                      : const Color(0xFFFF4D6D),
+                  color: good ? Colors.white : const Color(0xFFFFD7DF),
                   fontWeight: FontWeight.w900,
                 ),
               ),
             ),
             _DataPill(
               label: 'stock_total'.tr(),
-              value: '${item.stokTersedia}/${item.totalStok}',
+              value: 'available_stock'.tr(
+                namedArgs: {
+                  'available': '${item.stokTersedia}',
+                  'total': '${item.totalStok}',
+                },
+              ),
             ),
           ],
         ),
@@ -292,6 +298,37 @@ class _FacilityDetail extends StatelessWidget {
     if (labId.startsWith('2222')) return 'Lab IoT';
     if (labId.startsWith('3333')) return 'Lab Jaringan';
     return 'Ruang Lab';
+  }
+}
+
+class _FacilityTextPanel extends StatelessWidget {
+  const _FacilityTextPanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: dark
+            ? AppTheme.nightPanel.withValues(alpha: 0.96)
+            : AppTheme.cyberInk.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.24 : 0.16),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: child,
+    );
   }
 }
 
@@ -492,8 +529,9 @@ class _UsageScheduleChip extends StatelessWidget {
 }
 
 Color _statusColor(String status) {
+  final primary = AppTheme.electricBlue;
   return switch (status) {
-    'approved_aslab' || 'approved_kalab' || 'active' => const Color(0xFF22F55E),
+    'approved_aslab' || 'approved_kalab' || 'active' => primary,
     'pending' => const Color(0xFFFFB020),
     'rejected' => const Color(0xFFFF4D6D),
     _ => const Color(0xFF22D3EE),
@@ -1886,8 +1924,10 @@ class _ScoreBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: score.score / 100,
               minHeight: 16,
-              color: AppTheme.emerald,
-              backgroundColor: AppTheme.richBronze.withValues(alpha: 0.16),
+              color: Theme.of(context).colorScheme.primary,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.secondary.withValues(alpha: 0.16),
             ),
           ),
         ],

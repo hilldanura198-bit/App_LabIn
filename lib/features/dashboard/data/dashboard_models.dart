@@ -333,12 +333,282 @@ class DashboardModel {
 
   static const fallbackAssetPath = 'assets/images/labin.jpg';
 
+  static const localFacilityCatalog = <LabInventory>[
+    LabInventory(
+      id: 'local-acces-point-wifi',
+      labId: '1111-local',
+      namaAlat: 'Acces point wifi',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/acces point wifi.jpg',
+    ),
+    LabInventory(
+      id: 'local-alat-ukur-antrometri',
+      labId: '1111-local',
+      namaAlat: 'Alat ukur antrometri',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/alat ukur antrometri.jpg',
+    ),
+    LabInventory(
+      id: 'local-arduino-ide',
+      labId: '2222-local',
+      namaAlat: 'Arduino ide',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/arduino ide.jpg',
+    ),
+    LabInventory(
+      id: 'local-esp32-development-board',
+      labId: '2222-local',
+      namaAlat: 'Esp32 development board',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/esp32 development board.jpg',
+    ),
+    LabInventory(
+      id: 'local-hdmi',
+      labId: '3333-local',
+      namaAlat: 'Hdmi',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/hdmi.jpg',
+    ),
+    LabInventory(
+      id: 'local-kamera-sidang',
+      labId: '1111-local',
+      namaAlat: 'Kamera sidang',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/kamera sidang.jpg',
+    ),
+    LabInventory(
+      id: 'local-lan-kabel',
+      labId: '3333-local',
+      namaAlat: 'Lan kabel',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/lan  kabel.jpg',
+    ),
+    LabInventory(
+      id: 'local-laptop-akutansi',
+      labId: '1111-local',
+      namaAlat: 'Laptop akutansi',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/laptop akutansi.jpg',
+    ),
+    LabInventory(
+      id: 'local-manekin-cpr',
+      labId: '2222-local',
+      namaAlat: 'Manekin cpr',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/manekin cpr.jpg',
+    ),
+    LabInventory(
+      id: 'local-microphone-meeting',
+      labId: '1111-local',
+      namaAlat: 'Microphone meeting',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/microphone meeting.jpg',
+    ),
+    LabInventory(
+      id: 'local-monitor-ultrawide',
+      labId: '1111-local',
+      namaAlat: 'Monitor ultrawide',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/monitor ultrawide.jpg',
+    ),
+    LabInventory(
+      id: 'local-multimeter-digital',
+      labId: '2222-local',
+      namaAlat: 'Multimeter digital',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/multimeter digital.jpg',
+    ),
+    LabInventory(
+      id: 'local-pc',
+      labId: '1111-local',
+      namaAlat: 'Pc',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/pc.jpg',
+    ),
+    LabInventory(
+      id: 'local-pc-server',
+      labId: '3333-local',
+      namaAlat: 'Pc server',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/pc server.jpg',
+    ),
+    LabInventory(
+      id: 'local-printer',
+      labId: '1111-local',
+      namaAlat: 'Printer',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/printer.jpg',
+    ),
+    LabInventory(
+      id: 'local-proyektor',
+      labId: '1111-local',
+      namaAlat: 'Proyektor',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/proyektor.jpg',
+    ),
+    LabInventory(
+      id: 'local-router-cisco',
+      labId: '3333-local',
+      namaAlat: 'Router cisco',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/router cisco.jpg',
+    ),
+    LabInventory(
+      id: 'local-scanner-dokumen',
+      labId: '1111-local',
+      namaAlat: 'Scanner dokumen',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/scanner dokumen.jpg',
+    ),
+    LabInventory(
+      id: 'local-sensor-ultrasonik',
+      labId: '2222-local',
+      namaAlat: 'Sensor Ultrasonik',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/sensor ultrasonic.jpg',
+    ),
+    LabInventory(
+      id: 'local-smart-tv',
+      labId: '1111-local',
+      namaAlat: 'Smart tv',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/smart tv.jpg',
+    ),
+    LabInventory(
+      id: 'local-switch-manageable',
+      labId: '3333-local',
+      namaAlat: 'Switch manageable',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/switch manageable.jpg',
+    ),
+    LabInventory(
+      id: 'local-tablet-survey',
+      labId: '1111-local',
+      namaAlat: 'Tablet survey',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/tablet survey.jpg',
+    ),
+    LabInventory(
+      id: 'local-tensi-meter',
+      labId: '2222-local',
+      namaAlat: 'Tensi meter',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/tensi meter.jpg',
+    ),
+    LabInventory(
+      id: 'local-webcam',
+      labId: '1111-local',
+      namaAlat: 'Webcam',
+      totalStok: 9,
+      stokTersedia: 9,
+      kondisi: 'bagus',
+      type: 'alat',
+      imageUrl: 'assets/images/webcam.jpg',
+    ),
+  ];
+
+  static List<LabInventory> mergeWithLocalFacilities(
+    List<LabInventory> inventories,
+  ) {
+    final merged = <String, LabInventory>{
+      for (final item in localFacilityCatalog) _assetKey(item.namaAlat): item,
+    };
+    for (final item in inventories) {
+      final key = _assetKey(item.namaAlat);
+      merged[key] = LabInventory(
+        id: item.id,
+        labId: item.labId,
+        namaAlat: item.namaAlat.capitalize(),
+        totalStok: item.totalStok,
+        stokTersedia: item.stokTersedia,
+        kondisi: item.kondisi,
+        type: item.type,
+        manualUrl: item.manualUrl,
+        imageUrl: getLocalAssetPath(item.namaAlat),
+      );
+    }
+    final result = merged.values.toList()
+      ..sort((a, b) => a.namaAlat.compareTo(b.namaAlat));
+    return result;
+  }
+
   static String getLocalAssetPath(String name) {
-    final normalized = name.toLowerCase();
+    final normalized = _normalizeAssetName(name);
     return switch (normalized) {
       final value when value.contains('tablet survey') =>
         'assets/images/tablet survey.jpg',
-      final value when value.contains('sensor ultrasonic') =>
+      final value
+          when value.contains('sensor ultrasonic') ||
+              value.contains('sensor ultrasonik') =>
         'assets/images/sensor ultrasonic.jpg',
       final value
           when value.contains('pc workstation') ||
@@ -365,7 +635,9 @@ class DashboardModel {
       final value when value.contains('proyektor') =>
         'assets/images/proyektor.jpg',
       final value when value.contains('printer') => 'assets/images/printer.jpg',
-      final value when value.contains('access point') =>
+      final value
+          when value.contains('access point') ||
+              value.contains('acces point') =>
         'assets/images/acces point wifi.jpg',
       final value when value.contains('arduino') =>
         'assets/images/arduino ide.jpg',
@@ -415,6 +687,28 @@ class DashboardModel {
         'assets/images/lab akuntansi.jpg',
       _ => fallbackAssetPath,
     };
+  }
+
+  static String _assetKey(String name) {
+    final normalized = _normalizeAssetName(name)
+        .replaceAll('ultrasonik', 'ultrasonic')
+        .replaceAll('access', 'acces')
+        .replaceAll('akuntansi', 'akutansi');
+    return normalized;
+  }
+
+  static String _normalizeAssetName(String name) {
+    return name.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+}
+
+extension LabInStringCasing on String {
+  String capitalize() {
+    final trimmed = trim();
+    if (trimmed.isEmpty) {
+      return trimmed;
+    }
+    return trimmed[0].toUpperCase() + trimmed.substring(1);
   }
 }
 

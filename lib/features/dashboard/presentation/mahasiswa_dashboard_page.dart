@@ -122,7 +122,7 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
             SnackBar(
               content: Text(displayMessage),
               backgroundColor: message == 'checkout_success'
-                  ? Colors.green.shade600
+                  ? Theme.of(context).colorScheme.primary
                   : null,
             ),
           );
@@ -1024,7 +1024,7 @@ class _QuickModuleCard extends StatelessWidget {
 }
 
 List<LabInventory> _previewInventories(List<LabInventory> inventories) {
-  final sorted = [...inventories]
+  final sorted = DashboardModel.mergeWithLocalFacilities(inventories)
     ..sort((a, b) => b.stokTersedia.compareTo(a.stokTersedia));
   return sorted.take(8).toList();
 }
@@ -1298,7 +1298,9 @@ class _InventoryGrid extends StatelessWidget {
       return StreamBuilder<List<LabInventory>>(
         stream: repository.watchInventoriesByCampus(selectedCampus),
         builder: (context, snapshot) {
-          final fallbackInventories = snapshot.data ?? const <LabInventory>[];
+          final fallbackInventories = DashboardModel.mergeWithLocalFacilities(
+            snapshot.data ?? const <LabInventory>[],
+          );
           if (fallbackInventories.isEmpty) {
             return _EmptyCard(text: 'inventory_empty'.tr());
           }
@@ -1344,7 +1346,7 @@ class _InventoryGrid extends StatelessWidget {
                     ),
                     SizedBox(height: compact ? 7 : 10),
                     Text(
-                      inventory.namaAlat,
+                      inventory.namaAlat.capitalize(),
                       maxLines: compact ? 2 : 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -1489,7 +1491,7 @@ class _CartCheckout extends StatelessWidget {
               ...state.cart.values.map(
                 (item) => ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(item.inventory.namaAlat),
+                  title: Text(item.inventory.namaAlat.capitalize()),
                   subtitle: Text(
                     'cart_quantity'.tr(
                       namedArgs: {'count': '${item.quantity}'},
@@ -1563,7 +1565,9 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
       return StreamBuilder<List<LabInventory>>(
         stream: widget.repository.watchInventories(),
         builder: (context, snapshot) {
-          final inventories = snapshot.data ?? const <LabInventory>[];
+          final inventories = DashboardModel.mergeWithLocalFacilities(
+            snapshot.data ?? const <LabInventory>[],
+          );
           return _buildCard(
             context,
             inventories,
@@ -1572,7 +1576,10 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
         },
       );
     }
-    return _buildCard(context, widget.inventories);
+    return _buildCard(
+      context,
+      DashboardModel.mergeWithLocalFacilities(widget.inventories),
+    );
   }
 
   Widget _buildCard(
@@ -1602,7 +1609,7 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
                   .map(
                     (inventory) => DropdownMenuItem(
                       value: inventory,
-                      child: Text(inventory.namaAlat),
+                      child: Text(inventory.namaAlat.capitalize()),
                     ),
                   )
                   .toList(),
@@ -2352,7 +2359,7 @@ class _GlobalSearchSheetState extends State<_GlobalSearchSheet> {
       results.add(
         _GlobalSearchResult(
           icon: isRoom ? Icons.meeting_room_outlined : Icons.inventory_2,
-          title: inventory.namaAlat,
+          title: inventory.namaAlat.capitalize(),
           subtitle: isRoom
               ? 'room_stock_label'.tr(
                   namedArgs: {'count': '${inventory.stokTersedia}'},
