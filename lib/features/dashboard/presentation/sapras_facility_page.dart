@@ -84,17 +84,21 @@ class _FacilityList extends StatelessWidget {
                 final booking = _latestBookingForLab(bookings, item.labId);
                 final labBookings = _bookingsForLab(bookings, item.labId);
                 final odd = index.isOdd;
+                final accent = odd
+                    ? AppTheme.vibrantPurple
+                    : AppTheme.electricBlue;
                 return Container(
                   decoration: BoxDecoration(
-                    color: odd
-                        ? const Color(0xFF111827)
-                        : const Color(0xFF0F1B33),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: odd
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : AppTheme.electricBlue.withValues(alpha: 0.22),
+                    gradient: LinearGradient(
+                      colors: [
+                        accent.withValues(alpha: 0.14),
+                        AppTheme.cleanCyan.withValues(alpha: 0.08),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: accent.withValues(alpha: 0.18)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),

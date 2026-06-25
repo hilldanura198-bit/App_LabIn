@@ -140,7 +140,7 @@ class DashboardRepository {
   Future<List<LabRoom>> fetchLaboratories() async {
     final rows = await _supabase
         .from('laboratories')
-        .select('id,nama_lab,lokasi,status_operasional')
+        .select('id,nama_lab,lokasi,status_operasional,foto_url')
         .order('nama_lab');
     return rows.map(LabRoom.fromMap).toList();
   }
@@ -153,16 +153,32 @@ class DashboardRepository {
           .select()
           .order('nama_alat')
           .limit(20);
-      return rows.map(LabInventory.fromMap).toList();
+      return (rows as List<dynamic>)
+          .map((row) => LabInventory.fromMap(Map<String, dynamic>.from(row)))
+          .toList();
     }
     final safeQuery = normalized.replaceAll('%', r'\%').replaceAll('_', r'\_');
-    final rows = await _supabase
-        .from('inventories')
-        .select()
-        .ilike('nama_alat', '%$safeQuery%')
-        .order('nama_alat')
-        .limit(30);
-    return rows.map(LabInventory.fromMap).toList();
+    List<dynamic> rows;
+    try {
+      rows = await _supabase
+          .from('inventories')
+          .select()
+          .or(
+            'nama_alat.ilike.%$safeQuery%,nama_sarana.ilike.%$safeQuery%,deskripsi.ilike.%$safeQuery%',
+          )
+          .order('nama_alat')
+          .limit(30);
+    } catch (_) {
+      rows = await _supabase
+          .from('inventories')
+          .select()
+          .ilike('nama_alat', '%$safeQuery%')
+          .order('nama_alat')
+          .limit(30);
+    }
+    return rows
+        .map((row) => LabInventory.fromMap(Map<String, dynamic>.from(row)))
+        .toList();
   }
 
   Stream<List<LabRoom>> watchLaboratories() {

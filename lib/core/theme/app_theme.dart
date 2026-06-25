@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   const AppTheme._();
@@ -62,20 +61,52 @@ class AppTheme {
     required Color bodyColor,
     required Color displayColor,
   }) {
-    final base = GoogleFonts.interTextTheme().apply(
+    final base = ThemeData.light().textTheme.apply(
+      fontFamily: 'Nexa',
       bodyColor: bodyColor,
       displayColor: displayColor,
     );
     return base.copyWith(
-      displayLarge: base.displayLarge?.copyWith(fontWeight: FontWeight.w700),
-      displayMedium: base.displayMedium?.copyWith(fontWeight: FontWeight.w700),
-      displaySmall: base.displaySmall?.copyWith(fontWeight: FontWeight.w700),
-      headlineLarge: base.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
-      headlineMedium: base.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w700,
+      displayLarge: base.displayLarge?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
       ),
-      headlineSmall: base.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-      titleLarge: base.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      displayMedium: base.displayMedium?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      displaySmall: base.displaySmall?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      headlineLarge: base.headlineLarge?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      headlineMedium: base.headlineMedium?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      headlineSmall: base.headlineSmall?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      titleLarge: base.titleLarge?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      titleMedium: base.titleMedium?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      titleSmall: base.titleSmall?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
+      labelLarge: base.labelLarge?.copyWith(
+        fontFamily: 'Coolvetica',
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 
@@ -94,6 +125,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: 'Nexa',
       scaffoldBackgroundColor: offWhite,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
@@ -225,6 +257,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
+      fontFamily: 'Nexa',
       scaffoldBackgroundColor: const Color(0xFF070A16),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(

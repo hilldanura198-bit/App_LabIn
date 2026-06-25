@@ -47,24 +47,47 @@ class LabInventory {
       kondisi: map['kondisi'] as String? ?? 'bagus',
       type: map['type'] as String? ?? map['jenis'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
-      imageUrl: _imageUrlFromMap(map, name),
+      imageUrl: _imageUrlFromMap(map, fallback: _fallbackInventoryImage(map)),
     );
   }
 
-  static String _imageUrlFromMap(Map<String, dynamic> map, String name) {
+  static String? _imageUrlFromMap(
+    Map<String, dynamic> map, {
+    required String fallback,
+  }) {
     final value =
+        map['foto_url'] ??
         map['image_url'] ??
         map['gambar_url'] ??
-        map['foto_url'] ??
         map['foto'] ??
         map['photo_url'] ??
         map['image'] ??
         map['gambar'];
     final text = value?.toString().trim();
-    if (text != null && text.isNotEmpty) {
-      return text;
+    return text == null || text.isEmpty ? fallback : text;
+  }
+
+  static String _fallbackInventoryImage(Map<String, dynamic> map) {
+    final name = (map['nama_alat'] ?? map['nama_sarana'] ?? '')
+        .toString()
+        .toLowerCase();
+    if (name.contains('webcam')) {
+      return 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80';
     }
-    return _fallbackNetworkImage(name);
+    if (name.contains('tablet')) {
+      return 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1200&q=80';
+    }
+    if (name.contains('sensor') ||
+        name.contains('arduino') ||
+        name.contains('esp32')) {
+      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80';
+    }
+    if (name.contains('laptop') ||
+        name.contains('pc') ||
+        name.contains('workstation')) {
+      return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
   }
 }
 
@@ -336,24 +359,41 @@ class LabRoom {
       name: name,
       location: map['lokasi'] as String? ?? '-',
       status: map['status_operasional'] as String? ?? 'aktif',
-      imageUrl: _imageUrlFromMap(map, name),
+      imageUrl: _imageUrlFromMap(map, fallback: _fallbackRoomImage(map)),
     );
   }
 
-  static String _imageUrlFromMap(Map<String, dynamic> map, String name) {
+  static String? _imageUrlFromMap(
+    Map<String, dynamic> map, {
+    required String fallback,
+  }) {
     final value =
+        map['foto_url'] ??
         map['image_url'] ??
         map['gambar_url'] ??
-        map['foto_url'] ??
         map['foto'] ??
         map['photo_url'] ??
         map['image'] ??
         map['gambar'];
     final text = value?.toString().trim();
-    if (text != null && text.isNotEmpty) {
-      return text;
+    return text == null || text.isEmpty ? fallback : text;
+  }
+
+  static String _fallbackRoomImage(Map<String, dynamic> map) {
+    final name = (map['nama_lab'] ?? '').toString().toLowerCase();
+    if (name.contains('rpl')) {
+      return 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1200&q=80';
     }
-    return _fallbackNetworkImage(name);
+    if (name.contains('jaringan')) {
+      return 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=1200&q=80';
+    }
+    if (name.contains('iot')) {
+      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80';
+    }
+    if (name.contains('klinik') || name.contains('kesehatan')) {
+      return 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=1200&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80';
   }
 }
 

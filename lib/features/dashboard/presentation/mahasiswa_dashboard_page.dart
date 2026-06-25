@@ -469,6 +469,7 @@ class _HomeScrollContent extends StatelessWidget {
                           columns: gridColumns,
                           cart: state.cart,
                           repository: repository,
+                          selectedCampus: state.selectedCampus,
                         ),
                       const SizedBox(height: 10),
                       Center(
@@ -1282,18 +1283,33 @@ class _InventoryGrid extends StatelessWidget {
     required this.columns,
     required this.cart,
     required this.repository,
+    required this.selectedCampus,
   });
 
   final List<LabInventory> inventories;
   final int columns;
   final Map<String, BookingItemDraft> cart;
   final DashboardRepository repository;
+  final String selectedCampus;
 
   @override
   Widget build(BuildContext context) {
     if (inventories.isEmpty) {
-      return _EmptyCard(text: 'inventory_empty'.tr());
+      return StreamBuilder<List<LabInventory>>(
+        stream: repository.watchInventoriesByCampus(selectedCampus),
+        builder: (context, snapshot) {
+          final fallbackInventories = snapshot.data ?? const <LabInventory>[];
+          if (fallbackInventories.isEmpty) {
+            return _EmptyCard(text: 'inventory_empty'.tr());
+          }
+          return _buildGrid(context, fallbackInventories);
+        },
+      );
     }
+    return _buildGrid(context, inventories);
+  }
+
+  Widget _buildGrid(BuildContext context, List<LabInventory> items) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final gridColumns = constraints.maxWidth >= 760 ? columns : 2;
@@ -1301,7 +1317,7 @@ class _InventoryGrid extends StatelessWidget {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: inventories.length,
+          itemCount: items.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: gridColumns,
             crossAxisSpacing: 10,
@@ -1309,7 +1325,7 @@ class _InventoryGrid extends StatelessWidget {
             childAspectRatio: compact ? 0.58 : 0.68,
           ),
           itemBuilder: (context, index) {
-            final inventory = inventories[index];
+            final inventory = items[index];
             final reserved = cart[inventory.id]?.quantity ?? 0;
             final remaining = inventory.stokTersedia - reserved;
             final available = remaining > 0 && inventory.isAvailable;
