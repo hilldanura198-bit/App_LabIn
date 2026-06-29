@@ -942,6 +942,29 @@ class DashboardRepository {
     }).toList();
   }
 
+  Future<List<BookingItemDetail>> fetchBookingItemDetails(
+    String bookingId,
+  ) async {
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id,jumlah,inventories(nama_alat,kondisi,lab_id)')
+        .eq('booking_id', bookingId)
+        .order('created_at');
+    return rows.map<BookingItemDetail>((row) {
+      final inventory = row['inventories'];
+      final inventoryMap = inventory is Map
+          ? Map<String, dynamic>.from(inventory)
+          : const <String, dynamic>{};
+      return BookingItemDetail(
+        name: inventoryMap['nama_alat'] as String? ?? 'Item',
+        condition: inventoryMap['kondisi'] as String? ?? 'baik',
+        quantity: row['jumlah'] as int? ?? 1,
+        labId: inventoryMap['lab_id'] as String? ?? '',
+        inventoryId: row['inventory_id']?.toString(),
+      );
+    }).toList();
+  }
+
   Future<Map<String, dynamic>> _fetchOptionalProfilePreferences(
     String userId,
   ) async {

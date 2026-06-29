@@ -100,6 +100,22 @@ class BookingSnapshotItem {
   }
 }
 
+class BookingItemDetail {
+  const BookingItemDetail({
+    required this.name,
+    required this.condition,
+    required this.quantity,
+    required this.labId,
+    this.inventoryId,
+  });
+
+  final String name;
+  final String condition;
+  final int quantity;
+  final String labId;
+  final String? inventoryId;
+}
+
 class LabBooking {
   const LabBooking({
     required this.id,
