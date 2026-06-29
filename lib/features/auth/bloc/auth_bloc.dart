@@ -45,12 +45,6 @@ class AuthRegisterMahasiswaRequested extends AuthEvent {
   final String programStudi;
 }
 
-class AuthBiometricLoginRequested extends AuthEvent {
-  const AuthBiometricLoginRequested({this.alreadyAuthenticated = false});
-
-  final bool alreadyAuthenticated;
-}
-
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
 }
@@ -109,7 +103,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthGoogleLoginRequested>(_onGoogleLoginRequested);
     on<AuthRegisterMahasiswaRequested>(_onRegisterMahasiswaRequested);
-    on<AuthBiometricLoginRequested>(_onBiometricLoginRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
     on<_AuthSessionChanged>(_onAuthSessionChanged);
   }
@@ -196,22 +189,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onBiometricLoginRequested(
-    AuthBiometricLoginRequested event,
-    Emitter<AuthState> emit,
-  ) async {
-    emit(const AuthLoading());
-    try {
-      final userId = await _repository.signInWithBiometricSession(
-        skipPrompt: event.alreadyAuthenticated,
-      );
-      final role = await _repository.fetchUserRole(userId);
-      emit(Authenticated(userId: userId, role: role));
-    } on Object catch (error) {
-      emit(AuthFailure(_friendlyMessage(error)));
-    }
-  }
-
   Future<void> _onLogoutRequested(
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
@@ -238,10 +215,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   String _friendlyMessage(Object error) {
-    if (error is BiometricUnavailableException) {
-      return 'Perangkat ini tidak mendukung fitur biometrik.';
-    }
-
     if (error is AuthException) {
       final code = error.code?.toLowerCase();
       final message = error.message.toLowerCase();
@@ -288,9 +261,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
     if (normalized.contains('invalid login credentials')) {
       return 'Email atau password salah. Periksa kembali data login Anda.';
-    }
-    if (normalized.contains('biometrik') || normalized.contains('biometric')) {
-      return 'Perangkat ini tidak mendukung fitur biometrik.';
     }
     if (raw.contains('not configured')) {
       return 'Sistem backend belum dikonfigurasi. Jalankan app dengan env URL dan ANON KEY.';

@@ -466,12 +466,11 @@ class DashboardRepository {
     final row = await _supabase
         .from('profiles')
         .select(
-          'nama,nim_nip,email,role,whatsapp_number,avatar_url,biometric_enabled,realtime_notifications_enabled,notification_sound_enabled',
+          'nama,nim_nip,email,role,whatsapp_number,avatar_url,app_language',
         )
         .eq('id', userId)
         .single();
-    final preferences = await _fetchOptionalProfilePreferences(userId);
-    return ProfileSettings.fromMap({...row, ...preferences});
+    return ProfileSettings.fromMap(row);
   }
 
   Future<void> updateProfile(ProfileSettings settings) {
@@ -491,13 +490,9 @@ class DashboardRepository {
           'email': settings.email.trim(),
           'whatsapp_number': settings.whatsappNumber.trim(),
           'avatar_url': settings.avatarUrl,
-          'biometric_enabled': settings.biometricEnabled,
-          'realtime_notifications_enabled':
-              settings.realtimeNotificationsEnabled,
-          'notification_sound_enabled': settings.notificationSoundEnabled,
+          'app_language': settings.appLanguage,
         })
         .eq('id', userId);
-    await _updateOptionalProfilePreferences(userId, settings);
     await _insertNotification(
       userId: userId,
       title: 'Profil diperbarui',
@@ -795,7 +790,10 @@ class DashboardRepository {
     return LabBooking.fromMap(map);
   }
 
-  Future<String> confirmItemHandover(String rawCode) async {
+  Future<String> confirmItemHandover(
+    String rawCode, {
+    String returnCondition = 'bagus',
+  }) async {
     final bookingId = _bookingIdFromQr(rawCode);
     final booking = await _supabase
         .from('bookings')
@@ -812,11 +810,23 @@ class DashboardRepository {
       throw Exception('Status booking belum siap diproses: $status');
     }
 
-    await _supabase
+    final updated = await _supabase
         .from('bookings')
         .update({'status': nextStatus})
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .eq('status', status)
+        .select('id')
+        .maybeSingle();
+    if (updated == null) {
+      throw Exception('Status booking sudah berubah. Muat ulang data.');
+    }
     final returned = nextStatus == 'returned';
+    if (returned) {
+      await _incrementInventoryStockForBooking(bookingId);
+      if (returnCondition == 'rusak') {
+        await _markBookingInventoriesCondition(bookingId, 'rusak');
+      }
+    }
     await _insertNotification(
       userId: booking['user_id'] as String,
       title: returned ? 'Barang dikembalikan' : 'Barang diserahterimakan',
@@ -835,6 +845,96 @@ class DashboardRepository {
         .from('inventories')
         .update({'kondisi': 'bagus'})
         .eq('id', barcode);
+  }
+
+  Future<void> createInventory({
+    required String labId,
+    required String name,
+    required int totalStock,
+    required int availableStock,
+    required String type,
+    String? manualUrl,
+  }) async {
+    if (name.trim().isEmpty) {
+      throw Exception('Nama inventaris wajib diisi.');
+    }
+    if (totalStock < 0 || availableStock < 0 || availableStock > totalStock) {
+      throw Exception('Jumlah stok tidak valid.');
+    }
+    await _supabase.from('inventories').insert({
+      'lab_id': labId,
+      'nama_alat': name.trim(),
+      'total_stok': totalStock,
+      'stok_tersedia': availableStock,
+      'kondisi': 'bagus',
+      'type': type.trim().isEmpty ? 'alat' : type.trim(),
+      'manual_url': _optionalTrimmed(manualUrl),
+    });
+  }
+
+  Future<void> createLaboratory({
+    required String name,
+    required String location,
+  }) async {
+    if (name.trim().isEmpty || location.trim().isEmpty) {
+      throw Exception('Nama dan lokasi ruangan wajib diisi.');
+    }
+    await _supabase.from('laboratories').insert({
+      'nama_lab': name.trim(),
+      'lokasi': location.trim(),
+      'status_operasional': 'aktif',
+    });
+  }
+
+  Future<List<UserAccountSummary>> fetchUserAccounts() async {
+    final rows = await _supabase
+        .from('profiles')
+        .select('id,nama,nim_nip,email,role')
+        .order('role')
+        .order('nama');
+    return rows.map(UserAccountSummary.fromMap).toList();
+  }
+
+  Future<void> verifyAslabAccount(String userId) async {
+    await _supabase
+        .from('profiles')
+        .update({'role': 'aslab'})
+        .eq('id', userId)
+        .neq('role', 'kalab');
+  }
+
+  Future<List<BorrowedInventoryReport>> fetchBorrowedInventoryReport() async {
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id,jumlah,bookings(status),inventories(nama_alat)')
+        .inFilter('bookings.status', ['approved_kalab', 'active', 'late']);
+    final totals = <String, ({String name, int quantity})>{};
+    for (final row in rows) {
+      final inventoryId = row['inventory_id']?.toString() ?? '';
+      if (inventoryId.isEmpty) continue;
+      final inventory = row['inventories'];
+      final name = inventory is Map
+          ? inventory['nama_alat'] as String? ?? 'Inventaris'
+          : 'Inventaris';
+      final quantity = row['jumlah'] as int? ?? 0;
+      final current = totals[inventoryId];
+      totals[inventoryId] = (
+        name: current?.name ?? name,
+        quantity: (current?.quantity ?? 0) + quantity,
+      );
+    }
+    final report =
+        totals.entries
+            .map(
+              (entry) => BorrowedInventoryReport(
+                inventoryId: entry.key,
+                name: entry.value.name,
+                quantity: entry.value.quantity,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.quantity.compareTo(a.quantity));
+    return report;
   }
 
   Future<void> submitFeedback({
@@ -921,6 +1021,46 @@ class DashboardRepository {
     }
   }
 
+  Future<void> _incrementInventoryStockForBooking(String bookingId) async {
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id,jumlah,inventories(stok_tersedia,total_stok)')
+        .eq('booking_id', bookingId);
+    for (final row in rows) {
+      final inventoryId = row['inventory_id'] as String;
+      final quantity = row['jumlah'] as int? ?? 0;
+      final inventory = row['inventories'];
+      final inventoryMap = inventory is Map
+          ? Map<String, dynamic>.from(inventory)
+          : const <String, dynamic>{};
+      final currentStock = inventoryMap['stok_tersedia'] as int? ?? 0;
+      final totalStock = inventoryMap['total_stok'] as int? ?? currentStock;
+      final nextStock = (currentStock + quantity).clamp(0, totalStock);
+      await _supabase
+          .from('inventories')
+          .update({'stok_tersedia': nextStock})
+          .eq('id', inventoryId);
+    }
+  }
+
+  Future<void> _markBookingInventoriesCondition(
+    String bookingId,
+    String condition,
+  ) async {
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id')
+        .eq('booking_id', bookingId);
+    for (final row in rows) {
+      final inventoryId = row['inventory_id']?.toString();
+      if (inventoryId == null || inventoryId.isEmpty) continue;
+      await _supabase
+          .from('inventories')
+          .update({'kondisi': condition})
+          .eq('id', inventoryId);
+    }
+  }
+
   Future<List<BookingSnapshotItem>> _fetchBookingItemsSnapshot(
     String bookingId,
   ) async {
@@ -963,39 +1103,6 @@ class DashboardRepository {
         inventoryId: row['inventory_id']?.toString(),
       );
     }).toList();
-  }
-
-  Future<Map<String, dynamic>> _fetchOptionalProfilePreferences(
-    String userId,
-  ) async {
-    try {
-      final row = await _supabase
-          .from('profiles')
-          .select('app_language,location_enabled,device_security_enabled')
-          .eq('id', userId)
-          .single();
-      return Map<String, dynamic>.from(row);
-    } on Object {
-      return const {};
-    }
-  }
-
-  Future<void> _updateOptionalProfilePreferences(
-    String userId,
-    ProfileSettings settings,
-  ) async {
-    try {
-      await _supabase
-          .from('profiles')
-          .update({
-            'app_language': settings.appLanguage,
-            'location_enabled': settings.locationEnabled,
-            'device_security_enabled': settings.deviceSecurityEnabled,
-          })
-          .eq('id', userId);
-    } on Object {
-      // Kolom preferensi mungkin belum dimigrasi di database lama.
-    }
   }
 
   bool _shouldDecrementStockOnApproval(String previousStatus) {

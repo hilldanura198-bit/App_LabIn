@@ -29,7 +29,7 @@ class DownloadDocsPage extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final bookings = snapshot.data!;
+            final bookings = snapshot.data!.where(_isKalabApproved).toList();
             if (bookings.isEmpty) {
               return const Center(
                 child: Text('Belum ada booking yang bisa diunduh.'),
@@ -222,6 +222,13 @@ class _BookingPdfCard extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isKalabApproved(LabBooking booking) {
+  return switch (booking.status) {
+    'approved_kalab' || 'active' || 'returned' || 'late' => true,
+    _ => false,
+  };
 }
 
 class _ReturnedBookingReviewCard extends StatefulWidget {

@@ -17,6 +17,7 @@ import '../data/dashboard_repository.dart';
 import 'booking_form_page.dart';
 import 'check_reservation_page.dart';
 import 'download_docs_page.dart';
+import 'history_page.dart';
 import 'notification_center_page.dart';
 import 'room_schedule_page.dart';
 import 'sapras_facility_page.dart';
@@ -232,10 +233,7 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
                             icon: Icons.notifications_outlined,
                             text: 'notifications'.tr(),
                           ),
-                          GButton(
-                            icon: Icons.settings_outlined,
-                            text: 'settings'.tr(),
-                          ),
+                          GButton(icon: Icons.history_rounded, text: 'Riwayat'),
                         ],
                       ),
                     ),
@@ -254,12 +252,10 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
     return switch (_selectedIndex) {
       1 => CheckReservationPage(repository: repository, showAppBar: false),
       2 => NotificationCenterPage(repository: repository, showAppBar: false),
-      3 => RepositoryProvider.value(
-        value: context.read<AuthRepository>(),
-        child: BlocProvider.value(
-          value: context.read<AuthBloc>(),
-          child: SettingsPage(repository: repository, showAppBar: false),
-        ),
+      3 => HistoryPage(
+        repository: repository,
+        role: UserRole.mahasiswa,
+        showAppBar: false,
       ),
       _ => _HomeScrollContent(
         state: state,

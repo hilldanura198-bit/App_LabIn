@@ -739,12 +739,7 @@ class ProfileSettings {
     required this.role,
     required this.whatsappNumber,
     required this.avatarUrl,
-    required this.biometricEnabled,
-    required this.realtimeNotificationsEnabled,
-    required this.notificationSoundEnabled,
     required this.appLanguage,
-    required this.locationEnabled,
-    required this.deviceSecurityEnabled,
   });
 
   final String name;
@@ -753,12 +748,7 @@ class ProfileSettings {
   final String role;
   final String whatsappNumber;
   final String? avatarUrl;
-  final bool biometricEnabled;
-  final bool realtimeNotificationsEnabled;
-  final bool notificationSoundEnabled;
   final String appLanguage;
-  final bool locationEnabled;
-  final bool deviceSecurityEnabled;
 
   factory ProfileSettings.fromMap(Map<String, dynamic> map) {
     return ProfileSettings(
@@ -768,14 +758,7 @@ class ProfileSettings {
       role: map['role'] as String? ?? 'mahasiswa',
       whatsappNumber: map['whatsapp_number'] as String? ?? '',
       avatarUrl: map['avatar_url'] as String?,
-      biometricEnabled: map['biometric_enabled'] as bool? ?? false,
-      realtimeNotificationsEnabled:
-          map['realtime_notifications_enabled'] as bool? ?? true,
-      notificationSoundEnabled:
-          map['notification_sound_enabled'] as bool? ?? true,
       appLanguage: map['app_language'] as String? ?? 'id',
-      locationEnabled: map['location_enabled'] as bool? ?? true,
-      deviceSecurityEnabled: map['device_security_enabled'] as bool? ?? true,
     );
   }
 
@@ -786,12 +769,7 @@ class ProfileSettings {
     String? role,
     String? whatsappNumber,
     String? avatarUrl,
-    bool? biometricEnabled,
-    bool? realtimeNotificationsEnabled,
-    bool? notificationSoundEnabled,
     String? appLanguage,
-    bool? locationEnabled,
-    bool? deviceSecurityEnabled,
   }) {
     return ProfileSettings(
       name: name ?? this.name,
@@ -800,15 +778,7 @@ class ProfileSettings {
       role: role ?? this.role,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-      realtimeNotificationsEnabled:
-          realtimeNotificationsEnabled ?? this.realtimeNotificationsEnabled,
-      notificationSoundEnabled:
-          notificationSoundEnabled ?? this.notificationSoundEnabled,
       appLanguage: appLanguage ?? this.appLanguage,
-      locationEnabled: locationEnabled ?? this.locationEnabled,
-      deviceSecurityEnabled:
-          deviceSecurityEnabled ?? this.deviceSecurityEnabled,
     );
   }
 }
@@ -903,6 +873,44 @@ class FeedbackEntry {
       rating: map['rating'] as int? ?? 0,
       message: map['message'] as String? ?? '',
       createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+    );
+  }
+}
+
+class BorrowedInventoryReport {
+  const BorrowedInventoryReport({
+    required this.inventoryId,
+    required this.name,
+    required this.quantity,
+  });
+
+  final String inventoryId;
+  final String name;
+  final int quantity;
+}
+
+class UserAccountSummary {
+  const UserAccountSummary({
+    required this.id,
+    required this.name,
+    required this.identity,
+    required this.email,
+    required this.role,
+  });
+
+  final String id;
+  final String name;
+  final String identity;
+  final String email;
+  final String role;
+
+  factory UserAccountSummary.fromMap(Map<String, dynamic> map) {
+    return UserAccountSummary(
+      id: map['id'] as String,
+      name: map['nama'] as String? ?? 'Pengguna',
+      identity: map['nim_nip'] as String? ?? '-',
+      email: map['email'] as String? ?? '-',
+      role: map['role'] as String? ?? 'mahasiswa',
     );
   }
 }

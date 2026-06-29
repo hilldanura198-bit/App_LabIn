@@ -285,7 +285,7 @@ class _FacilityDetail extends StatelessWidget {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _UsageStatusChip(status: booking?.status ?? 'available'),
+            _UsageStatusChip(status: booking == null ? 'available' : 'used'),
             _UsageScheduleChip(bookings: bookings),
           ],
         ),
@@ -549,12 +549,13 @@ IconData _statusIcon(String status) {
 
 String _statusLabel(String status) {
   return switch (status) {
+    'used' => 'Terpakai',
     'approved_aslab' => 'status_approved_aslab'.tr(),
     'approved_kalab' => 'status_approved_kalab'.tr(),
     'active' => 'status_active'.tr(),
     'returned' => 'status_returned'.tr(),
     'late' => 'status_late'.tr(),
-    'pending' => 'status_pending'.tr(),
+    'pending' => 'Terpakai',
     'rejected' => 'rejected'.tr(),
     _ => 'available'.tr(),
   };
@@ -911,6 +912,22 @@ class _CampusDenahPreview extends StatelessWidget {
                     ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
                   ),
                   const SizedBox(height: 14),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      DashboardModel.getLocalAssetPath(rooms.first),
+                      height: 260,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, _, _) => Image.asset(
+                        DashboardModel.fallbackAssetPath,
+                        height: 260,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   const _BlueprintLegend(),
                   const SizedBox(height: 12),
                   LayoutBuilder(

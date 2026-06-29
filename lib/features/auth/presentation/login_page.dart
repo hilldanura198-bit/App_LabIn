@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:local_auth/local_auth.dart';
 
 import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,7 +20,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _localAuth = LocalAuthentication();
   bool _obscurePassword = true;
 
   @override
@@ -232,14 +229,6 @@ class _LoginPageState extends State<LoginPage> {
                                                 ? null
                                                 : _startGoogleSso,
                                           ),
-                                          const SizedBox(height: 10),
-                                          _AuthOptionButton(
-                                            icon: Icons.fingerprint_rounded,
-                                            label: 'Masuk dengan Biometrik',
-                                            onPressed: isLoading
-                                                ? null
-                                                : _startBiometricLogin,
-                                          ),
                                           const SizedBox(height: 18),
                                           TextButton(
                                             onPressed: _openRegisterPage,
@@ -301,8 +290,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showAuthMessage(String message) {
-    final isBiometricMessage =
-        message == 'Perangkat ini tidak mendukung fitur biometrik.';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -311,14 +298,9 @@ class _LoginPageState extends State<LoginPage> {
         content: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            gradient: isBiometricMessage
-                ? AppTheme.cyberGradient
-                : LinearGradient(
-                    colors: [
-                      AppTheme.ink,
-                      AppTheme.ink.withValues(alpha: 0.88),
-                    ],
-                  ),
+            gradient: LinearGradient(
+              colors: [AppTheme.ink, AppTheme.ink.withValues(alpha: 0.88)],
+            ),
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -330,12 +312,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           child: Row(
             children: [
-              Icon(
-                isBiometricMessage
-                    ? Icons.fingerprint_rounded
-                    : Icons.info_outline_rounded,
-                color: Colors.white,
-              ),
+              Icon(Icons.info_outline_rounded, color: Colors.white),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -394,106 +371,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       },
-    );
-  }
-
-  Future<void> _startBiometricLogin() async {
-    try {
-      if (kIsWeb) {
-        _showPremiumSnackBar(
-          'Perangkat ini tidak mendukung fitur biometrik.',
-          Icons.fingerprint_rounded,
-        );
-        return;
-      }
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      if (!canCheckBiometrics || !isDeviceSupported) {
-        _showPremiumSnackBar(
-          'Perangkat ini tidak mendukung fitur biometrik.',
-          Icons.fingerprint_rounded,
-        );
-        return;
-      }
-
-      var authenticated = await _localAuth.authenticate(
-        localizedReason: 'Gunakan biometrik untuk masuk ke ${AppBrand.name}.',
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
-      );
-      authenticated =
-          authenticated ||
-          await _localAuth.authenticate(
-            localizedReason:
-                'Biometrik gagal. Gunakan PIN/pola perangkat sebagai cadangan.',
-            biometricOnly: false,
-            persistAcrossBackgrounding: true,
-          );
-      if (!mounted) {
-        return;
-      }
-      if (!authenticated) {
-        _showPremiumSnackBar(
-          'Login biometrik dibatalkan.',
-          Icons.info_outline_rounded,
-        );
-        return;
-      }
-
-      _showPremiumSnackBar(
-        'Biometrik berhasil. Membuka dashboard...',
-        Icons.verified_rounded,
-      );
-      context.read<AuthBloc>().add(
-        const AuthBiometricLoginRequested(alreadyAuthenticated: true),
-      );
-    } on Object catch (_) {
-      if (!mounted) {
-        return;
-      }
-      _showPremiumSnackBar(
-        'Login biometrik gagal. Coba lagi atau gunakan email.',
-        Icons.warning_amber_rounded,
-      );
-    }
-  }
-
-  void _showPremiumSnackBar(String message, IconData icon) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: AppTheme.cyberGradient,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.vibrantPurple.withValues(alpha: 0.22),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

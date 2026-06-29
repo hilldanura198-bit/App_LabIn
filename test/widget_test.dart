@@ -23,6 +23,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Masuk ke LabIn'), findsOneWidget);
-    expect(find.byIcon(Icons.fingerprint_rounded), findsOneWidget);
+    expect(find.text('Email Login'), findsOneWidget);
+    expect(find.text('Masuk dengan Google'), findsOneWidget);
+    expect(find.byIcon(Icons.fingerprint_rounded), findsNothing);
   });
 }

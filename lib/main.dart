@@ -129,7 +129,13 @@ class AuthGate extends StatelessWidget {
             UserRole.aslab => const AslabDashboardPage(),
             UserRole.kalab => const KalabDashboardPage(),
           };
-          return TermsGate(userId: state.userId, child: dashboard);
+          return TermsGate(
+            userId: state.userId,
+            bypassWhenSessionActive:
+                context.read<AuthRepository>().client?.auth.currentSession !=
+                null,
+            child: dashboard,
+          );
         }
 
         final message = state is AuthFailure ? state.message : null;
@@ -140,10 +146,16 @@ class AuthGate extends StatelessWidget {
 }
 
 class TermsGate extends StatefulWidget {
-  const TermsGate({super.key, required this.userId, required this.child});
+  const TermsGate({
+    super.key,
+    required this.userId,
+    required this.child,
+    required this.bypassWhenSessionActive,
+  });
 
   final String userId;
   final Widget child;
+  final bool bypassWhenSessionActive;
 
   @override
   State<TermsGate> createState() => _TermsGateState();
@@ -167,6 +179,9 @@ class _TermsGateState extends State<TermsGate> {
   }
 
   Future<bool> _readAcceptance() async {
+    if (widget.bypassWhenSessionActive) {
+      return true;
+    }
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_termsKey(widget.userId)) ?? false;
   }

@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -38,13 +36,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
-  final _localAuth = LocalAuthentication();
-  bool _biometricEnabled = false;
-  bool _biometricSupported = false;
-  bool _deviceSecurityEnabled = true;
-  bool _locationEnabled = true;
-  bool _realtimeNotifications = true;
-  bool _notificationSound = true;
   bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
@@ -69,7 +60,6 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final biometricSupported = await _canUseBiometricsSafely();
       final profile = await widget.repository.fetchProfileSettings();
       final currentUser = widget.repository.currentUser;
       final metadata = currentUser?.userMetadata ?? const <String, dynamic>{};
@@ -87,17 +77,8 @@ class _SettingsPageState extends State<SettingsPage> {
           .toString()
           .trim();
       final language = prefs.getString('app_language') ?? profile.appLanguage;
-      final locationEnabled =
-          prefs.getBool('feature_location') ?? profile.locationEnabled;
-      final deviceSecurityEnabled = kIsWeb
-          ? true
-          : prefs.getBool('feature_device_security') ??
-                profile.deviceSecurityEnabled;
       setState(() {
         _language = language;
-        _locationEnabled = locationEnabled;
-        _deviceSecurityEnabled = deviceSecurityEnabled;
-        _biometricSupported = kIsWeb ? true : biometricSupported;
         _nameController.text = profile.name.isNotEmpty
             ? profile.name
             : fallbackName;
@@ -111,13 +92,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ? profile.email
             : fallbackEmail;
         _avatarUrl = profile.avatarUrl;
-        _biometricEnabled = kIsWeb
-            ? true
-            : profile.biometricEnabled &&
-                  deviceSecurityEnabled &&
-                  biometricSupported;
-        _realtimeNotifications = profile.realtimeNotificationsEnabled;
-        _notificationSound = profile.notificationSoundEnabled;
         _role = profile.role;
         _loading = false;
       });
@@ -128,18 +102,6 @@ class _SettingsPageState extends State<SettingsPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
-    }
-  }
-
-  Future<bool> _canUseBiometricsSafely() async {
-    try {
-      if (kIsWeb) {
-        return false;
-      }
-      return await _localAuth.canCheckBiometrics ||
-          await _localAuth.isDeviceSupported();
-    } on Object {
-      return false;
     }
   }
 
@@ -201,33 +163,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           _buildMenuCard(
                             context,
                             children: [
-                              _switchTile(
-                                icon: Icons.location_on_outlined,
-                                title: _label('locationFeature'),
-                                subtitle: _label('locationFeatureSubtitle'),
-                                value: _locationEnabled,
-                                onChanged: (value) => _updatePreference(
-                                  () => _locationEnabled = value,
-                                ),
-                              ),
-                              _switchTile(
-                                icon: Icons.verified_user_outlined,
-                                title: _label('deviceSecurity'),
-                                subtitle: _biometricSupported
-                                    ? _label('deviceSecuritySubtitle')
-                                    : _label('biometricUnsupported'),
-                                value: _deviceSecurityEnabled,
-                                onChanged: _biometricSupported
-                                    ? (value) {
-                                        _updatePreference(() {
-                                          _deviceSecurityEnabled = value;
-                                          if (!value) {
-                                            _biometricEnabled = false;
-                                          }
-                                        });
-                                      }
-                                    : null,
-                              ),
                               BlocBuilder<ThemeCubit, ThemeMode>(
                                 builder: (context, mode) {
                                   return _switchTile(
@@ -243,41 +178,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                     },
                                   );
                                 },
-                              ),
-                              _switchTile(
-                                icon: Icons.fingerprint_rounded,
-                                title: _label('biometricLogin'),
-                                subtitle: kIsWeb
-                                    ? _label('biometricWebSubtitle')
-                                    : _label('biometricSubtitle'),
-                                value: _biometricEnabled,
-                                onChanged:
-                                    (_biometricSupported &&
-                                        (_deviceSecurityEnabled || kIsWeb))
-                                    ? (value) => _updatePreference(
-                                        () => _biometricEnabled = value,
-                                      )
-                                    : null,
-                              ),
-                              _switchTile(
-                                icon: Icons.notifications_active_outlined,
-                                title: _label('realtimeNotification'),
-                                subtitle: _label(
-                                  'realtimeNotificationSubtitle',
-                                ),
-                                value: _realtimeNotifications,
-                                onChanged: (value) => _updatePreference(
-                                  () => _realtimeNotifications = value,
-                                ),
-                              ),
-                              _switchTile(
-                                icon: Icons.volume_up_outlined,
-                                title: _label('notificationSound'),
-                                subtitle: _label('notificationSoundSubtitle'),
-                                value: _notificationSound,
-                                onChanged: (value) => _updatePreference(
-                                  () => _notificationSound = value,
-                                ),
                               ),
                             ],
                           ),
@@ -746,11 +646,6 @@ class _SettingsPageState extends State<SettingsPage> {
     ).showSnackBar(SnackBar(content: Text('delete_account_body'.tr())));
   }
 
-  void _updatePreference(VoidCallback update) {
-    setState(update);
-    _persistSettings();
-  }
-
   Future<bool> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return false;
@@ -774,20 +669,10 @@ class _SettingsPageState extends State<SettingsPage> {
           role: _role,
           whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
           avatarUrl: _avatarUrl,
-          biometricEnabled:
-              _biometricEnabled &&
-              _biometricSupported &&
-              _deviceSecurityEnabled,
-          realtimeNotificationsEnabled: _realtimeNotifications,
-          notificationSoundEnabled: _notificationSound,
           appLanguage: _language,
-          locationEnabled: _locationEnabled,
-          deviceSecurityEnabled: _deviceSecurityEnabled,
         ),
       );
       await prefs.setString('app_language', _language);
-      await prefs.setBool('feature_location', _locationEnabled);
-      await prefs.setBool('feature_device_security', _deviceSecurityEnabled);
       if (mounted && showSnackBar) {
         ScaffoldMessenger.of(
           context,
@@ -940,21 +825,8 @@ class _SettingsPageState extends State<SettingsPage> {
       'language': 'Bahasa',
       'changePassword': 'Ganti Password',
       'changePasswordSubtitle': 'Perbarui kata sandi akun',
-      'locationFeature': 'Fitur Lokasi',
-      'locationFeatureSubtitle':
-          'Izinkan lokasi untuk cek reservasi dan akses.',
-      'deviceSecurity': 'Keamanan Perangkat',
-      'deviceSecuritySubtitle': 'Sinkronkan perlindungan perangkat.',
-      'biometricUnsupported': 'Perangkat belum mendukung biometrik.',
       'darkMode': 'Dark Mode',
       'darkModeSubtitle': 'Aktifkan tampilan gelap.',
-      'biometricLogin': 'Biometric Login',
-      'biometricWebSubtitle': 'Aktif via browser session.',
-      'biometricSubtitle': 'Preferensi biometrik lokal.',
-      'realtimeNotification': 'Realtime Notification',
-      'realtimeNotificationSubtitle': 'Update booking dan inventaris instan.',
-      'notificationSound': 'Notification Sound',
-      'notificationSoundSubtitle': 'Suara untuk notifikasi realtime.',
       'logout': 'Keluar Akun',
       'logoutSubtitle': 'Akhiri sesi akun LabIn',
       'deleteAccount': 'Hapus Akun',
@@ -966,21 +838,8 @@ class _SettingsPageState extends State<SettingsPage> {
       'language': 'Language',
       'changePassword': 'Change Password',
       'changePasswordSubtitle': 'Update your account password',
-      'locationFeature': 'Location Feature',
-      'locationFeatureSubtitle':
-          'Allow location for reservation and access checks.',
-      'deviceSecurity': 'Device Security',
-      'deviceSecuritySubtitle': 'Sync device protection.',
-      'biometricUnsupported': 'This device does not support biometrics.',
       'darkMode': 'Dark Mode',
       'darkModeSubtitle': 'Enable dark appearance.',
-      'biometricLogin': 'Biometric Login',
-      'biometricWebSubtitle': 'Enabled via browser session.',
-      'biometricSubtitle': 'Local biometric preference.',
-      'realtimeNotification': 'Realtime Notification',
-      'realtimeNotificationSubtitle': 'Instant booking and inventory updates.',
-      'notificationSound': 'Notification Sound',
-      'notificationSoundSubtitle': 'Sound for realtime notifications.',
       'logout': 'Log Out',
       'logoutSubtitle': 'End your LabIn session',
       'deleteAccount': 'Delete Account',

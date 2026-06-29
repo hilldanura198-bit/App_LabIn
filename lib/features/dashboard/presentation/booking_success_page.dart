@@ -58,7 +58,7 @@ class BookingSuccessPage extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Selamat, pengajuan peminjaman Anda telah sukses!',
+                      'Detail Peminjaman',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
@@ -68,7 +68,7 @@ class BookingSuccessPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Kode Booking: ${booking.reservationNo}',
+                      'Pengajuan berhasil dikirim. Kode booking: ${booking.reservationNo}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.86),
@@ -76,6 +76,8 @@ class BookingSuccessPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 28),
+                    _BookingManifest(booking: booking),
+                    const SizedBox(height: 18),
                     if (_canRenderQr)
                       ElevatedButton.icon(
                         onPressed: () => _showQrTicket(context),
@@ -195,6 +197,76 @@ class BookingSuccessPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BookingManifest extends StatelessWidget {
+  const _BookingManifest({required this.booking});
+
+  final LabBooking booking;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            booking.labDisplayName,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (booking.itemsSnapshot.isEmpty)
+            const Text(
+              'Tidak ada barang tercatat.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white),
+            )
+          else
+            ...booking.itemsSnapshot.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.inventory_2_outlined,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'x${item.quantity}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

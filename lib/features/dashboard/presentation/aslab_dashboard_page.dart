@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -9,6 +10,7 @@ import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'aslab_detail_pengajuan_page.dart';
+import 'history_page.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
@@ -42,6 +44,7 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
   late Future<List<Map<String, dynamic>>> _pendingFuture;
   String _aslabName = 'Aslab';
   bool _initialized = false;
+  int _selectedIndex = 0;
 
   @override
   void didChangeDependencies() {
@@ -128,110 +131,131 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
             ),
           ],
         ),
-        body: BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, state) {
-            final active = state.bookings
-                .where(
-                  (booking) =>
-                      booking.status == 'approved_kalab' ||
-                      booking.status == 'active',
-                )
-                .toList();
-            final repository = DashboardRepository(
-              context.read<AuthRepository>().client,
-            );
-
-            return SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth >= 900
-                      ? 760.0
-                      : constraints.maxWidth;
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            FutureBuilder<List<Map<String, dynamic>>>(
-                              future: _pendingFuture,
-                              builder: (context, snapshot) {
-                                final pending =
-                                    snapshot.data ??
-                                    const <Map<String, dynamic>>[];
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    _AslabHero(
-                                      pendingCount: pending.length,
-                                      activeCount: active.length,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    RoomStockStreamBanner(
-                                      repository: repository,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Daftar Pengajuan Pending',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting)
-                                      const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(28),
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      )
-                                    else if (snapshot.hasError)
-                                      _InfoCard(_friendlyError(snapshot.error))
-                                    else if (pending.isEmpty)
-                                      const _InfoCard(
-                                        'Tidak ada antrean pending.',
-                                      )
-                                    else
-                                      ListView.builder(
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        itemCount: pending.length,
-                                        itemBuilder: (context, index) {
-                                          final booking = pending[index];
-                                          return _ApprovalRequestCard(
-                                            booking: booking,
-                                            onTap: () => _openApprovalDetail(
-                                              context,
-                                              booking,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            _ScannerPrompt(onScan: () => _scanQr(context)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
+        body: _buildBody(),
+        bottomNavigationBar: _AslabBottomNav(
+          selectedIndex: _selectedIndex,
+          onTabChange: (index) => setState(() => _selectedIndex = index),
         ),
       ),
+    );
+  }
+
+  Widget _buildBody() {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    if (_selectedIndex == 1) {
+      return SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(18),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: _ScannerPrompt(onScan: () => _scanQr(context)),
+            ),
+          ),
+        ),
+      );
+    }
+    if (_selectedIndex == 2) {
+      return HistoryPage(
+        repository: repository,
+        role: UserRole.aslab,
+        showAppBar: false,
+      );
+    }
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, state) {
+        final active = state.bookings
+            .where(
+              (booking) =>
+                  booking.status == 'approved_kalab' ||
+                  booking.status == 'active',
+            )
+            .toList();
+        final repository = DashboardRepository(
+          context.read<AuthRepository>().client,
+        );
+
+        return SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth >= 900
+                  ? 760.0
+                  : constraints.maxWidth;
+              return Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _pendingFuture,
+                          builder: (context, snapshot) {
+                            final pending =
+                                snapshot.data ?? const <Map<String, dynamic>>[];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _AslabHero(
+                                  pendingCount: pending.length,
+                                  activeCount: active.length,
+                                ),
+                                const SizedBox(height: 16),
+                                RoomStockStreamBanner(repository: repository),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Daftar Pengajuan Pending',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                                const SizedBox(height: 10),
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(28),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                else if (snapshot.hasError)
+                                  _InfoCard(_friendlyError(snapshot.error))
+                                else if (pending.isEmpty)
+                                  const _InfoCard('Tidak ada antrean pending.')
+                                else
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: pending.length,
+                                    itemBuilder: (context, index) {
+                                      final booking = pending[index];
+                                      return _ApprovalRequestCard(
+                                        booking: booking,
+                                        onTap: () => _openApprovalDetail(
+                                          context,
+                                          booking,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _ScannerPrompt(onScan: () => _scanQr(context)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -258,8 +282,11 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
         isScrollControlled: true,
         builder: (_) => _QrHandoverSheet(
           booking: booking,
-          onConfirm: () async {
-            await repository.confirmItemHandover(rawCode);
+          onConfirm: (condition) async {
+            await repository.confirmItemHandover(
+              rawCode,
+              returnCondition: condition,
+            );
             if (!context.mounted) return;
             context.read<DashboardBloc>().add(
               const DashboardStarted(
@@ -337,11 +364,52 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
   }
 }
 
+class _AslabBottomNav extends StatelessWidget {
+  const _AslabBottomNav({
+    required this.selectedIndex,
+    required this.onTabChange,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onTabChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: GNav(
+              selectedIndex: selectedIndex,
+              onTabChange: onTabChange,
+              gap: 8,
+              tabBorderRadius: 16,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              activeColor: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              tabBackgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.18),
+              tabs: const [
+                GButton(icon: Icons.dashboard_outlined, text: 'Beranda'),
+                GButton(icon: Icons.qr_code_scanner_rounded, text: 'Scan'),
+                GButton(icon: Icons.history_rounded, text: 'Riwayat'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _QrHandoverSheet extends StatefulWidget {
   const _QrHandoverSheet({required this.booking, required this.onConfirm});
 
   final LabBooking booking;
-  final Future<void> Function() onConfirm;
+  final Future<void> Function(String condition) onConfirm;
 
   @override
   State<_QrHandoverSheet> createState() => _QrHandoverSheetState();
@@ -349,6 +417,7 @@ class _QrHandoverSheet extends StatefulWidget {
 
 class _QrHandoverSheetState extends State<_QrHandoverSheet> {
   bool _submitting = false;
+  String _condition = 'bagus';
 
   @override
   Widget build(BuildContext context) {
@@ -418,6 +487,31 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
                     ),
                   ),
                 ),
+              if (isReturn) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _condition,
+                  decoration: const InputDecoration(
+                    labelText: 'Kondisi fisik saat kembali',
+                    prefixIcon: Icon(Icons.health_and_safety_outlined),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'bagus',
+                      child: Text('Layak pakai / bagus'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'rusak',
+                      child: Text('Rusak / perlu tindak lanjut'),
+                    ),
+                  ],
+                  onChanged: _submitting
+                      ? null
+                      : (value) => setState(() {
+                          _condition = value ?? 'bagus';
+                        }),
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: _submitting ? null : _confirm,
@@ -445,7 +539,7 @@ class _QrHandoverSheetState extends State<_QrHandoverSheet> {
   Future<void> _confirm() async {
     try {
       setState(() => _submitting = true);
-      await widget.onConfirm();
+      await widget.onConfirm(_condition);
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);

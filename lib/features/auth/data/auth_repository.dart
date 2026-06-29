@@ -1,23 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/brand.dart';
 import '../bloc/auth_bloc.dart';
-
-class BiometricUnavailableException implements Exception {
-  const BiometricUnavailableException();
-
-  @override
-  String toString() => 'Perangkat ini tidak mendukung fitur biometrik.';
-}
 
 class AuthRepository {
   AuthRepository(this._client);
 
   final SupabaseClient? _client;
-  final LocalAuthentication _localAuth = LocalAuthentication();
 
   SupabaseClient? get client => _client;
 
@@ -125,59 +115,6 @@ class AuthRepository {
       'kalab' => UserRole.kalab,
       _ => throw Exception('Role user tidak dikenali: $role'),
     };
-  }
-
-  Future<String> signInWithBiometricSession({bool skipPrompt = false}) async {
-    try {
-      if (kIsWeb) {
-        throw const BiometricUnavailableException();
-      }
-      final session = _supabase.auth.currentSession;
-      final canAuthenticate = await _canAuthenticateBiometrically();
-      if (!canAuthenticate) {
-        throw const BiometricUnavailableException();
-      }
-      if (session == null || _supabase.auth.currentUser == null) {
-        throw Exception(
-          'Aktifkan sesi Supabase terlebih dahulu sebelum masuk biometrik.',
-        );
-      }
-
-      final authenticated =
-          skipPrompt ||
-          await _localAuth.authenticate(
-            localizedReason:
-                'Gunakan biometrik untuk membuka sesi ${AppBrand.name}',
-            biometricOnly: true,
-            persistAcrossBackgrounding: true,
-          );
-      if (!authenticated) {
-        throw Exception('Autentikasi biometrik dibatalkan.');
-      }
-
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('Belum ada sesi Supabase aktif untuk biometric login.');
-      }
-      return userId;
-    } on BiometricUnavailableException {
-      rethrow;
-    } on Object catch (error) {
-      throw Exception('Login biometrik gagal: $error');
-    }
-  }
-
-  Future<bool> _canAuthenticateBiometrically() async {
-    try {
-      if (kIsWeb) {
-        return false;
-      }
-      final canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      final isDeviceSupported = await _localAuth.isDeviceSupported();
-      return canCheckBiometrics && isDeviceSupported;
-    } on Object {
-      return false;
-    }
   }
 
   Future<void> signOut() async {

@@ -19,6 +19,7 @@ class RoomSchedulePage extends StatefulWidget {
 class _RoomSchedulePageState extends State<RoomSchedulePage> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
+  TimeOfDay _selectedSlot = const TimeOfDay(hour: 9, minute: 0);
   String? _selectedLabId;
   late final Future<List<LabRoom>> _roomsFuture;
 
@@ -43,6 +44,7 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
               builder: (context, scheduleSnapshot) {
                 final bookings = scheduleSnapshot.data ?? const <LabBooking>[];
                 final selectedBookings = _filterBookings(bookings);
+                final availability = _roomAvailability(rooms, bookings);
                 return LayoutBuilder(
                   builder: (context, constraints) {
                     final maxWidth = constraints.maxWidth >= 860
@@ -75,6 +77,14 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                     selectedLabId: _selectedLabId,
                                     onSelected: (labId) {
                                       setState(() => _selectedLabId = labId);
+                                    },
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _AvailabilityPanel(
+                                    slot: _selectedSlot,
+                                    rooms: availability,
+                                    onSlotChanged: (slot) {
+                                      setState(() => _selectedSlot = slot);
                                     },
                                   ),
                                   const SizedBox(height: 18),
@@ -140,6 +150,38 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
     }).toList()..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
     return filtered;
   }
+
+  List<_RoomAvailability> _roomAvailability(
+    List<LabRoom> rooms,
+    List<LabBooking> bookings,
+  ) {
+    final slotStart = DateTime(
+      _selectedDay.year,
+      _selectedDay.month,
+      _selectedDay.day,
+      _selectedSlot.hour,
+      _selectedSlot.minute,
+    );
+    final slotEnd = slotStart.add(const Duration(hours: 1));
+    return rooms.map((room) {
+      final busy = bookings.any((booking) {
+        if (booking.labId != room.id) return false;
+        if (booking.status == 'returned' || booking.status == 'rejected') {
+          return false;
+        }
+        return booking.tanggalPinjam.isBefore(slotEnd) &&
+            booking.tanggalKembali.isAfter(slotStart);
+      });
+      return _RoomAvailability(room: room, isAvailable: !busy);
+    }).toList();
+  }
+}
+
+class _RoomAvailability {
+  const _RoomAvailability({required this.room, required this.isAvailable});
+
+  final LabRoom room;
+  final bool isAvailable;
 }
 
 Color _accentForIndex(int index) {
@@ -273,6 +315,122 @@ class _RoomFilter extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AvailabilityPanel extends StatelessWidget {
+  const _AvailabilityPanel({
+    required this.slot,
+    required this.rooms,
+    required this.onSlotChanged,
+  });
+
+  final TimeOfDay slot;
+  final List<_RoomAvailability> rooms;
+  final ValueChanged<TimeOfDay> onSlotChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final available = rooms.where((item) => item.isAvailable).toList();
+    final busy = rooms.where((item) => !item.isAvailable).toList();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Ketersediaan Slot Ruangan',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: slot,
+                    );
+                    if (picked != null) onSlotChanged(picked);
+                  },
+                  icon: const Icon(Icons.schedule_rounded),
+                  label: Text(slot.format(context)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _AvailabilityWrap(
+              title: 'Kosong',
+              rooms: available,
+              color: AppTheme.deepTeal,
+              icon: Icons.event_available_outlined,
+            ),
+            const SizedBox(height: 10),
+            _AvailabilityWrap(
+              title: 'Terpakai',
+              rooms: busy,
+              color: AppTheme.richBronze,
+              icon: Icons.event_busy_outlined,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AvailabilityWrap extends StatelessWidget {
+  const _AvailabilityWrap({
+    required this.title,
+    required this.rooms,
+    required this.color,
+    required this.icon,
+  });
+
+  final String title;
+  final List<_RoomAvailability> rooms;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        if (rooms.isEmpty)
+          Text(
+            'Tidak ada ruangan.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: rooms
+                .map(
+                  (item) => Chip(
+                    avatar: Icon(icon, size: 16, color: color),
+                    label: Text(item.room.name),
+                    labelStyle: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    backgroundColor: color.withValues(alpha: 0.10),
+                    side: BorderSide(color: color.withValues(alpha: 0.35)),
+                  ),
+                )
+                .toList(),
+          ),
+      ],
     );
   }
 }

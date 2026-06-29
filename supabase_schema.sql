@@ -48,6 +48,7 @@ create table if not exists public.inventories (
   total_stok integer not null default 0,
   stok_tersedia integer not null default 0,
   kondisi text not null default 'bagus',
+  type text not null default 'alat',
   manual_url text,
   image_url text,
   created_at timestamptz not null default now(),
@@ -62,7 +63,8 @@ alter table public.laboratories
   add column if not exists image_url text;
 
 alter table public.inventories
-  add column if not exists image_url text;
+  add column if not exists image_url text,
+  add column if not exists type text not null default 'alat';
 
 alter table public.profiles
   add column if not exists app_language text not null default 'id',
@@ -157,6 +159,19 @@ create table if not exists public.notifications (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.raft_replication_log (
+  id uuid primary key default gen_random_uuid(),
+  term integer not null default 1,
+  log_index bigserial not null unique,
+  entity_table text not null,
+  entity_id text not null,
+  command text not null,
+  payload jsonb not null default '{}'::jsonb,
+  committed boolean not null default true,
+  created_at timestamptz not null default now(),
+  constraint raft_replication_log_term_check check (term > 0)
+);
+
 create index if not exists inventories_lab_id_idx on public.inventories(lab_id);
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
 create index if not exists bookings_lab_id_idx on public.bookings(lab_id);
@@ -174,6 +189,8 @@ create index if not exists feedback_created_at_idx on public.feedback(created_at
 create index if not exists notifications_user_id_idx on public.notifications(user_id);
 create index if not exists notifications_created_at_idx on public.notifications(created_at);
 create index if not exists notifications_is_read_idx on public.notifications(is_read);
+create index if not exists raft_replication_log_entity_idx on public.raft_replication_log(entity_table, entity_id);
+create index if not exists raft_replication_log_committed_idx on public.raft_replication_log(committed);
 
 alter table public.profiles
 add column if not exists email text,
@@ -337,6 +354,7 @@ for each row execute function public.set_updated_at();
 
 alter table public.bookings replica identity full;
 alter table public.inventories replica identity full;
+alter table public.raft_replication_log replica identity full;
 
 do $$
 begin
@@ -370,6 +388,16 @@ begin
       and tablename = 'inventories'
   ) then
     alter publication supabase_realtime add table public.inventories;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'raft_replication_log'
+  ) then
+    alter publication supabase_realtime add table public.raft_replication_log;
   end if;
 end;
 $$;

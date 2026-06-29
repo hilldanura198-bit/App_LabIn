@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/brand.dart';
@@ -9,7 +10,10 @@ import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
+import 'history_page.dart';
 import 'kalab_detail_pengajuan_page.dart';
+import 'room_schedule_page.dart';
+import 'sapras_facility_page.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
@@ -41,6 +45,7 @@ class _KalabDashboardView extends StatefulWidget {
 
 class _KalabDashboardViewState extends State<_KalabDashboardView> {
   late Future<List<Map<String, dynamic>>> _approvalFuture;
+  int _selectedIndex = 0;
 
   @override
   void didChangeDependencies() {
@@ -94,106 +99,115 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
             ),
           ],
         ),
-        body: BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, state) {
-            final repository = DashboardRepository(
-              context.read<AuthRepository>().client,
-            );
-            return SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth >= 940
-                      ? 820.0
-                      : constraints.maxWidth;
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            FutureBuilder<List<Map<String, dynamic>>>(
-                              future: _approvalFuture,
-                              builder: (context, snapshot) {
-                                final approvals =
-                                    snapshot.data ??
-                                    const <Map<String, dynamic>>[];
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    _KalabHero(
-                                      approvalCount: approvals.length,
-                                      criticalCount:
-                                          state.lowStockInventories.length,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    RoomStockStreamBanner(
-                                      repository: repository,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Persetujuan Final Kalab',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting)
-                                      const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(28),
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      )
-                                    else if (snapshot.hasError)
-                                      _InfoCard(snapshot.error.toString())
-                                    else if (approvals.isEmpty)
-                                      const _InfoCard(
-                                        'Belum ada approval Aslab.',
-                                      )
-                                    else
-                                      ListView.builder(
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        itemCount: approvals.length,
-                                        itemBuilder: (context, index) {
-                                          final booking = approvals[index];
-                                          return _KalabApprovalCard(
-                                            booking: booking,
-                                            onTap: () => _openKalabDetail(
-                                              context,
-                                              booking,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            _InventoryAlert(
-                              inventories: state.lowStockInventories,
-                              onScan: () => _scanBarcode(context),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
+        body: _buildBody(),
+        bottomNavigationBar: _KalabBottomNav(
+          selectedIndex: _selectedIndex,
+          onTabChange: (index) => setState(() => _selectedIndex = index),
         ),
       ),
+    );
+  }
+
+  Widget _buildBody() {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    if (_selectedIndex == 1) {
+      return KalabControlPanel(repository: repository);
+    }
+    if (_selectedIndex == 2) {
+      return HistoryPage(
+        repository: repository,
+        role: UserRole.kalab,
+        showAppBar: false,
+      );
+    }
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, state) {
+        final repository = DashboardRepository(
+          context.read<AuthRepository>().client,
+        );
+        return SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth >= 940
+                  ? 820.0
+                  : constraints.maxWidth;
+              return Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _approvalFuture,
+                          builder: (context, snapshot) {
+                            final approvals =
+                                snapshot.data ?? const <Map<String, dynamic>>[];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _KalabHero(
+                                  approvalCount: approvals.length,
+                                  criticalCount:
+                                      state.lowStockInventories.length,
+                                ),
+                                const SizedBox(height: 16),
+                                RoomStockStreamBanner(repository: repository),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Persetujuan Final Kalab',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                                const SizedBox(height: 10),
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(28),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                else if (snapshot.hasError)
+                                  _InfoCard(snapshot.error.toString())
+                                else if (approvals.isEmpty)
+                                  const _InfoCard('Belum ada approval Aslab.')
+                                else
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: approvals.length,
+                                    itemBuilder: (context, index) {
+                                      final booking = approvals[index];
+                                      return _KalabApprovalCard(
+                                        booking: booking,
+                                        onTap: () =>
+                                            _openKalabDetail(context, booking),
+                                      );
+                                    },
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _InventoryAlert(
+                          inventories: state.lowStockInventories,
+                          onScan: () => _scanBarcode(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -249,6 +263,47 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   }
 }
 
+class _KalabBottomNav extends StatelessWidget {
+  const _KalabBottomNav({
+    required this.selectedIndex,
+    required this.onTabChange,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onTabChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: GNav(
+              selectedIndex: selectedIndex,
+              onTabChange: onTabChange,
+              gap: 8,
+              tabBorderRadius: 16,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              activeColor: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              tabBackgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.18),
+              tabs: const [
+                GButton(icon: Icons.dashboard_outlined, text: 'Beranda'),
+                GButton(icon: Icons.admin_panel_settings, text: 'Panel'),
+                GButton(icon: Icons.history_rounded, text: 'Riwayat'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _KalabHero extends StatelessWidget {
   const _KalabHero({required this.approvalCount, required this.criticalCount});
 
@@ -292,6 +347,546 @@ class _KalabHero extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class KalabControlPanel extends StatefulWidget {
+  const KalabControlPanel({super.key, required this.repository});
+
+  final DashboardRepository repository;
+
+  @override
+  State<KalabControlPanel> createState() => _KalabControlPanelState();
+}
+
+class _KalabControlPanelState extends State<KalabControlPanel> {
+  late Future<List<LabRoom>> _roomsFuture;
+  late Future<List<UserAccountSummary>> _usersFuture;
+  late Future<List<BorrowedInventoryReport>> _reportFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  void _refresh() {
+    _roomsFuture = widget.repository.fetchLaboratories();
+    _usersFuture = widget.repository.fetchUserAccounts();
+    _reportFuture = widget.repository.fetchBorrowedInventoryReport();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: RefreshIndicator(
+        onRefresh: () async => setState(_refresh),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 820),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _PanelShortcutGrid(repository: widget.repository),
+                    const SizedBox(height: 16),
+                    _InventoryCreateCard(
+                      roomsFuture: _roomsFuture,
+                      repository: widget.repository,
+                      onSaved: () => setState(_refresh),
+                    ),
+                    const SizedBox(height: 16),
+                    _RoomCreateCard(
+                      repository: widget.repository,
+                      onSaved: () => setState(_refresh),
+                    ),
+                    const SizedBox(height: 16),
+                    _AslabVerificationCard(
+                      usersFuture: _usersFuture,
+                      repository: widget.repository,
+                      onUpdated: () => setState(_refresh),
+                    ),
+                    const SizedBox(height: 16),
+                    _BorrowedReportCard(reportFuture: _reportFuture),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PanelShortcutGrid extends StatelessWidget {
+  const _PanelShortcutGrid({required this.repository});
+
+  final DashboardRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = [
+      (
+        Icons.inventory_2_outlined,
+        'Manajemen Barang',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SaprasFacilityPage(repository: repository),
+          ),
+        ),
+      ),
+      (
+        Icons.meeting_room_outlined,
+        'Reservasi Ruangan',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RoomSchedulePage(repository: repository),
+          ),
+        ),
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 620 ? 2 : 1;
+        return GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: columns == 1 ? 3.8 : 2.6,
+          children: actions.map((action) {
+            return Card(
+              child: InkWell(
+                onTap: action.$3,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(action.$1, color: AppTheme.deepTeal, size: 32),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          action.$2,
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _InventoryCreateCard extends StatefulWidget {
+  const _InventoryCreateCard({
+    required this.roomsFuture,
+    required this.repository,
+    required this.onSaved,
+  });
+
+  final Future<List<LabRoom>> roomsFuture;
+  final DashboardRepository repository;
+  final VoidCallback onSaved;
+
+  @override
+  State<_InventoryCreateCard> createState() => _InventoryCreateCardState();
+}
+
+class _InventoryCreateCardState extends State<_InventoryCreateCard> {
+  final _name = TextEditingController();
+  final _total = TextEditingController(text: '1');
+  final _available = TextEditingController(text: '1');
+  String? _labId;
+  String _type = 'alat';
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _total.dispose();
+    _available.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FutureBuilder<List<LabRoom>>(
+          future: widget.roomsFuture,
+          builder: (context, snapshot) {
+            final rooms = snapshot.data ?? const <LabRoom>[];
+            _labId ??= rooms.isEmpty ? null : rooms.first.id;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Tambah Inventaris',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _name,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama barang/instrumen',
+                    prefixIcon: Icon(Icons.inventory_2_outlined),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: _labId,
+                  decoration: const InputDecoration(labelText: 'Ruangan'),
+                  items: rooms
+                      .map(
+                        (room) => DropdownMenuItem(
+                          value: room.id,
+                          child: Text(room.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() => _labId = value),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _total,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Total'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _available,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Tersedia',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _type,
+                        decoration: const InputDecoration(labelText: 'Jenis'),
+                        items: const [
+                          DropdownMenuItem(value: 'alat', child: Text('Alat')),
+                          DropdownMenuItem(
+                            value: 'ruangan',
+                            child: Text('Prasarana'),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _type = value ?? 'alat'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _saving || _labId == null ? null : _save,
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_rounded),
+                  label: const Text('Simpan Inventaris'),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    try {
+      setState(() => _saving = true);
+      await widget.repository.createInventory(
+        labId: _labId!,
+        name: _name.text,
+        totalStock: int.tryParse(_total.text) ?? 0,
+        availableStock: int.tryParse(_available.text) ?? 0,
+        type: _type,
+      );
+      _name.clear();
+      if (!mounted) return;
+      setState(() => _saving = false);
+      widget.onSaved();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inventaris berhasil ditambahkan.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+}
+
+class _RoomCreateCard extends StatefulWidget {
+  const _RoomCreateCard({required this.repository, required this.onSaved});
+
+  final DashboardRepository repository;
+  final VoidCallback onSaved;
+
+  @override
+  State<_RoomCreateCard> createState() => _RoomCreateCardState();
+}
+
+class _RoomCreateCardState extends State<_RoomCreateCard> {
+  final _name = TextEditingController();
+  final _location = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _location.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Tambah Ruangan Laboratorium',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _name,
+              decoration: const InputDecoration(labelText: 'Nama ruangan'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _location,
+              decoration: const InputDecoration(labelText: 'Lokasi'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _saving ? null : _save,
+              icon: const Icon(Icons.meeting_room_outlined),
+              label: const Text('Simpan Ruangan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    try {
+      setState(() => _saving = true);
+      await widget.repository.createLaboratory(
+        name: _name.text,
+        location: _location.text,
+      );
+      _name.clear();
+      _location.clear();
+      if (!mounted) return;
+      setState(() => _saving = false);
+      widget.onSaved();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ruangan berhasil ditambahkan.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+}
+
+class _AslabVerificationCard extends StatelessWidget {
+  const _AslabVerificationCard({
+    required this.usersFuture,
+    required this.repository,
+    required this.onUpdated,
+  });
+
+  final Future<List<UserAccountSummary>> usersFuture;
+  final DashboardRepository repository;
+  final VoidCallback onUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FutureBuilder<List<UserAccountSummary>>(
+          future: usersFuture,
+          builder: (context, snapshot) {
+            final users = snapshot.data ?? const <UserAccountSummary>[];
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Verifikasi Akun Aslab',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (!snapshot.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (users.isEmpty)
+                  const Text('Belum ada akun pengguna.')
+                else
+                  ...users.map(
+                    (user) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        user.role == 'aslab'
+                            ? Icons.verified_user_outlined
+                            : Icons.person_outline,
+                      ),
+                      title: Text(user.name),
+                      subtitle: Text('${user.identity} | ${user.email}'),
+                      trailing: user.role == 'aslab'
+                          ? const Chip(label: Text('Aslab'))
+                          : user.role == 'kalab'
+                          ? const Chip(label: Text('Kalab'))
+                          : FilledButton(
+                              onPressed: () async {
+                                await repository.verifyAslabAccount(user.id);
+                                onUpdated();
+                              },
+                              child: const Text('Jadikan Aslab'),
+                            ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _BorrowedReportCard extends StatelessWidget {
+  const _BorrowedReportCard({required this.reportFuture});
+
+  final Future<List<BorrowedInventoryReport>> reportFuture;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FutureBuilder<List<BorrowedInventoryReport>>(
+          future: reportFuture,
+          builder: (context, snapshot) {
+            final rows = snapshot.data ?? const <BorrowedInventoryReport>[];
+            final max = rows.isEmpty ? 1 : rows.first.quantity;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Laporan Barang Dipinjam',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Ekspor ringkasan',
+                      onPressed: rows.isEmpty
+                          ? null
+                          : () {
+                              final text = rows
+                                  .map((row) => '${row.name},${row.quantity}')
+                                  .join('\n');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('CSV siap: $text')),
+                              );
+                            },
+                      icon: const Icon(Icons.ios_share_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (!snapshot.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (rows.isEmpty)
+                  const Text('Tidak ada barang yang sedang dipinjam.')
+                else
+                  ...rows.map(
+                    (row) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  row.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '${row.quantity}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          LinearProgressIndicator(
+                            value: row.quantity / max,
+                            minHeight: 10,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
