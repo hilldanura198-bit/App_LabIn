@@ -37,6 +37,7 @@ class LabInventory {
 
   factory LabInventory.fromMap(Map<String, dynamic> map) {
     final name = map['nama_alat'] as String? ?? 'Alat Lab';
+    final remoteImage = map['image_url'] as String?;
     return LabInventory(
       id: map['id'] as String,
       labId: map['lab_id'] as String,
@@ -47,7 +48,9 @@ class LabInventory {
       kondisi: map['kondisi'] as String? ?? 'bagus',
       type: map['type'] as String? ?? map['jenis'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
-      imageUrl: getLocalAssetPath(name),
+      imageUrl: remoteImage == null || remoteImage.trim().isEmpty
+          ? getLocalAssetPath(name)
+          : remoteImage,
     );
   }
 
@@ -250,10 +253,11 @@ class LabBooking {
   String get statusLabel {
     return switch (status) {
       'pending' => 'Pending',
-      'approved_aslab' || 'approved_kalab' => 'Approved',
-      'active' => 'Active',
+      'approved_aslab' => 'ACC Aslab',
+      'approved_kalab' => 'ACC Kalab',
+      'active' => 'Digunakan',
       'rejected' => 'Ditolak',
-      'returned' => 'Selesai',
+      'returned' => 'Dikembalikan',
       'late' => 'Terlambat',
       _ => status,
     };
@@ -334,12 +338,16 @@ class LabRoom {
 
   factory LabRoom.fromMap(Map<String, dynamic> map) {
     final name = map['nama_lab'] as String? ?? 'Ruang Lab';
+    final remoteImage =
+        map['image_url'] as String? ?? map['foto_url'] as String?;
     return LabRoom(
       id: map['id'] as String,
       name: name,
       location: map['lokasi'] as String? ?? '-',
       status: map['status_operasional'] as String? ?? 'aktif',
-      imageUrl: DashboardModel.getLocalAssetPath(name),
+      imageUrl: remoteImage == null || remoteImage.trim().isEmpty
+          ? DashboardModel.getLocalAssetPath(name)
+          : remoteImage,
     );
   }
 }
@@ -737,6 +745,7 @@ class ProfileSettings {
     required this.nimNip,
     required this.email,
     required this.role,
+    required this.programStudi,
     required this.whatsappNumber,
     required this.avatarUrl,
     required this.appLanguage,
@@ -746,6 +755,7 @@ class ProfileSettings {
   final String nimNip;
   final String email;
   final String role;
+  final String programStudi;
   final String whatsappNumber;
   final String? avatarUrl;
   final String appLanguage;
@@ -756,6 +766,7 @@ class ProfileSettings {
       nimNip: map['nim_nip'] as String? ?? '',
       email: map['email'] as String? ?? '',
       role: map['role'] as String? ?? 'mahasiswa',
+      programStudi: map['program_studi'] as String? ?? '',
       whatsappNumber: map['whatsapp_number'] as String? ?? '',
       avatarUrl: map['avatar_url'] as String?,
       appLanguage: map['app_language'] as String? ?? 'id',
@@ -767,6 +778,7 @@ class ProfileSettings {
     String? nimNip,
     String? email,
     String? role,
+    String? programStudi,
     String? whatsappNumber,
     String? avatarUrl,
     String? appLanguage,
@@ -776,6 +788,7 @@ class ProfileSettings {
       nimNip: nimNip ?? this.nimNip,
       email: email ?? this.email,
       role: role ?? this.role,
+      programStudi: programStudi ?? this.programStudi,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       appLanguage: appLanguage ?? this.appLanguage,
@@ -911,6 +924,43 @@ class UserAccountSummary {
       identity: map['nim_nip'] as String? ?? '-',
       email: map['email'] as String? ?? '-',
       role: map['role'] as String? ?? 'mahasiswa',
+    );
+  }
+}
+
+class DailyBorrowerReport {
+  const DailyBorrowerReport({
+    required this.bookingId,
+    required this.reservationNo,
+    required this.borrowerName,
+    required this.identity,
+    required this.labName,
+    required this.status,
+    required this.items,
+    required this.borrowedAt,
+  });
+
+  final String bookingId;
+  final String reservationNo;
+  final String borrowerName;
+  final String identity;
+  final String labName;
+  final String status;
+  final List<BookingSnapshotItem> items;
+  final DateTime borrowedAt;
+
+  int get totalQuantity => items.fold(0, (sum, item) => sum + item.quantity);
+
+  factory DailyBorrowerReport.fromBooking(LabBooking booking) {
+    return DailyBorrowerReport(
+      bookingId: booking.id,
+      reservationNo: booking.reservationNo,
+      borrowerName: booking.borrowerName,
+      identity: booking.borrowerIdentity ?? '-',
+      labName: booking.labDisplayName,
+      status: booking.statusLabel,
+      items: booking.itemsSnapshot,
+      borrowedAt: booking.tanggalPinjam,
     );
   }
 }

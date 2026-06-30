@@ -611,7 +611,40 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _logout() {
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+          title: Text('logout_confirm_title'.tr()),
+          content: Text('logout_confirm_body'.tr()),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text('cancel'.tr()),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text('logout_confirm_action'.tr()),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
     if (widget.showAppBar && Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -623,16 +656,21 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('delete_account'.tr()),
-          content: Text('delete_account_body'.tr()),
+          icon: const Icon(
+            Icons.delete_outline_rounded,
+            color: Colors.redAccent,
+          ),
+          title: Text('delete_account_confirm_title'.tr()),
+          content: Text('delete_account_confirm_body'.tr()),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text('cancel'.tr()),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text('submit'.tr()),
+              child: Text('delete_account_confirm_action'.tr()),
             ),
           ],
         );
@@ -667,6 +705,7 @@ class _SettingsPageState extends State<SettingsPage> {
           nimNip: _nimController.text,
           email: _emailController.text,
           role: _role,
+          programStudi: '',
           whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
           avatarUrl: _avatarUrl,
           appLanguage: _language,

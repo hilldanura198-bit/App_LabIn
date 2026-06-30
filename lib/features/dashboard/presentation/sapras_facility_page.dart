@@ -112,7 +112,7 @@ class _FacilityList extends StatelessWidget {
                       builder: (context, constraints) {
                         final compact = constraints.maxWidth < 620;
                         final image = _FacilityImage(
-                          assetName: item.namaAlat,
+                          assetName: item.imageUrl ?? item.namaAlat,
                           height: compact ? 150 : 112,
                           fallbackIcon: Icons.inventory_2_rounded,
                         );
@@ -207,7 +207,7 @@ class _FacilityList extends StatelessWidget {
       builder: (_) => _ImageDialog(
         title: item.namaAlat.capitalize(),
         subtitle: 'Kode aset dan dokumentasi visual sarana.',
-        imageUrl: item.namaAlat,
+        imageUrl: item.imageUrl ?? item.namaAlat,
         booking: booking,
         icon: Icons.inventory_2_rounded,
       ),
@@ -279,16 +279,10 @@ class _FacilityDetail extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            _UsageStatusChip(status: booking == null ? 'available' : 'used'),
-            _UsageScheduleChip(bookings: bookings),
-          ],
-        ),
+        if (bookings.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _UsageScheduleChip(bookings: bookings),
+        ],
       ],
     );
   }
@@ -403,6 +397,16 @@ class _RealtimeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (assetName.startsWith('http://') || assetName.startsWith('https://')) {
+      return Image.network(
+        assetName,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, _, _) =>
+            _ImagePlaceholder(height: height, icon: fallbackIcon),
+      );
+    }
     return Image.asset(
       DashboardModel.getLocalAssetPath(assetName),
       height: height,
@@ -503,8 +507,8 @@ class _UsageScheduleChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: bookings.map((booking) {
-          final start = _timeLabel(booking.tanggalPinjam);
-          final end = _timeLabel(booking.tanggalKembali);
+          final start = _timeLabel(booking.tanggalPinjam, booking.startTime);
+          final end = _timeLabel(booking.tanggalKembali, booking.endTime);
           final label = start == end || (start == '00:00' && end == '00:00')
               ? 'operational_fallback'.tr()
               : '$start-$end';
@@ -523,7 +527,12 @@ class _UsageScheduleChip extends StatelessWidget {
     );
   }
 
-  String _timeLabel(DateTime value) {
+  String _timeLabel(DateTime value, String storedTime) {
+    final normalized = storedTime.trim();
+    if (RegExp(r'^\d{2}:\d{2}$').hasMatch(normalized) &&
+        normalized != '00:00') {
+      return normalized;
+    }
     return '${_twoDigits(value.hour)}:${_twoDigits(value.minute)}';
   }
 }
@@ -1528,8 +1537,12 @@ class _ReviewSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 380;
+    final iconBox = compact ? 58.0 : 66.0;
+    final iconSize = compact ? 38.0 : 46.0;
+    final scoreSize = compact ? 26.0 : 30.0;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(compact ? 16 : 18),
       decoration: BoxDecoration(
         gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(24),
@@ -1546,17 +1559,17 @@ class _ReviewSummaryCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 74,
-            height: 74,
+            width: iconBox,
+            height: iconBox,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.star_rounded,
               color: Color(0xFFFFD166),
-              size: 52,
+              size: iconSize,
             ),
           ),
           const SizedBox(width: 16),
@@ -1574,9 +1587,9 @@ class _ReviewSummaryCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${average.toStringAsFixed(1)}/5',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 34,
+                    fontSize: scoreSize,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -1801,8 +1814,12 @@ class _SatisfactionSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 380;
+    final iconBox = compact ? 58.0 : 66.0;
+    final iconSize = compact ? 38.0 : 46.0;
+    final scoreSize = compact ? 26.0 : 30.0;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(compact ? 16 : 18),
       decoration: BoxDecoration(
         gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(24),
@@ -1819,17 +1836,17 @@ class _SatisfactionSummaryCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 76,
-            height: 76,
+            width: iconBox,
+            height: iconBox,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.star_rounded,
               color: Color(0xFFFFD166),
-              size: 54,
+              size: iconSize,
             ),
           ),
           const SizedBox(width: 16),
@@ -1845,11 +1862,11 @@ class _SatisfactionSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   '4.8/5',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 34,
+                    fontSize: scoreSize,
                     fontWeight: FontWeight.w900,
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/brand.dart';
@@ -47,9 +48,7 @@ class DashboardShell extends StatelessWidget {
         actions: [
           HeaderActionButton(
             tooltip: 'Keluar',
-            onPressed: () {
-              context.read<AuthBloc>().add(const AuthLogoutRequested());
-            },
+            onPressed: () => _confirmLogout(context),
             icon: const Icon(Icons.logout_rounded),
           ),
         ],
@@ -109,6 +108,42 @@ class DashboardShell extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+          title: Text('logout_confirm_title'.tr()),
+          content: Text('logout_confirm_body'.tr()),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text('cancel'.tr()),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text('logout_confirm_action'.tr()),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<AuthBloc>().add(const AuthLogoutRequested());
+    }
   }
 }
 

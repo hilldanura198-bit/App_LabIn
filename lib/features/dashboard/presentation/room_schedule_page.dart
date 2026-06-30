@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/lab_catalog.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
@@ -26,7 +27,27 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
   @override
   void initState() {
     super.initState();
-    _roomsFuture = widget.repository.fetchLaboratories();
+    _roomsFuture = _loadRooms();
+  }
+
+  Future<List<LabRoom>> _loadRooms() async {
+    try {
+      final rooms = await widget.repository.fetchLaboratories();
+      if (rooms.isNotEmpty) return rooms;
+    } on Object {
+      // Keep the weekly calendar accessible when the backend room table is not
+      // reachable or still using seed data.
+    }
+    return AppLabCatalog.labs
+        .map(
+          (lab) => LabRoom(
+            id: lab.id,
+            name: lab.name,
+            location: lab.location,
+            status: 'aktif',
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -37,11 +58,20 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
         child: FutureBuilder<List<LabRoom>>(
           future: _roomsFuture,
           builder: (context, roomSnapshot) {
+            if (roomSnapshot.hasError) {
+              return Center(child: Text(roomSnapshot.error.toString()));
+            }
+            if (!roomSnapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
             final rooms = roomSnapshot.data ?? const <LabRoom>[];
             final roomNames = {for (final room in rooms) room.id: room.name};
             return StreamBuilder<List<LabBooking>>(
               stream: widget.repository.watchRoomSchedule(),
               builder: (context, scheduleSnapshot) {
+                if (scheduleSnapshot.hasError) {
+                  return Center(child: Text(scheduleSnapshot.error.toString()));
+                }
                 final bookings = scheduleSnapshot.data ?? const <LabBooking>[];
                 final selectedBookings = _filterBookings(bookings);
                 final availability = _roomAvailability(rooms, bookings);

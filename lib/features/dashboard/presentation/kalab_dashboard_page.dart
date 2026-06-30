@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/brand.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../core/brand.dart';
+import '../../../core/lab_catalog.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'history_page.dart';
+import 'kalab_daily_report_page.dart';
 import 'kalab_detail_pengajuan_page.dart';
+import 'kalab_inventory_crud_page.dart';
+import 'kalab_user_management_page.dart';
 import 'room_schedule_page.dart';
-import 'sapras_facility_page.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
@@ -433,10 +437,19 @@ class _PanelShortcutGrid extends StatelessWidget {
     final actions = [
       (
         Icons.inventory_2_outlined,
-        'Manajemen Barang',
+        'CRUD Sarpras',
         () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => SaprasFacilityPage(repository: repository),
+            builder: (_) => KalabInventoryCrudPage(repository: repository),
+          ),
+        ),
+      ),
+      (
+        Icons.manage_accounts_outlined,
+        'Kontrol User',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KalabUserManagementPage(repository: repository),
           ),
         ),
       ),
@@ -446,6 +459,15 @@ class _PanelShortcutGrid extends StatelessWidget {
         () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => RoomSchedulePage(repository: repository),
+          ),
+        ),
+      ),
+      (
+        Icons.analytics_outlined,
+        'Laporan Peminjaman',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KalabDailyReportPage(repository: repository),
           ),
         ),
       ),
@@ -509,8 +531,10 @@ class _InventoryCreateCardState extends State<_InventoryCreateCard> {
   final _name = TextEditingController();
   final _total = TextEditingController(text: '1');
   final _available = TextEditingController(text: '1');
+  final _picker = ImagePicker();
   String? _labId;
   String _type = 'alat';
+  XFile? _image;
   bool _saving = false;
 
   @override
@@ -563,42 +587,65 @@ class _InventoryCreateCardState extends State<_InventoryCreateCard> {
                   onChanged: (value) => setState(() => _labId = value),
                 ),
                 const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _total,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Total'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _available,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Tersedia',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _type,
-                        decoration: const InputDecoration(labelText: 'Jenis'),
-                        items: const [
-                          DropdownMenuItem(value: 'alat', child: Text('Alat')),
-                          DropdownMenuItem(
-                            value: 'ruangan',
-                            child: Text('Prasarana'),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final fieldWidth = constraints.maxWidth >= 760
+                        ? (constraints.maxWidth - 20) / 3
+                        : constraints.maxWidth;
+                    return Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        SizedBox(
+                          width: fieldWidth,
+                          child: TextField(
+                            controller: _total,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Total',
+                            ),
                           ),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => _type = value ?? 'alat'),
-                      ),
-                    ),
-                  ],
+                        ),
+                        SizedBox(
+                          width: fieldWidth,
+                          child: TextField(
+                            controller: _available,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Tersedia',
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: fieldWidth,
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _type,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Jenis',
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'alat',
+                                child: Text('Alat'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'ruangan',
+                                child: Text('Ruangan Laboratorium'),
+                              ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _type = value ?? 'alat'),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                _InventoryImagePickerButton(
+                  imageName: _image?.name,
+                  onPick: _pickImage,
                 ),
                 const SizedBox(height: 12),
                 FilledButton.icon(
@@ -619,6 +666,17 @@ class _InventoryCreateCardState extends State<_InventoryCreateCard> {
     );
   }
 
+  Future<void> _pickImage() async {
+    final image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 78,
+      maxWidth: 1280,
+    );
+    if (image != null) {
+      setState(() => _image = image);
+    }
+  }
+
   Future<void> _save() async {
     try {
       setState(() => _saving = true);
@@ -628,10 +686,14 @@ class _InventoryCreateCardState extends State<_InventoryCreateCard> {
         totalStock: int.tryParse(_total.text) ?? 0,
         availableStock: int.tryParse(_available.text) ?? 0,
         type: _type,
+        image: _image,
       );
       _name.clear();
       if (!mounted) return;
-      setState(() => _saving = false);
+      setState(() {
+        _saving = false;
+        _image = null;
+      });
       widget.onSaved();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Inventaris berhasil ditambahkan.')),
@@ -648,6 +710,63 @@ class _InventoryCreateCardState extends State<_InventoryCreateCard> {
   }
 }
 
+class _InventoryImagePickerButton extends StatelessWidget {
+  const _InventoryImagePickerButton({
+    required this.imageName,
+    required this.onPick,
+  });
+
+  final String? imageName;
+  final VoidCallback onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onPick,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: scheme.primary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.primary.withValues(alpha: 0.24)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.add_photo_alternate_outlined,
+                color: scheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                imageName == null
+                    ? 'Tambah Gambar Barang'
+                    : 'Gambar dipilih: $imageName',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RoomCreateCard extends StatefulWidget {
   const _RoomCreateCard({required this.repository, required this.onSaved});
 
@@ -660,13 +779,25 @@ class _RoomCreateCard extends StatefulWidget {
 
 class _RoomCreateCardState extends State<_RoomCreateCard> {
   final _name = TextEditingController();
-  final _location = TextEditingController();
+  late String _location;
   bool _saving = false;
+
+  static final _locationOptions = <String>{
+    for (final lab in AppLabCatalog.labs) lab.location,
+    'Gedung Rektorat Lt. 1',
+    'Gedung Rektorat Lt. 2',
+    'Area Luar Ruangan',
+  }.toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _location = _locationOptions.first;
+  }
 
   @override
   void dispose() {
     _name.dispose();
-    _location.dispose();
     super.dispose();
   }
 
@@ -690,9 +821,20 @@ class _RoomCreateCardState extends State<_RoomCreateCard> {
               decoration: const InputDecoration(labelText: 'Nama ruangan'),
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: _location,
+            DropdownButtonFormField<String>(
+              initialValue: _location,
               decoration: const InputDecoration(labelText: 'Lokasi'),
+              items: _locationOptions
+                  .map(
+                    (location) => DropdownMenuItem(
+                      value: location,
+                      child: Text(location),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() {
+                _location = value ?? _locationOptions.first;
+              }),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -711,10 +853,10 @@ class _RoomCreateCardState extends State<_RoomCreateCard> {
       setState(() => _saving = true);
       await widget.repository.createLaboratory(
         name: _name.text,
-        location: _location.text,
+        location: _location,
       );
       _name.clear();
-      _location.clear();
+      _location = _locationOptions.first;
       if (!mounted) return;
       setState(() => _saving = false);
       widget.onSaved();

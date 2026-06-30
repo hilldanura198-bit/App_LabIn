@@ -23,6 +23,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
   final _stepTwoKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
+  final _nimController = TextEditingController();
+  final _programStudiController = TextEditingController();
   final _waController = TextEditingController();
   final _purposeController = TextEditingController();
   final _otherItemsController = TextEditingController();
@@ -35,6 +37,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
   int _step = 0;
   bool _loading = true;
   bool _submitting = false;
+  bool _borrowForSelf = true;
+  ProfileSettings? _activeProfile;
 
   List<LabInventory> _inventories = const [];
   String? _selectedFacultyCode;
@@ -86,6 +90,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
     ).first.id;
     for (final controller in [
       _nameController,
+      _nimController,
+      _programStudiController,
       _waController,
       _purposeController,
       _otherItemsController,
@@ -104,6 +110,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
   void dispose() {
     for (final controller in [
       _nameController,
+      _nimController,
+      _programStudiController,
       _waController,
       _purposeController,
       _otherItemsController,
@@ -116,6 +124,8 @@ class _BookingFormPageState extends State<BookingFormPage> {
       controller.removeListener(_handleTextChange);
     }
     _nameController.dispose();
+    _nimController.dispose();
+    _programStudiController.dispose();
     _waController.dispose();
     _purposeController.dispose();
     _otherItemsController.dispose();
@@ -309,10 +319,48 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                               spacing: 14,
                                               runSpacing: 14,
                                               children: [
+                                                SizedBox(
+                                                  width:
+                                                      constraints.maxWidth >=
+                                                          720
+                                                      ? constraints.maxWidth
+                                                      : double.infinity,
+                                                  child: SegmentedButton<bool>(
+                                                    segments: const [
+                                                      ButtonSegment<bool>(
+                                                        value: true,
+                                                        icon: Icon(
+                                                          Icons
+                                                              .account_circle_outlined,
+                                                        ),
+                                                        label: Text(
+                                                          'Atas Nama Diri Sendiri',
+                                                        ),
+                                                      ),
+                                                      ButtonSegment<bool>(
+                                                        value: false,
+                                                        icon: Icon(
+                                                          Icons
+                                                              .supervisor_account_outlined,
+                                                        ),
+                                                        label: Text(
+                                                          'Atas Nama Orang Lain',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    selected: {_borrowForSelf},
+                                                    onSelectionChanged:
+                                                        (selected) =>
+                                                            _setBorrowerDelegation(
+                                                              selected.first,
+                                                            ),
+                                                  ),
+                                                ),
                                                 _fieldBox(
                                                   context: context,
                                                   child: TextFormField(
                                                     controller: _nameController,
+                                                    readOnly: _borrowForSelf,
                                                     textInputAction:
                                                         TextInputAction.next,
                                                     autovalidateMode:
@@ -341,7 +389,41 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                 _fieldBox(
                                                   context: context,
                                                   child: TextFormField(
+                                                    controller: _nimController,
+                                                    readOnly: true,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                          labelText:
+                                                              'NIM / NIP',
+                                                          prefixIcon: Icon(
+                                                            Icons
+                                                                .badge_outlined,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        _programStudiController,
+                                                    readOnly: true,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                          labelText:
+                                                              'Program Studi',
+                                                          prefixIcon: Icon(
+                                                            Icons
+                                                                .school_outlined,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ),
+                                                _fieldBox(
+                                                  context: context,
+                                                  child: TextFormField(
                                                     controller: _waController,
+                                                    readOnly: _borrowForSelf,
                                                     keyboardType:
                                                         TextInputType.phone,
                                                     autovalidateMode:
@@ -951,8 +1033,15 @@ class _BookingFormPageState extends State<BookingFormPage> {
 
   Future<void> _load() async {
     try {
-      final inventories = await widget.repository.watchInventories().first;
+      final results = await Future.wait<Object>([
+        widget.repository.watchInventories().first,
+        widget.repository.fetchProfileSettings(),
+      ]);
+      final inventories = results[0] as List<LabInventory>;
+      final profile = results[1] as ProfileSettings;
       if (!mounted) return;
+      _activeProfile = profile;
+      _applyProfileAutofill();
       setState(() {
         _inventories = inventories;
         _loading = false;
@@ -964,6 +1053,29 @@ class _BookingFormPageState extends State<BookingFormPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  void _setBorrowerDelegation(bool forSelf) {
+    setState(() {
+      _borrowForSelf = forSelf;
+      if (forSelf) {
+        _applyProfileAutofill();
+      } else {
+        _nameController.clear();
+        _nimController.clear();
+        _programStudiController.clear();
+        _waController.clear();
+      }
+    });
+  }
+
+  void _applyProfileAutofill() {
+    final profile = _activeProfile;
+    if (profile == null) return;
+    _nameController.text = profile.name;
+    _nimController.text = profile.nimNip;
+    _programStudiController.text = profile.programStudi;
+    _waController.text = profile.whatsappNumber;
   }
 
   Future<void> _handleStepContinue() async {

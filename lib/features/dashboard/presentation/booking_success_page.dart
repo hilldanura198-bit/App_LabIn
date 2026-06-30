@@ -58,7 +58,7 @@ class BookingSuccessPage extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Detail Peminjaman',
+                      'Permintaan Checkout',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
@@ -68,7 +68,7 @@ class BookingSuccessPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Pengajuan berhasil dikirim. Kode booking: ${booking.reservationNo}',
+                      'Rangkuman detail pengajuan berhasil dikirim. Kode booking: ${booking.reservationNo}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.86),
@@ -95,7 +95,7 @@ class BookingSuccessPage extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          'QR Code muncul setelah di-ACC Kepala Lab',
+                          'QR Code resmi muncul setelah status ACC Aslab dan ACC Kalab.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -136,7 +136,7 @@ class BookingSuccessPage extends StatelessWidget {
     if (!_canRenderQr) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('QR Code muncul setelah di-ACC Kepala Lab'),
+          content: Text('QR Code muncul setelah ACC Aslab dan ACC Kalab.'),
         ),
       );
       return;

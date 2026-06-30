@@ -138,11 +138,21 @@ class DashboardRepository {
   }
 
   Future<List<LabRoom>> fetchLaboratories() async {
-    final rows = await _supabase
-        .from('laboratories')
-        .select('id,nama_lab,lokasi,status_operasional,foto_url')
-        .order('nama_lab');
-    return rows.map(LabRoom.fromMap).toList();
+    List<dynamic> rows;
+    try {
+      rows = await _supabase
+          .from('laboratories')
+          .select('id,nama_lab,lokasi,status_operasional,image_url')
+          .order('nama_lab');
+    } on Object {
+      rows = await _supabase
+          .from('laboratories')
+          .select('id,nama_lab,lokasi,status_operasional,foto_url')
+          .order('nama_lab');
+    }
+    return rows
+        .map((row) => LabRoom.fromMap(Map<String, dynamic>.from(row as Map)))
+        .toList();
   }
 
   Future<List<LabInventory>> searchInventories(String query) async {
@@ -451,11 +461,21 @@ class DashboardRepository {
   }
 
   Stream<List<LabBooking>> watchRoomSchedule() {
+    final now = DateTime.now();
     return _supabase
         .from('bookings')
         .stream(primaryKey: ['id'])
         .order('tanggal_pinjam')
-        .map((rows) => rows.map(LabBooking.fromMap).toList());
+        .map(
+          (rows) => rows
+              .map(LabBooking.fromMap)
+              .where(
+                (booking) => booking.tanggalKembali.isAfter(
+                  now.subtract(const Duration(days: 30)),
+                ),
+              )
+              .toList(),
+        );
   }
 
   Future<ProfileSettings> fetchProfileSettings() async {
@@ -466,11 +486,25 @@ class DashboardRepository {
     final row = await _supabase
         .from('profiles')
         .select(
-          'nama,nim_nip,email,role,whatsapp_number,avatar_url,app_language',
+          'nama,nim_nip,email,role,program_studi,whatsapp_number,avatar_url,app_language',
         )
         .eq('id', userId)
-        .single();
-    return ProfileSettings.fromMap(row);
+        .maybeSingle();
+    if (row != null) {
+      return ProfileSettings.fromMap(row);
+    }
+    final user = currentUser;
+    final metadata = user?.userMetadata ?? const <String, dynamic>{};
+    return ProfileSettings(
+      name: (metadata['nama'] ?? metadata['name'] ?? 'Pengguna').toString(),
+      nimNip: (metadata['nim_nip'] ?? metadata['nim'] ?? '-').toString(),
+      email: user?.email ?? '',
+      role: 'mahasiswa',
+      programStudi: (metadata['program_studi'] ?? '').toString(),
+      whatsappNumber: (metadata['whatsapp_number'] ?? '').toString(),
+      avatarUrl: null,
+      appLanguage: 'id',
+    );
   }
 
   Future<void> updateProfile(ProfileSettings settings) {
@@ -482,17 +516,20 @@ class DashboardRepository {
     if (userId == null) {
       throw Exception('User belum login.');
     }
-    await _supabase
-        .from('profiles')
-        .update({
-          'nama': settings.name.trim(),
-          'nim_nip': settings.nimNip.trim(),
-          'email': settings.email.trim(),
-          'whatsapp_number': settings.whatsappNumber.trim(),
-          'avatar_url': settings.avatarUrl,
-          'app_language': settings.appLanguage,
-        })
-        .eq('id', userId);
+    final payload = {
+      'id': userId,
+      'nama': settings.name.trim(),
+      'nim_nip': settings.nimNip.trim(),
+      'email': settings.email.trim(),
+      'role': settings.role.trim().isEmpty ? 'mahasiswa' : settings.role,
+      'whatsapp_number': settings.whatsappNumber.trim(),
+      'avatar_url': settings.avatarUrl,
+      'app_language': settings.appLanguage,
+    };
+    if (settings.programStudi.trim().isNotEmpty) {
+      payload['program_studi'] = settings.programStudi.trim();
+    }
+    await _supabase.from('profiles').upsert(payload);
     await _insertNotification(
       userId: userId,
       title: 'Profil diperbarui',
@@ -505,6 +542,26 @@ class DashboardRepository {
 
   Future<String> uploadAvatar(XFile image) async {
     return ProfileRepository(_client).uploadProfilePicture(image);
+  }
+
+  Future<String> uploadSarprasImage(XFile image) async {
+    final userId = currentUserId ?? 'kalab';
+    final extension = image.name.split('.').last.toLowerCase();
+    final safeExtension = extension.isEmpty ? 'jpg' : extension;
+    final path =
+        '$userId/sarpras-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
+    final bytes = await image.readAsBytes();
+    await _supabase.storage
+        .from('sarpras-media')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: image.mimeType ?? 'image/$safeExtension',
+          ),
+        );
+    return _supabase.storage.from('sarpras-media').getPublicUrl(path);
   }
 
   Future<void> updatePassword(String password) async {
@@ -854,6 +911,7 @@ class DashboardRepository {
     required int availableStock,
     required String type,
     String? manualUrl,
+    XFile? image,
   }) async {
     if (name.trim().isEmpty) {
       throw Exception('Nama inventaris wajib diisi.');
@@ -861,6 +919,7 @@ class DashboardRepository {
     if (totalStock < 0 || availableStock < 0 || availableStock > totalStock) {
       throw Exception('Jumlah stok tidak valid.');
     }
+    final imageUrl = image == null ? null : await uploadSarprasImage(image);
     await _supabase.from('inventories').insert({
       'lab_id': labId,
       'nama_alat': name.trim(),
@@ -869,21 +928,37 @@ class DashboardRepository {
       'kondisi': 'bagus',
       'type': type.trim().isEmpty ? 'alat' : type.trim(),
       'manual_url': _optionalTrimmed(manualUrl),
+      'image_url': imageUrl,
     });
+    await _appendConsensusLog(
+      entityTable: 'inventories',
+      entityId: name.trim(),
+      command: 'create_inventory',
+      payload: {'lab_id': labId, 'type': type, 'total_stok': totalStock},
+    );
   }
 
   Future<void> createLaboratory({
     required String name,
     required String location,
+    XFile? image,
   }) async {
     if (name.trim().isEmpty || location.trim().isEmpty) {
       throw Exception('Nama dan lokasi ruangan wajib diisi.');
     }
+    final imageUrl = image == null ? null : await uploadSarprasImage(image);
     await _supabase.from('laboratories').insert({
       'nama_lab': name.trim(),
       'lokasi': location.trim(),
       'status_operasional': 'aktif',
+      'image_url': imageUrl,
     });
+    await _appendConsensusLog(
+      entityTable: 'laboratories',
+      entityId: name.trim(),
+      command: 'create_laboratory',
+      payload: {'lokasi': location.trim()},
+    );
   }
 
   Future<List<UserAccountSummary>> fetchUserAccounts() async {
@@ -896,11 +971,92 @@ class DashboardRepository {
   }
 
   Future<void> verifyAslabAccount(String userId) async {
-    await _supabase
-        .from('profiles')
-        .update({'role': 'aslab'})
-        .eq('id', userId)
-        .neq('role', 'kalab');
+    await updateUserRole(userId: userId, role: 'aslab');
+  }
+
+  Future<void> updateUserRole({
+    required String userId,
+    required String role,
+  }) async {
+    if (!{'mahasiswa', 'aslab', 'kalab'}.contains(role)) {
+      throw Exception('Role tidak valid.');
+    }
+    await _supabase.from('profiles').update({'role': role}).eq('id', userId);
+    await _appendConsensusLog(
+      entityTable: 'profiles',
+      entityId: userId,
+      command: 'update_user_role',
+      payload: {'role': role},
+    );
+  }
+
+  Future<void> deleteUserProfile(String userId) async {
+    if (userId == currentUserId) {
+      throw Exception('Akun aktif tidak dapat dihapus dari panel ini.');
+    }
+    try {
+      await _supabase.from('profiles').delete().eq('id', userId);
+    } on PostgrestException catch (error) {
+      if (error.code == '23503') {
+        throw Exception(
+          'User memiliki histori transaksi sehingga tidak dapat dihapus langsung. Ubah role atau arsipkan melalui backend admin.',
+        );
+      }
+      rethrow;
+    }
+    await _appendConsensusLog(
+      entityTable: 'profiles',
+      entityId: userId,
+      command: 'delete_user_profile',
+      payload: const {},
+    );
+  }
+
+  Future<void> createManagedUser({
+    required String name,
+    required String identity,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    if (name.trim().isEmpty ||
+        identity.trim().isEmpty ||
+        email.trim().isEmpty ||
+        password.length < 6) {
+      throw Exception(
+        'Data user belum lengkap atau password kurang dari 6 karakter.',
+      );
+    }
+    if (!{'mahasiswa', 'aslab', 'kalab'}.contains(role)) {
+      throw Exception('Role tidak valid.');
+    }
+    final kalabRefreshToken = _supabase.auth.currentSession?.refreshToken;
+    final response = await _supabase.auth.signUp(
+      email: email.trim(),
+      password: password,
+      data: {'nama': name.trim(), 'nim_nip': identity.trim(), 'role': role},
+    );
+    final userId = response.user?.id;
+    if (userId == null) {
+      throw Exception('Auth user belum tersedia setelah pendaftaran.');
+    }
+    await _supabase.from('profiles').upsert({
+      'id': userId,
+      'nama': name.trim(),
+      'nim_nip': identity.trim(),
+      'email': email.trim(),
+      'role': role,
+    });
+    await _appendConsensusLog(
+      entityTable: 'profiles',
+      entityId: userId,
+      command: 'create_managed_user',
+      payload: {'role': role},
+    );
+    final currentUserId = _supabase.auth.currentUser?.id;
+    if (kalabRefreshToken != null && currentUserId == userId) {
+      await _supabase.auth.setSession(kalabRefreshToken);
+    }
   }
 
   Future<List<BorrowedInventoryReport>> fetchBorrowedInventoryReport() async {
@@ -935,6 +1091,56 @@ class DashboardRepository {
             .toList()
           ..sort((a, b) => b.quantity.compareTo(a.quantity));
     return report;
+  }
+
+  Stream<List<LabBooking>> watchReturnableBookings() {
+    return watchBookingsByStatus(const ['active']);
+  }
+
+  Future<void> confirmReturnChecklist({
+    required String bookingId,
+    required Map<String, int> returnedQuantities,
+    required String condition,
+  }) async {
+    final items = await fetchBookingItemDetails(bookingId);
+    for (final item in items) {
+      final inventoryId = item.inventoryId;
+      if (inventoryId == null || inventoryId.isEmpty) continue;
+      final returned = returnedQuantities[inventoryId] ?? 0;
+      if (returned != item.quantity) {
+        throw Exception('Kuantitas ${item.name} tidak cocok.');
+      }
+    }
+    await confirmItemHandover(bookingId, returnCondition: condition);
+    await _appendConsensusLog(
+      entityTable: 'bookings',
+      entityId: bookingId,
+      command: 'confirm_return_checklist',
+      payload: {'condition': condition},
+    );
+  }
+
+  Future<List<DailyBorrowerReport>> fetchDailyBorrowerReport(
+    DateTime date,
+  ) async {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+    return fetchBorrowerReportForRange(start: start, end: end);
+  }
+
+  Future<List<DailyBorrowerReport>> fetchBorrowerReportForRange({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final rows = await _supabase
+        .from('bookings')
+        .select(_bookingWithProfileColumns)
+        .gte('tanggal_pinjam', start.toUtc().toIso8601String())
+        .lt('tanggal_pinjam', end.toUtc().toIso8601String())
+        .order('tanggal_pinjam');
+    return rows
+        .map((row) => DailyBorrowerReport.fromBooking(LabBooking.fromMap(row)))
+        .toList();
   }
 
   Future<void> submitFeedback({
@@ -1173,5 +1379,24 @@ class DashboardRepository {
       'target_id': targetId,
       'is_read': false,
     });
+  }
+
+  Future<void> _appendConsensusLog({
+    required String entityTable,
+    required String entityId,
+    required String command,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      await _supabase.from('raft_replication_log').insert({
+        'entity_table': entityTable,
+        'entity_id': entityId,
+        'command': command,
+        'payload': payload,
+        'committed': true,
+      });
+    } on Object {
+      // Older databases may not have the consensus audit table yet.
+    }
   }
 }

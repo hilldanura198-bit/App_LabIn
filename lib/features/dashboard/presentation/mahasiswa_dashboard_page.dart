@@ -15,6 +15,7 @@ import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'booking_form_page.dart';
+import 'booking_success_page.dart';
 import 'check_reservation_page.dart';
 import 'download_docs_page.dart';
 import 'history_page.dart';
@@ -62,6 +63,7 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
 
   int _selectedIndex = 0;
   String? _lastCheckoutBookingId;
+  String? _ratingSuppressedAfterCheckoutId;
   bool _isRatingSheetOpen = false;
   bool _notificationListenerStarted = false;
   bool _notificationsPrimed = false;
@@ -131,13 +133,25 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
         if (message == 'checkout_success' &&
             state.activeHomeBooking != null &&
             state.activeHomeBooking!.id != _lastCheckoutBookingId) {
-          _lastCheckoutBookingId = state.activeHomeBooking!.id;
-          setState(() => _selectedIndex = 1);
+          final booking = state.activeHomeBooking!;
+          _lastCheckoutBookingId = booking.id;
+          _ratingSuppressedAfterCheckoutId = booking.id;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => BookingSuccessPage(booking: booking),
+              ),
+            );
+          });
         }
-        if (!_isRatingSheetOpen && state.bookings.isNotEmpty) {
+        if (message != 'checkout_success' &&
+            !_isRatingSheetOpen &&
+            state.bookings.isNotEmpty) {
           final unrated = state.bookings.where(
             (booking) =>
-                (booking.status == 'returned' || booking.status == 'selesai') &&
+                booking.id != _ratingSuppressedAfterCheckoutId &&
+                booking.status == 'returned' &&
                 booking.ratingReview == null,
           );
           if (unrated.isNotEmpty) {

@@ -106,7 +106,10 @@ class AuthRepository {
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
+    if (profile == null) {
+      return UserRole.mahasiswa;
+    }
     final role = profile['role'] as String?;
 
     return switch (role) {

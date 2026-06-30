@@ -11,6 +11,7 @@ import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'aslab_detail_pengajuan_page.dart';
 import 'history_page.dart';
+import 'return_workflow_page.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
@@ -158,6 +159,9 @@ class _AslabDashboardViewState extends State<_AslabDashboardView> {
       );
     }
     if (_selectedIndex == 2) {
+      return ReturnWorkflowPage(repository: repository, showAppBar: false);
+    }
+    if (_selectedIndex == 3) {
       return HistoryPage(
         repository: repository,
         role: UserRole.aslab,
@@ -395,6 +399,7 @@ class _AslabBottomNav extends StatelessWidget {
               tabs: const [
                 GButton(icon: Icons.dashboard_outlined, text: 'Beranda'),
                 GButton(icon: Icons.qr_code_scanner_rounded, text: 'Scan'),
+                GButton(icon: Icons.assignment_return_rounded, text: 'Kembali'),
                 GButton(icon: Icons.history_rounded, text: 'Riwayat'),
               ],
             ),
@@ -865,7 +870,7 @@ class _ScannerPrompt extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Scan QR mahasiswa untuk mengubah status Approved Kalab menjadi Active, atau Active menjadi Returned.',
+              'Scan QR mahasiswa untuk mengubah status ACC Kalab menjadi Digunakan, atau Digunakan menjadi Dikembalikan.',
             ),
             const SizedBox(height: 14),
             FilledButton.icon(

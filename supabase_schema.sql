@@ -66,6 +66,28 @@ alter table public.inventories
   add column if not exists image_url text,
   add column if not exists type text not null default 'alat';
 
+insert into storage.buckets (id, name, public)
+values ('sarpras-media', 'sarpras-media', true)
+on conflict (id) do nothing;
+
+drop policy if exists sarpras_media_public_read on storage.objects;
+create policy sarpras_media_public_read on storage.objects
+for select
+using (bucket_id = 'sarpras-media');
+
+drop policy if exists sarpras_media_staff_write on storage.objects;
+create policy sarpras_media_staff_write on storage.objects
+for insert
+with check (
+  bucket_id = 'sarpras-media'
+  and exists (
+    select 1
+    from public.profiles staff
+    where staff.id = auth.uid()
+      and staff.role in ('aslab', 'kalab')
+  )
+);
+
 alter table public.profiles
   add column if not exists app_language text not null default 'id',
   add column if not exists location_enabled boolean not null default true,
