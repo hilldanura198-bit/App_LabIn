@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -923,18 +925,7 @@ class _CampusDenahPreview extends StatelessWidget {
                   const SizedBox(height: 14),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      DashboardModel.getLocalAssetPath(rooms.first),
-                      height: 260,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, _, _) => Image.asset(
-                        DashboardModel.fallbackAssetPath,
-                        height: 260,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    child: _RealisticCampusMap(campus: campus),
                   ),
                   const SizedBox(height: 12),
                   const _BlueprintLegend(),
@@ -1052,6 +1043,498 @@ class _CampusInfoCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _RealisticCampusMap extends StatelessWidget {
+  const _RealisticCampusMap({required this.campus});
+
+  final _CampusMapData campus;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 300,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        border: Border.all(color: campus.accent.withValues(alpha: 0.20)),
+      ),
+      child: CustomPaint(
+        painter: _CampusMapPainter(
+          campus: campus,
+          surface: scheme.surface,
+          textColor: scheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _CampusMapPainter extends CustomPainter {
+  const _CampusMapPainter({
+    required this.campus,
+    required this.surface,
+    required this.textColor,
+  });
+
+  final _CampusMapData campus;
+  final Color surface;
+  final Color textColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _drawBase(canvas, size);
+    switch (campus.layout) {
+      case _CampusLayout.rektorat:
+        _drawRektorat(canvas, size);
+      case _CampusLayout.campus1:
+        _drawCampus1(canvas, size);
+      case _CampusLayout.campus2:
+        _drawCampus2(canvas, size);
+      case _CampusLayout.campus3:
+        _drawCampus3(canvas, size);
+      case _CampusLayout.campus4:
+        _drawCampus4(canvas, size);
+    }
+    _drawCompass(canvas, size);
+  }
+
+  void _drawBase(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final bg = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFE8E1D2), Color(0xFFD8E1D3), Color(0xFFC9D8D6)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(rect);
+    canvas.drawRect(rect, bg);
+
+    final gridPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.18)
+      ..strokeWidth = 1;
+    for (var x = 0.0; x < size.width; x += 34) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+    for (var y = 0.0; y < size.height; y += 34) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+  }
+
+  void _drawRektorat(Canvas canvas, Size size) {
+    _road(canvas, size, [
+      const Offset(-0.05, 0.74),
+      const Offset(0.34, 0.62),
+      const Offset(1.05, 0.70),
+    ], 34);
+    _road(canvas, size, [
+      const Offset(0.50, -0.05),
+      const Offset(0.48, 0.45),
+      const Offset(0.58, 1.05),
+    ], 22);
+    _green(canvas, size, const Rect.fromLTWH(0.05, 0.06, 0.25, 0.30), 'Taman');
+    _green(canvas, size, const Rect.fromLTWH(0.70, 0.08, 0.22, 0.25), 'Plaza');
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.35, 0.15, 0.26, 0.25),
+      campus.rooms[1],
+      campus.accent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.18, 0.45, 0.24, 0.18),
+      campus.rooms[2],
+      const Color(0xFF7A8DA8),
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.62, 0.43, 0.23, 0.17),
+      campus.rooms[3],
+      const Color(0xFF9C8B70),
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.38, 0.48, 0.19, 0.14),
+      campus.rooms[0],
+      campus.secondaryAccent,
+    );
+    _parking(canvas, size, const Rect.fromLTWH(0.08, 0.76, 0.24, 0.14));
+    _pin(canvas, size, const Offset(0.48, 0.46), 'FO');
+  }
+
+  void _drawCampus1(Canvas canvas, Size size) {
+    _road(canvas, size, [
+      const Offset(0.08, -0.05),
+      const Offset(0.18, 0.26),
+      const Offset(0.16, 1.05),
+    ], 26);
+    _road(canvas, size, [
+      const Offset(-0.04, 0.44),
+      const Offset(0.38, 0.48),
+      const Offset(1.06, 0.37),
+    ], 24);
+    _green(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.70, 0.60, 0.22, 0.25),
+      'Lapangan',
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.30, 0.10, 0.26, 0.20),
+      campus.rooms[0],
+      campus.accent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.60, 0.14, 0.24, 0.18),
+      campus.rooms[1],
+      campus.secondaryAccent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.31, 0.56, 0.20, 0.22),
+      campus.rooms[2],
+      const Color(0xFF8C9B72),
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.55, 0.50, 0.20, 0.18),
+      campus.rooms[3],
+      const Color(0xFF8A84A8),
+    );
+    _parking(canvas, size, const Rect.fromLTWH(0.07, 0.72, 0.18, 0.16));
+    _pin(canvas, size, const Offset(0.43, 0.36), 'FIK');
+  }
+
+  void _drawCampus2(Canvas canvas, Size size) {
+    _road(canvas, size, [
+      const Offset(-0.05, 0.24),
+      const Offset(0.30, 0.29),
+      const Offset(1.05, 0.20),
+    ], 24);
+    _road(canvas, size, [
+      const Offset(0.68, -0.05),
+      const Offset(0.62, 0.44),
+      const Offset(0.74, 1.05),
+    ], 28);
+    _green(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.08, 0.52, 0.23, 0.28),
+      'Healing Garden',
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.12, 0.12, 0.20, 0.16),
+      campus.rooms[0],
+      const Color(0xFF6F9F9A),
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.36, 0.38, 0.26, 0.23),
+      campus.rooms[1],
+      campus.accent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.69, 0.38, 0.18, 0.18),
+      campus.rooms[2],
+      campus.secondaryAccent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.39, 0.67, 0.22, 0.15),
+      campus.rooms[3],
+      const Color(0xFF8699B8),
+    );
+    _parking(canvas, size, const Rect.fromLTWH(0.73, 0.70, 0.17, 0.16));
+    _pin(canvas, size, const Offset(0.50, 0.35), 'FK');
+  }
+
+  void _drawCampus3(Canvas canvas, Size size) {
+    _road(canvas, size, [
+      const Offset(-0.04, 0.82),
+      const Offset(0.28, 0.74),
+      const Offset(1.05, 0.78),
+    ], 30);
+    _road(canvas, size, [
+      const Offset(0.28, -0.05),
+      const Offset(0.36, 0.40),
+      const Offset(0.32, 1.05),
+    ], 24);
+    _green(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.58, 0.08, 0.28, 0.26),
+      'Courtyard',
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.08, 0.16, 0.20, 0.20),
+      campus.rooms[0],
+      campus.accent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.39, 0.20, 0.18, 0.18),
+      campus.rooms[1],
+      campus.secondaryAccent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.55, 0.45, 0.28, 0.21),
+      campus.rooms[2],
+      const Color(0xFF987E84),
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.16, 0.50, 0.16, 0.15),
+      campus.rooms[3],
+      const Color(0xFF77968F),
+    );
+    _parking(canvas, size, const Rect.fromLTWH(0.70, 0.76, 0.20, 0.13));
+    _pin(canvas, size, const Offset(0.42, 0.70), 'FH');
+  }
+
+  void _drawCampus4(Canvas canvas, Size size) {
+    _road(canvas, size, [
+      const Offset(-0.04, 0.50),
+      const Offset(0.28, 0.52),
+      const Offset(0.52, 0.42),
+      const Offset(1.05, 0.48),
+    ], 26);
+    _road(canvas, size, [
+      const Offset(0.82, -0.05),
+      const Offset(0.74, 0.32),
+      const Offset(0.80, 1.05),
+    ], 24);
+    _green(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.08, 0.12, 0.24, 0.24),
+      'Amphitheater',
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.36, 0.10, 0.20, 0.18),
+      campus.rooms[0],
+      campus.accent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.59, 0.12, 0.18, 0.18),
+      campus.rooms[1],
+      campus.secondaryAccent,
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.18, 0.60, 0.24, 0.18),
+      campus.rooms[2],
+      const Color(0xFF8B8FB1),
+    );
+    _building(
+      canvas,
+      size,
+      const Rect.fromLTWH(0.48, 0.63, 0.20, 0.17),
+      campus.rooms[3],
+      const Color(0xFF7BA27E),
+    );
+    _parking(canvas, size, const Rect.fromLTWH(0.76, 0.62, 0.16, 0.19));
+    _pin(canvas, size, const Offset(0.58, 0.47), 'K4');
+  }
+
+  void _road(Canvas canvas, Size size, List<Offset> points, double width) {
+    final path = Path()
+      ..moveTo(points.first.dx * size.width, points.first.dy * size.height);
+    for (final point in points.skip(1)) {
+      path.lineTo(point.dx * size.width, point.dy * size.height);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF5F6670)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.65)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  void _green(Canvas canvas, Size size, Rect rect, String label) {
+    final r = _scaled(rect, size);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r, const Radius.circular(18)),
+      Paint()..color = const Color(0xFF6CA66C).withValues(alpha: 0.72),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r.deflate(5), const Radius.circular(14)),
+      Paint()..color = const Color(0xFF9EC27C).withValues(alpha: 0.55),
+    );
+    _label(canvas, r.center, label, Colors.white, 11, FontWeight.w900);
+  }
+
+  void _parking(Canvas canvas, Size size, Rect rect) {
+    final r = _scaled(rect, size);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r, const Radius.circular(12)),
+      Paint()..color = const Color(0xFFB9BDC3).withValues(alpha: 0.90),
+    );
+    final stripe = Paint()
+      ..color = Colors.white.withValues(alpha: 0.75)
+      ..strokeWidth = 1.4;
+    for (var x = r.left + 14; x < r.right - 8; x += 16) {
+      canvas.drawLine(
+        Offset(x, r.top + 9),
+        Offset(x - 9, r.bottom - 9),
+        stripe,
+      );
+    }
+    _label(
+      canvas,
+      r.center,
+      'Parkir',
+      const Color(0xFF334155),
+      12,
+      FontWeight.w900,
+    );
+  }
+
+  void _building(
+    Canvas canvas,
+    Size size,
+    Rect rect,
+    String label,
+    Color color,
+  ) {
+    final r = _scaled(rect, size);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        r.shift(const Offset(0, 5)),
+        const Radius.circular(12),
+      ),
+      Paint()..color = Colors.black.withValues(alpha: 0.16),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r, const Radius.circular(12)),
+      Paint()..color = color.withValues(alpha: 0.92),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r.deflate(5), const Radius.circular(9)),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = Colors.white.withValues(alpha: 0.42),
+    );
+    _label(canvas, r.center, label, Colors.white, 11, FontWeight.w900);
+  }
+
+  void _pin(Canvas canvas, Size size, Offset point, String label) {
+    final center = Offset(point.dx * size.width, point.dy * size.height);
+    canvas.drawCircle(
+      center,
+      17,
+      Paint()..color = Colors.white.withValues(alpha: 0.92),
+    );
+    canvas.drawCircle(center, 12, Paint()..color = campus.accent);
+    _label(canvas, center, label, Colors.white, 10, FontWeight.w900);
+  }
+
+  void _drawCompass(Canvas canvas, Size size) {
+    final center = Offset(size.width - 34, 34);
+    final path = Path()
+      ..moveTo(center.dx, center.dy - 18)
+      ..lineTo(center.dx + 8, center.dy + 12)
+      ..lineTo(center.dx, center.dy + 7)
+      ..lineTo(center.dx - 8, center.dy + 12)
+      ..close();
+    canvas.drawCircle(
+      center,
+      24,
+      Paint()..color = surface.withValues(alpha: 0.78),
+    );
+    canvas.drawPath(path, Paint()..color = const Color(0xFF1F2937));
+    _label(
+      canvas,
+      center.translate(0, -2),
+      'N',
+      Colors.white,
+      10,
+      FontWeight.w900,
+    );
+  }
+
+  Rect _scaled(Rect rect, Size size) {
+    return Rect.fromLTWH(
+      rect.left * size.width,
+      rect.top * size.height,
+      rect.width * size.width,
+      rect.height * size.height,
+    );
+  }
+
+  void _label(
+    Canvas canvas,
+    Offset center,
+    String text,
+    Color color,
+    double fontSize,
+    FontWeight weight,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: weight,
+          height: 1.05,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: ui.TextDirection.ltr,
+      maxLines: 2,
+      ellipsis: '...',
+    )..layout(maxWidth: 92);
+    painter.paint(
+      canvas,
+      center - Offset(painter.width / 2, painter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CampusMapPainter oldDelegate) {
+    return oldDelegate.campus != campus ||
+        oldDelegate.surface != surface ||
+        oldDelegate.textColor != textColor;
   }
 }
 
