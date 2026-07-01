@@ -66,6 +66,8 @@ class _HistoryPageState extends State<HistoryPage> {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _HistoryCard(
                                 booking: booking,
+                                repository: widget.repository,
+                                role: widget.role,
                                 isInfrastructure: _isInfrastructureBooking(
                                   booking,
                                 ),
@@ -155,9 +157,16 @@ class _HistoryFilter extends StatelessWidget {
 }
 
 class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.booking, required this.isInfrastructure});
+  const _HistoryCard({
+    required this.booking,
+    required this.repository,
+    required this.role,
+    required this.isInfrastructure,
+  });
 
   final LabBooking booking;
+  final DashboardRepository repository;
+  final UserRole role;
   final bool isInfrastructure;
 
   @override
@@ -169,7 +178,11 @@ class _HistoryCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => BookingHistoryDetailPage(booking: booking),
+            builder: (_) => BookingHistoryDetailPage(
+              bookingId: booking.id,
+              role: role,
+              repository: repository,
+            ),
           ),
         ),
         borderRadius: BorderRadius.circular(12),

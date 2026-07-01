@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../auth/bloc/auth_bloc.dart';
 import 'dashboard_models.dart';
 import 'profile_repository.dart';
 
@@ -857,6 +858,42 @@ class DashboardRepository {
         .eq('id', bookingId)
         .single();
     final map = Map<String, dynamic>.from(booking);
+    final bookingItems = await _fetchBookingItemsSnapshot(bookingId);
+    if (bookingItems.isNotEmpty) {
+      map['items_snapshot'] = bookingItems.map((item) => item.toMap()).toList();
+    }
+    return LabBooking.fromMap(map);
+  }
+
+  Future<LabBooking> fetchBookingHistoryDetail({
+    required String bookingId,
+    required UserRole role,
+  }) async {
+    final userId = currentUserId;
+    if (role == UserRole.mahasiswa && userId == null) {
+      throw Exception(
+        'Akses Ditolak: Anda tidak memiliki hak akses untuk melihat transaksi ini!',
+      );
+    }
+    final lockedUserId = userId;
+    final query = _supabase.from('bookings').select(_bookingWithProfileColumns);
+    final bookingRow = switch (role) {
+      UserRole.mahasiswa =>
+        await query
+            .eq('id', bookingId)
+            .eq('user_id', lockedUserId!)
+            .maybeSingle(),
+      UserRole.aslab ||
+      UserRole.kalab => await query.eq('id', bookingId).maybeSingle(),
+    };
+    if (bookingRow == null) {
+      throw Exception(
+        role == UserRole.mahasiswa
+            ? 'Akses Ditolak: Anda tidak memiliki hak akses untuk melihat transaksi ini!'
+            : 'Detail transaksi tidak ditemukan.',
+      );
+    }
+    final map = Map<String, dynamic>.from(bookingRow);
     final bookingItems = await _fetchBookingItemsSnapshot(bookingId);
     if (bookingItems.isNotEmpty) {
       map['items_snapshot'] = bookingItems.map((item) => item.toMap()).toList();
