@@ -713,7 +713,7 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Ki Mangun Sarkoro No.20, Nusukan, Banjarsari, Surakarta',
       subtitle: 'Pusat administrasi dan layanan akademik utama.',
       layout: _CampusLayout.rektorat,
-      mapAssetPath: 'assets/images/denah 5.jpeg',
+      mapAssetPath: 'assets/images/denah rektorat.jpeg',
       rooms: [
         'Lobby Utama',
         'Ruang Rektor',
@@ -728,7 +728,7 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Bhayangkara No.55, Tipes, Serengan, Surakarta',
       subtitle: 'Ruang kelas utama dan pusat aktivitas praktikum FIK.',
       layout: _CampusLayout.campus1,
-      mapAssetPath: 'assets/images/denah 1.jpeg',
+      mapAssetPath: 'assets/images/denah kampus 1.jpeg',
       rooms: [
         'Lab RPL',
         'Lab IoT',
@@ -743,7 +743,7 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. KH Samanhudi No.93, Sondakan, Laweyan, Surakarta',
       subtitle: 'Fokus pada klinik, simulasi, dan layanan kesehatan.',
       layout: _CampusLayout.campus2,
-      mapAssetPath: 'assets/images/denah 2.jpeg',
+      mapAssetPath: 'assets/images/denah kampus 2.jpeg',
       rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
     ),
     _CampusMapData(
@@ -751,7 +751,7 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
       layout: _CampusLayout.campus3,
-      mapAssetPath: 'assets/images/denah 3.jpeg',
+      mapAssetPath: 'assets/images/denah kampus 3.jpeg',
       rooms: [
         'Lab Legal Tech',
         'Lab Mediasi',
@@ -765,7 +765,7 @@ class _CampusMapTabs extends StatelessWidget {
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Blok lanjutan untuk praktikum, diskusi, dan kegiatan modern.',
       layout: _CampusLayout.campus4,
-      mapAssetPath: 'assets/images/denah 4.jpeg',
+      mapAssetPath: 'assets/images/denah kampus 4.jpeg',
       rooms: [
         'Ruang Diskusi',
         'Lab Presentasi',
