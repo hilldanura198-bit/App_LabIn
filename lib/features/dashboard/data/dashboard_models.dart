@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class LabInventory {
   const LabInventory({
@@ -286,6 +287,20 @@ class LabBooking {
 
   String get reviewMessage => (ratingReview?['review'] as String? ?? '').trim();
   bool get hasReviewed => ratingReview != null;
+  String get scheduleLabel {
+    final date = DateFormat('dd MMM yyyy').format(tanggalPinjam);
+    final start = _displayTime(startTime, tanggalPinjam);
+    final end = _displayTime(endTime, tanggalKembali);
+    return '$date | $start - $end';
+  }
+
+  static String _displayTime(String value, DateTime fallback) {
+    final normalized = value.trim();
+    if (normalized.isNotEmpty && normalized != '00:00') {
+      return normalized.length >= 5 ? normalized.substring(0, 5) : normalized;
+    }
+    return DateFormat.Hm().format(fallback);
+  }
 
   static Map<String, dynamic>? _ratingReviewFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value;

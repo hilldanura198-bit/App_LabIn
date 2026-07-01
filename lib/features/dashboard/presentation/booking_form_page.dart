@@ -50,7 +50,15 @@ class _BookingFormPageState extends State<BookingFormPage> {
   TimeOfDay? _endTime;
   final Map<String, BookingItemDraft> _selectedItems = {};
 
-  String get _invalidMessage => 'Data belum sesuai!';
+  String get _invalidMessage => 'Wajib mengisi tanggal dan waktu peminjaman!';
+
+  bool get _isScheduleComplete =>
+      _requestDate != null &&
+      _borrowDate != null &&
+      _returnDate != null &&
+      _startTime != null &&
+      _endTime != null &&
+      _isReturnAfterStart();
 
   bool get _hasSelectedItems =>
       _selectedItems.isNotEmpty || _otherItemsController.text.trim().isNotEmpty;
@@ -58,12 +66,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
   bool get _isStepOneValid {
     return _nameController.text.trim().isNotEmpty &&
         AppValidation.isValidWhatsappNumber(_waController.text) &&
-        _requestDate != null &&
-        _borrowDate != null &&
-        _returnDate != null &&
-        _startTime != null &&
-        _endTime != null &&
-        _isReturnAfterStart() &&
+        _isScheduleComplete &&
         _purposeController.text.trim().length >= 8;
   }
 
@@ -279,7 +282,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                       )
                                                     : Text(
                                                         isLast
-                                                            ? 'send'.tr()
+                                                            ? 'Checkout / Kirim Pengajuan'
                                                             : 'continue'.tr(),
                                                       ),
                                               ),
@@ -720,6 +723,26 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                     ),
                                                   ),
                                                 ),
+                                                if (!_isScheduleComplete)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 2,
+                                                          left: 4,
+                                                        ),
+                                                    child: Text(
+                                                      _invalidMessage,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            color: Colors
+                                                                .redAccent,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                    ),
+                                                  ),
                                                 SizedBox(
                                                   width:
                                                       constraints.maxWidth >=
@@ -1128,12 +1151,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
       setState(() => _step = 0);
       return;
     }
-    if (_borrowDate == null ||
-        _requestDate == null ||
-        _startTime == null ||
-        _returnDate == null ||
-        _endTime == null ||
-        !_isReturnAfterStart()) {
+    if (!_isScheduleComplete) {
       _showWarning(_invalidMessage);
       setState(() => _step = 0);
       return;

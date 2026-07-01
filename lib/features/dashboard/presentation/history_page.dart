@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
@@ -171,9 +170,6 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('dd MMM yyyy').format(booking.tanggalPinjam);
-    final time =
-        '${DateFormat.Hm().format(booking.tanggalPinjam)} - ${DateFormat.Hm().format(booking.tanggalKembali)}';
     return Card(
       child: InkWell(
         onTap: () => Navigator.of(context).push(
@@ -241,7 +237,7 @@ class _HistoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '$date | $time',
+                booking.scheduleLabel,
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),

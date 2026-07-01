@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -86,8 +85,7 @@ class _DetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final schedule =
-        '${DateFormat('dd MMM yyyy HH:mm').format(booking.tanggalPinjam)} - ${DateFormat('HH:mm').format(booking.tanggalKembali)}';
+    final schedule = booking.scheduleLabel;
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
