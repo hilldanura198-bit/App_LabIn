@@ -99,6 +99,23 @@ class DashboardRepository {
         .map((rows) => rows.map(LabBooking.fromMap).toList());
   }
 
+  Stream<List<LabBooking>> watchHistoryBookings({
+    required bool includeAllUsers,
+  }) {
+    if (includeAllUsers) {
+      return watchBookingsByStatus(const [
+        'pending',
+        'approved_aslab',
+        'approved_kalab',
+        'active',
+        'returned',
+        'late',
+        'rejected',
+      ]);
+    }
+    return watchCurrentUserBookings();
+  }
+
   Stream<List<AppNotification>> watchNotifications() {
     final userId = currentUserId;
     if (userId == null) {

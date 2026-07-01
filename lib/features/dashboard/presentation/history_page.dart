@@ -85,22 +85,20 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Stream<List<LabBooking>> _historyStream() {
-    if (widget.role == UserRole.mahasiswa) {
-      return widget.repository.watchCurrentUserBookings();
-    }
-    return widget.repository.watchBookingsByStatus(const [
-      'pending',
-      'approved_aslab',
-      'approved_kalab',
-      'active',
-      'returned',
-      'late',
-      'rejected',
-    ]);
+    return widget.repository.watchHistoryBookings(
+      includeAllUsers:
+          widget.role == UserRole.aslab || widget.role == UserRole.kalab,
+    );
   }
 
   List<LabBooking> _filterBookings(List<LabBooking> bookings) {
+    final currentUserId = widget.repository.currentUserId;
+    final isMahasiswa = widget.role == UserRole.mahasiswa;
     final filtered = bookings.where((booking) {
+      if (isMahasiswa &&
+          (currentUserId == null || booking.userId != currentUserId)) {
+        return false;
+      }
       if (_filter == 'Semua') return true;
       final hasRoom = _isInfrastructureBooking(booking);
       return _filter == 'Ruangan Lab' ? hasRoom : !hasRoom;
