@@ -513,7 +513,7 @@ class DashboardRepository {
     final row = await _supabase
         .from('profiles')
         .select(
-          'nama,nim_nip,email,role,program_studi,whatsapp_number,avatar_url,app_language',
+          'nama,nim_nip,email,role,program_studi,whatsapp_number,avatar_url',
         )
         .eq('id', userId)
         .maybeSingle();
@@ -530,7 +530,6 @@ class DashboardRepository {
       programStudi: (metadata['program_studi'] ?? '').toString(),
       whatsappNumber: (metadata['whatsapp_number'] ?? '').toString(),
       avatarUrl: null,
-      appLanguage: 'id',
     );
   }
 
@@ -551,7 +550,6 @@ class DashboardRepository {
       'role': settings.role.trim().isEmpty ? 'mahasiswa' : settings.role,
       'whatsapp_number': settings.whatsappNumber.trim(),
       'avatar_url': settings.avatarUrl,
-      'app_language': settings.appLanguage,
     };
     if (settings.programStudi.trim().isNotEmpty) {
       payload['program_studi'] = settings.programStudi.trim();

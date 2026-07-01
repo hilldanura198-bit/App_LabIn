@@ -764,7 +764,6 @@ class ProfileSettings {
     required this.programStudi,
     required this.whatsappNumber,
     required this.avatarUrl,
-    required this.appLanguage,
   });
 
   final String name;
@@ -774,7 +773,6 @@ class ProfileSettings {
   final String programStudi;
   final String whatsappNumber;
   final String? avatarUrl;
-  final String appLanguage;
 
   factory ProfileSettings.fromMap(Map<String, dynamic> map) {
     return ProfileSettings(
@@ -785,7 +783,6 @@ class ProfileSettings {
       programStudi: map['program_studi'] as String? ?? '',
       whatsappNumber: map['whatsapp_number'] as String? ?? '',
       avatarUrl: map['avatar_url'] as String?,
-      appLanguage: map['app_language'] as String? ?? 'id',
     );
   }
 
@@ -797,7 +794,6 @@ class ProfileSettings {
     String? programStudi,
     String? whatsappNumber,
     String? avatarUrl,
-    String? appLanguage,
   }) {
     return ProfileSettings(
       name: name ?? this.name,
@@ -807,7 +803,6 @@ class ProfileSettings {
       programStudi: programStudi ?? this.programStudi,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      appLanguage: appLanguage ?? this.appLanguage,
     );
   }
 }

@@ -76,7 +76,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final fallbackEmail = (metadata['email'] ?? currentUser?.email ?? '')
           .toString()
           .trim();
-      final language = prefs.getString('app_language') ?? profile.appLanguage;
+      final language = prefs.getString('app_language') ?? 'id';
       setState(() {
         _language = language;
         _nameController.text = profile.name.isNotEmpty
@@ -708,7 +708,6 @@ class _SettingsPageState extends State<SettingsPage> {
           programStudi: '',
           whatsappNumber: AppValidation.normalizeWhatsappNumber(whatsapp),
           avatarUrl: _avatarUrl,
-          appLanguage: _language,
         ),
       );
       await prefs.setString('app_language', _language);
