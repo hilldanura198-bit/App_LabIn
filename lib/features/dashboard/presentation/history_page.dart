@@ -87,9 +87,9 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Stream<List<LabBooking>> _historyStream() {
+    final isMahasiswa = widget.role == UserRole.mahasiswa;
     return widget.repository.watchHistoryBookings(
-      includeAllUsers:
-          widget.role == UserRole.aslab || widget.role == UserRole.kalab,
+      includeAllUsers: !isMahasiswa,
     );
   }
 

@@ -114,7 +114,16 @@ class DashboardRepository {
         'rejected',
       ]);
     }
-    return watchCurrentUserBookings();
+    final userId = currentUserId;
+    if (userId == null) {
+      return Stream.value(const []);
+    }
+    return _supabase
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .order('tanggal_pinjam', ascending: false)
+        .map((rows) => rows.map(LabBooking.fromMap).toList());
   }
 
   Stream<List<AppNotification>> watchNotifications() {
