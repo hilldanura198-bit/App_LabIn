@@ -63,11 +63,12 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
 
   int _selectedIndex = 0;
   String? _lastCheckoutBookingId;
-  String? _ratingSuppressedAfterCheckoutId;
   bool _isRatingSheetOpen = false;
   bool _notificationListenerStarted = false;
   bool _notificationsPrimed = false;
   final Set<String> _knownNotificationIds = {};
+  final Set<String> _promptedRatingBookingIds = {};
+  DashboardState? _lastDashboardState;
   StreamSubscription<List<AppNotification>>? _notificationSubscription;
 
   @override
@@ -118,6 +119,8 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
           previous.message != current.message ||
           previous.bookings != current.bookings,
       listener: (context, state) {
+        final previousState = _lastDashboardState;
+        _lastDashboardState = state;
         final message = state.message;
         if (message != null) {
           final displayMessage = _localizedDashboardMessage(message);
@@ -135,7 +138,6 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
             state.activeHomeBooking!.id != _lastCheckoutBookingId) {
           final booking = state.activeHomeBooking!;
           _lastCheckoutBookingId = booking.id;
-          _ratingSuppressedAfterCheckoutId = booking.id;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             Navigator.of(context).push(
@@ -145,18 +147,31 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
             );
           });
         }
-        if (message != 'checkout_success' &&
-            !_isRatingSheetOpen &&
-            state.bookings.isNotEmpty) {
-          final unrated = state.bookings.where(
-            (booking) =>
-                booking.id != _ratingSuppressedAfterCheckoutId &&
-                booking.status == 'returned' &&
-                booking.ratingReview == null,
-          );
-          if (unrated.isNotEmpty) {
+        if (message != 'checkout_success' && !_isRatingSheetOpen) {
+          if (previousState == null) {
+            return;
+          }
+          final previousById = {
+            for (final booking in previousState.bookings) booking.id: booking,
+          };
+          LabBooking? latestReturned;
+          for (final booking in state.bookings) {
+            if (booking.status != 'returned' ||
+                booking.hasReviewed ||
+                _promptedRatingBookingIds.contains(booking.id)) {
+              continue;
+            }
+            final previousStatus = previousById[booking.id]?.status;
+            if (previousStatus != 'active' && previousStatus != 'late') {
+              continue;
+            }
+            latestReturned = booking;
+            break;
+          }
+          if (latestReturned != null) {
+            _promptedRatingBookingIds.add(latestReturned.id);
             _isRatingSheetOpen = true;
-            _showRatingBottomSheet(context, unrated.first).whenComplete(() {
+            _showRatingBottomSheet(context, latestReturned).whenComplete(() {
               _isRatingSheetOpen = false;
             });
           }

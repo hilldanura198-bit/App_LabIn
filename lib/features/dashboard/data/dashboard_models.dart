@@ -285,6 +285,7 @@ class LabBooking {
   }
 
   String get reviewMessage => (ratingReview?['review'] as String? ?? '').trim();
+  bool get hasReviewed => ratingReview != null;
 
   static Map<String, dynamic>? _ratingReviewFromMap(Object? value) {
     if (value is Map<String, dynamic>) return value;
