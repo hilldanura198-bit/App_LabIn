@@ -65,7 +65,10 @@ class _BookingHistoryDetailPageState extends State<BookingHistoryDetailPage> {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            return _DetailContent(booking: snapshot.data!);
+            return _DetailContent(
+              booking: snapshot.data!,
+              repository: widget.repository,
+            );
           },
         ),
       ),
@@ -79,13 +82,15 @@ class _BookingHistoryDetailPageState extends State<BookingHistoryDetailPage> {
 }
 
 class _DetailContent extends StatelessWidget {
-  const _DetailContent({required this.booking});
+  const _DetailContent({required this.booking, required this.repository});
 
   final LabBooking booking;
+  final DashboardRepository repository;
 
   @override
   Widget build(BuildContext context) {
     final schedule = booking.scheduleLabel;
+    final isSelfBooking = booking.userId == repository.currentUserId;
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
@@ -128,11 +133,41 @@ class _DetailContent extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '${booking.borrowerName} | ${booking.borrowerIdentity ?? '-'}',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppTheme.muted),
-                        ),
+                        if (isSelfBooking)
+                          Text(
+                            'Atas nama: ${booking.borrowerName}',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.muted,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          )
+                        else
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              _InfoChip(
+                                label: 'Nama Mahasiswa',
+                                value: booking.borrowerName,
+                              ),
+                              if ((booking.borrowerIdentity ?? '').isNotEmpty)
+                                _InfoChip(
+                                  label: 'NIM',
+                                  value: booking.borrowerIdentity!,
+                                ),
+                              if ((booking.borrowerProgramStudi ?? '')
+                                  .isNotEmpty)
+                                _InfoChip(
+                                  label: 'Program Studi',
+                                  value: booking.borrowerProgramStudi!,
+                                ),
+                              _InfoChip(
+                                label: 'Fakultas',
+                                value: booking.facultyLabel,
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 14),
                         _MetaRow(
                           icon: Icons.meeting_room_outlined,
@@ -363,6 +398,45 @@ class _MetaRow extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppTheme.muted,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ],
       ),

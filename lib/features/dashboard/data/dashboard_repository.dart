@@ -1022,6 +1022,23 @@ class DashboardRepository {
     );
   }
 
+  Future<void> updateLaboratoryStatus({
+    required String laboratoryId,
+    required bool isOpen,
+  }) async {
+    final status = isOpen ? 'aktif' : 'tutup';
+    await _supabase
+        .from('laboratories')
+        .update({'status_operasional': status})
+        .eq('id', laboratoryId);
+    await _appendConsensusLog(
+      entityTable: 'laboratories',
+      entityId: laboratoryId,
+      command: 'update_laboratory_status',
+      payload: {'status_operasional': status},
+    );
+  }
+
   Future<List<UserAccountSummary>> fetchUserAccounts() async {
     final rows = await _supabase
         .from('profiles')
@@ -1152,6 +1169,23 @@ class DashboardRepository {
             .toList()
           ..sort((a, b) => b.quantity.compareTo(a.quantity));
     return report;
+  }
+
+  Future<List<MaintenanceReportEntry>> fetchMaintenanceReports() async {
+    final rows = await _supabase
+        .from('maintenance_reports')
+        .select(
+          'id,user_id,inventory_id,deskripsi,foto_url,status_perbaikan,created_at,profiles(nama,nim_nip),inventories(nama_alat,lab_id)',
+        )
+        .order('created_at', ascending: false)
+        .limit(40);
+    return (rows as List<dynamic>)
+        .map(
+          (row) => MaintenanceReportEntry.fromMap(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
   }
 
   Stream<List<LabBooking>> watchReturnableBookings() {

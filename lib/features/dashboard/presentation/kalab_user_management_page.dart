@@ -152,7 +152,7 @@ class _UserControlTileState extends State<_UserControlTile> {
                   ? null
                   : (role) {
                       if (role != null && role != user.role) {
-                        _updateRole(role);
+                        _confirmRoleChange(role);
                       }
                     },
             ),
@@ -182,6 +182,31 @@ class _UserControlTileState extends State<_UserControlTile> {
         role: role,
       );
     });
+  }
+
+  Future<void> _confirmRoleChange(String role) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ubah role pengguna?'),
+        content: const Text(
+          'Apakah Anda yakin ingin mengubah role pengguna ini?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Ya, Ubah'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _updateRole(role);
+    }
   }
 
   Future<void> _delete() async {

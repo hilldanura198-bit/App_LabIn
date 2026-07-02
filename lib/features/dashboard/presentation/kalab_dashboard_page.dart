@@ -49,12 +49,14 @@ class _KalabDashboardView extends StatefulWidget {
 
 class _KalabDashboardViewState extends State<_KalabDashboardView> {
   late Future<List<Map<String, dynamic>>> _approvalFuture;
+  late Future<List<MaintenanceReportEntry>> _maintenanceFuture;
   int _selectedIndex = 0;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _approvalFuture = _fetchKalabQueue();
+    _maintenanceFuture = _fetchMaintenanceReports();
   }
 
   Future<List<Map<String, dynamic>>> _fetchKalabQueue() async {
@@ -72,9 +74,17 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
+  Future<List<MaintenanceReportEntry>> _fetchMaintenanceReports() async {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    return repository.fetchMaintenanceReports();
+  }
+
   void _refreshQueue() {
     setState(() {
       _approvalFuture = _fetchKalabQueue();
+      _maintenanceFuture = _fetchMaintenanceReports();
     });
   }
 
@@ -117,7 +127,10 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
       context.read<AuthRepository>().client,
     );
     if (_selectedIndex == 1) {
-      return KalabControlPanel(repository: repository);
+      return KalabControlPanel(
+        repository: repository,
+        maintenanceFuture: _maintenanceFuture,
+      );
     }
     if (_selectedIndex == 2) {
       return HistoryPage(
@@ -357,9 +370,14 @@ class _KalabHero extends StatelessWidget {
 }
 
 class KalabControlPanel extends StatefulWidget {
-  const KalabControlPanel({super.key, required this.repository});
+  const KalabControlPanel({
+    super.key,
+    required this.repository,
+    required this.maintenanceFuture,
+  });
 
   final DashboardRepository repository;
+  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
 
   @override
   State<KalabControlPanel> createState() => _KalabControlPanelState();
@@ -415,6 +433,10 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                       onUpdated: () => setState(_refresh),
                     ),
                     const SizedBox(height: 16),
+                    _MaintenanceReportCard(
+                      maintenanceFuture: widget.maintenanceFuture,
+                    ),
+                    const SizedBox(height: 16),
                     _BorrowedReportCard(reportFuture: _reportFuture),
                   ],
                 ),
@@ -455,7 +477,7 @@ class _PanelShortcutGrid extends StatelessWidget {
       ),
       (
         Icons.meeting_room_outlined,
-        'Reservasi Ruangan',
+        'Atur Ruangan',
         () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => RoomSchedulePage(repository: repository),
@@ -1022,6 +1044,124 @@ class _BorrowedReportCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _MaintenanceReportCard extends StatelessWidget {
+  const _MaintenanceReportCard({required this.maintenanceFuture});
+
+  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FutureBuilder<List<MaintenanceReportEntry>>(
+          future: maintenanceFuture,
+          builder: (context, snapshot) {
+            final rows = snapshot.data ?? const <MaintenanceReportEntry>[];
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Laporan Maintenance / Kerusakan Alat',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (!snapshot.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (rows.isEmpty)
+                  const Text('Belum ada laporan kerusakan dari mahasiswa.')
+                else
+                  ...rows.map(
+                    (row) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Wrap(
+                          spacing: 14,
+                          runSpacing: 10,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: AppTheme.vibrantPurple.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.handyman_outlined,
+                                color: AppTheme.vibrantPurple,
+                              ),
+                            ),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 420),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    row.inventoryName ?? row.inventoryId,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    row.description,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: AppTheme.muted),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    row.reporterName == null
+                                        ? DateFormat(
+                                            'dd MMM yyyy, HH:mm',
+                                          ).format(row.createdAt)
+                                        : '${row.reporterName} | ${row.reporterIdentity ?? '-'}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Chip(
+                              label: Text(row.status),
+                              labelStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                              backgroundColor: AppTheme.richBronze,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

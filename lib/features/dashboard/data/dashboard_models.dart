@@ -913,6 +913,71 @@ class BorrowedInventoryReport {
   final int quantity;
 }
 
+class MaintenanceReportEntry {
+  const MaintenanceReportEntry({
+    required this.id,
+    required this.inventoryId,
+    required this.description,
+    required this.photoUrl,
+    required this.status,
+    required this.createdAt,
+    this.reporterName,
+    this.reporterIdentity,
+    this.inventoryName,
+    this.labId,
+  });
+
+  final String id;
+  final String inventoryId;
+  final String description;
+  final String? photoUrl;
+  final String status;
+  final DateTime createdAt;
+  final String? reporterName;
+  final String? reporterIdentity;
+  final String? inventoryName;
+  final String? labId;
+
+  factory MaintenanceReportEntry.fromMap(Map<String, dynamic> map) {
+    return MaintenanceReportEntry(
+      id: map['id'] as String,
+      inventoryId: map['inventory_id'] as String? ?? '',
+      description: map['deskripsi'] as String? ?? '',
+      photoUrl: map['foto_url'] as String?,
+      status: map['status_perbaikan'] as String? ?? 'diterima',
+      createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+      reporterName: _profileNameFromMap(map['profiles']),
+      reporterIdentity: _profileIdentityFromMap(map['profiles']),
+      inventoryName: _inventoryNameFromMap(map['inventories']),
+      labId: _inventoryLabIdFromMap(map['inventories']),
+    );
+  }
+
+  static String? _profileNameFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['nama'] as String?;
+    if (value is Map) return value['nama'] as String?;
+    return null;
+  }
+
+  static String? _profileIdentityFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['nim_nip'] as String?;
+    if (value is Map) return value['nim_nip'] as String?;
+    return null;
+  }
+
+  static String? _inventoryNameFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['nama_alat'] as String?;
+    if (value is Map) return value['nama_alat'] as String?;
+    return null;
+  }
+
+  static String? _inventoryLabIdFromMap(Object? value) {
+    if (value is Map<String, dynamic>) return value['lab_id'] as String?;
+    if (value is Map) return value['lab_id'] as String?;
+    return null;
+  }
+}
+
 class UserAccountSummary {
   const UserAccountSummary({
     required this.id,

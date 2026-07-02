@@ -126,14 +126,14 @@ class _SettingsPageState extends State<SettingsPage> {
               child: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.fromLTRB(22, 14, 22, 22),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 620),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildProfileHeader(context),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
                           _buildMenuCard(
                             context,
                             children: [
@@ -227,7 +227,7 @@ class _SettingsPageState extends State<SettingsPage> {
         : _nimController.text.trim();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(26),

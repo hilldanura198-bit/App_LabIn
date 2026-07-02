@@ -22,7 +22,7 @@ class SaprasFacilityPage extends StatelessWidget {
     return Theme(
       data: AppTheme.campusTheme(Theme.of(context), selectedCampus),
       child: DefaultTabController(
-        length: 4,
+        length: 3,
         child: Scaffold(
           appBar: GlassAppBar(
             title: 'sapras_campus'.tr(),
@@ -32,7 +32,6 @@ class SaprasFacilityPage extends StatelessWidget {
                 Tab(text: 'facility'.tr()),
                 Tab(text: 'infrastructure'.tr()),
                 Tab(text: 'blueprint'.tr()),
-                Tab(text: 'satisfaction_tab'.tr()),
               ],
             ),
           ),
@@ -45,7 +44,6 @@ class SaprasFacilityPage extends StatelessWidget {
                 ),
                 _InfrastructureList(repository: repository),
                 _CampusMapTabs(selectedCampus: selectedCampus),
-                _SatisfactionReviewTab(repository: repository),
               ],
             ),
           ),
@@ -81,12 +79,9 @@ class _FacilityList extends StatelessWidget {
             final bookings = bookingSnapshot.data ?? const <LabBooking>[];
             return ListView.separated(
               padding: const EdgeInsets.all(18),
-              itemCount: items.length + 1,
+              itemCount: items.length,
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                if (index == items.length) {
-                  return const _FacilityReviewCard();
-                }
                 final item = items[index];
                 final code = _assetCode(index);
                 final booking = _latestBookingForLab(bookings, item.labId);
@@ -848,8 +843,6 @@ class _CampusMapPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [denah, const SizedBox(height: 16), info],
                     ),
-                  const SizedBox(height: 16),
-                  const _FacilityReviewCard(),
                 ],
               ),
             ),
@@ -987,143 +980,6 @@ class _CampusInfoCard extends StatelessWidget {
                 .toList(),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _FacilityReviewCard extends StatelessWidget {
-  const _FacilityReviewCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final testimonials = ['testimonial_1'.tr(), 'testimonial_2'.tr()];
-    return Card(
-      color: scheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: const Color(0xFFF59E0B).withValues(alpha: 0.26),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDBEAFE),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.star_rounded,
-                    color: Color(0xFFF59E0B),
-                    size: 34,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'satisfaction_title'.tr(),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: scheme.onSurface,
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'satisfaction_subtitle'.tr(),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: scheme.outlineVariant),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
-                  const SizedBox(width: 8),
-                  Text(
-                    '4.8/5',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.vibrantPurple,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      'average_rating'.tr(),
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            ...testimonials.map(
-              (text) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.format_quote_rounded,
-                        color: AppTheme.electricBlue,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          text,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: scheme.onSurface,
-                                height: 1.4,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
