@@ -127,17 +127,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final background = BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          AppTheme.vibrantPurple.withValues(alpha: 0.18),
-          AppTheme.electricBlue.withValues(alpha: 0.08),
-          Theme.of(context).colorScheme.surface,
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ),
-    );
+    final campus = AppTheme.campusColorsOf(context);
+    final background = BoxDecoration(gradient: campus.gradient);
 
     return Scaffold(
       appBar: widget.showAppBar ? GlassAppBar(title: 'profile'.tr()) : null,
@@ -155,7 +146,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
+                      padding: const EdgeInsets.fromLTRB(22, 4, 22, 18),
                       children: [
                         Center(
                           child: ConstrainedBox(
@@ -164,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildProfileHeader(context),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 8),
                                 _buildMenuCard(
                                   context,
                                   children: [
@@ -275,8 +266,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 180),
-      padding: const EdgeInsets.all(18),
+      constraints: const BoxConstraints(minHeight: 172),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(30),
@@ -387,7 +378,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       name,
                       maxLines: 1,
@@ -407,7 +398,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -469,7 +460,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required VoidCallback onTap,
     Color? iconColor,
   }) {
-    final color = iconColor ?? Theme.of(context).colorScheme.primary;
+    final color = iconColor ?? AppTheme.campusColorsOf(context).primary;
     return ListTile(
       onTap: onTap,
       leading: _tileIcon(icon, color),
@@ -488,7 +479,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required ValueChanged<bool>? onChanged,
   }) {
     return ListTile(
-      leading: _tileIcon(icon, Theme.of(context).colorScheme.secondary),
+      leading: _tileIcon(icon, AppTheme.campusColorsOf(context).secondary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       subtitle: Text(subtitle),
       trailing: Switch(value: value, onChanged: onChanged),

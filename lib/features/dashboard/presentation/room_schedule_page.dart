@@ -110,6 +110,15 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                             .bodyMedium
                                             ?.copyWith(color: AppTheme.muted),
                                       ),
+                                      const SizedBox(height: 8),
+                                      _StatusBanner(
+                                        title: canManageSlots
+                                            ? 'Mode Kalab'
+                                            : 'Mode Mahasiswa',
+                                        message: canManageSlots
+                                            ? 'Kalab dapat mengetuk slot untuk block atau unblock manual. Status buku lab yang sudah ada tetap menjadi acuan utama.'
+                                            : 'Mahasiswa hanya melihat slot ketersediaan dan detail booking yang sudah ada agar pengajuan tidak dobel.',
+                                      ),
                                       if (canManageSlots) ...[
                                         const SizedBox(height: 8),
                                         Text(

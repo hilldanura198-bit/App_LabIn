@@ -712,6 +712,11 @@ class DashboardModel {
         'assets/images/lab mediasi digital.jpg',
       final value when value.contains('legal tech') =>
         'assets/images/lab legal tech.jpg',
+      final value
+          when value.contains('lab jaringan') ||
+              value.contains('jaringan komputer') ||
+              value.contains('lab jaringan komputer') =>
+        'assets/images/lab_jaringan_komputer.png',
       final value when value.contains('kesehatan masyarakat') =>
         'assets/images/lab kesehatan masyarakat.jpg',
       final value when value.contains('rpl') => 'assets/images/lab rpl.jpg',
