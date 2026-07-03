@@ -79,10 +79,46 @@ class BookingSuccessPage extends StatelessWidget {
                     _BookingManifest(booking: booking),
                     const SizedBox(height: 18),
                     if (_canRenderQr)
-                      ElevatedButton.icon(
-                        onPressed: () => _showQrTicket(context),
-                        icon: const Icon(Icons.qr_code_2_rounded),
-                        label: const Text('Tampilkan QR'),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _showQrTicket(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.campusGradientOf(context),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.16),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.qr_code_2_rounded,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Tampilkan QR',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       )
                     else
                       Container(

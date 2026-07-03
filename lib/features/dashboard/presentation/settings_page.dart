@@ -36,7 +36,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
-  bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
   String _language = 'id';
@@ -93,51 +92,61 @@ class _SettingsPageState extends State<SettingsPage> {
             : fallbackEmail;
         _avatarUrl = profile.avatarUrl;
         _role = profile.role;
-        _loading = false;
       });
     } on Object catch (error) {
-      setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
-      }
+      final currentUser = widget.repository.currentUser;
+      final metadata = currentUser?.userMetadata ?? const <String, dynamic>{};
+      if (!mounted) return;
+      setState(() {
+        _nameController.text = (metadata['nama'] ?? metadata['name'] ?? '-')
+            .toString()
+            .trim();
+        _nimController.text = (metadata['nim_nip'] ?? metadata['nim'] ?? '-')
+            .toString()
+            .trim();
+        _waController.text =
+            (metadata['whatsapp_number'] ?? metadata['phone'] ?? '-')
+                .toString()
+                .trim();
+        _emailController.text = (metadata['email'] ?? currentUser?.email ?? '-')
+            .toString()
+            .trim();
+        _avatarUrl = null;
+        _role = 'mahasiswa';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: widget.showAppBar ? GlassAppBar(title: 'profile'.tr()) : null,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.secondary.withValues(alpha: 0.18),
-                    Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.08),
-                    Theme.of(context).colorScheme.surface,
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth >= 720
+                ? 620.0
+                : constraints.maxWidth;
+            return RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 18),
+                children: [
+                  Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 620),
+                      constraints: BoxConstraints(maxWidth: maxWidth),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildProfileHeader(context),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           _buildMenuCard(
                             context,
                             children: [
@@ -216,9 +225,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -233,8 +245,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 180),
-      padding: const EdgeInsets.all(18),
+      constraints: const BoxConstraints(minHeight: 172),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(30),
@@ -250,37 +262,22 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.14,
-                child: CustomPaint(
-                  painter: _HeaderOrnamentPainter(gradient.colors),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -10,
-            top: -12,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.10),
-              ),
-            ),
-          ),
           Positioned(
             left: 10,
             bottom: 12,
             child: Text(
-              'LabIn - Manajemen Fasilitas',
+              'LabIn',
               style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.18),
+                color: Colors.white,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
+                letterSpacing: 0.2,
+                shadows: const [
+                  Shadow(
+                    color: Color(0x66000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ),
@@ -352,6 +349,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
+                      'LabIn - Manajemen Fasilitas...',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -360,7 +367,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       nim,
                       maxLines: 1,
@@ -368,6 +375,27 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.82),
                         fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18),
+                        ),
+                      ),
+                      child: Text(
+                        _roleLabel(_role),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -411,7 +439,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required VoidCallback onTap,
     Color? iconColor,
   }) {
-    final color = iconColor ?? Theme.of(context).colorScheme.primary;
+    final color = iconColor ?? AppTheme.campusColorsOf(context).primary;
     return ListTile(
       onTap: onTap,
       leading: _tileIcon(icon, color),
@@ -430,7 +458,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required ValueChanged<bool>? onChanged,
   }) {
     return ListTile(
-      leading: _tileIcon(icon, Theme.of(context).colorScheme.secondary),
+      leading: _tileIcon(icon, AppTheme.campusColorsOf(context).secondary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       subtitle: Text(subtitle),
       trailing: Switch(value: value, onChanged: onChanged),
@@ -455,6 +483,14 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Icon(icon, color: color),
     );
+  }
+
+  String _roleLabel(String role) {
+    return switch (role.toLowerCase()) {
+      'kalab' => 'Kalab',
+      'aslab' => 'Aslab',
+      _ => 'Mahasiswa',
+    };
   }
 
   void _showEditProfileSheet() {
@@ -945,52 +981,5 @@ class _SettingsPageState extends State<SettingsPage> {
       'deleteAccountSubtitle': 'Request LabIn account deletion',
     };
     return (_language == 'en' ? en : id)[key] ?? key;
-  }
-}
-
-class _HeaderOrnamentPainter extends CustomPainter {
-  _HeaderOrnamentPainter(this.colors);
-
-  final List<Color> colors;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..shader = LinearGradient(
-        colors: colors,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(Offset.zero & size);
-    final path = Path();
-    path.moveTo(size.width * 0.06, size.height * 0.22);
-    path.cubicTo(
-      size.width * 0.24,
-      size.height * 0.02,
-      size.width * 0.45,
-      size.height * 0.38,
-      size.width * 0.80,
-      size.height * 0.18,
-    );
-    path.cubicTo(
-      size.width * 0.92,
-      size.height * 0.10,
-      size.width * 0.94,
-      size.height * 0.62,
-      size.width * 0.64,
-      size.height * 0.76,
-    );
-    canvas.drawPath(path, paint);
-    canvas.drawCircle(
-      Offset(size.width * 0.88, size.height * 0.28),
-      size.shortestSide * 0.10,
-      Paint()..color = colors.last.withValues(alpha: 0.12),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _HeaderOrnamentPainter oldDelegate) {
-    return oldDelegate.colors != colors;
   }
 }

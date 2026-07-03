@@ -626,6 +626,9 @@ class DashboardModel {
       for (final item in localFacilityCatalog) _assetKey(item.namaAlat): item,
     };
     for (final item in inventories) {
+      if (_shouldExcludeFromCatalog(item)) {
+        continue;
+      }
       final key = _assetKey(item.namaAlat);
       merged[key] = LabInventory(
         id: item.id,
@@ -642,6 +645,12 @@ class DashboardModel {
     final result = merged.values.toList()
       ..sort((a, b) => a.namaAlat.compareTo(b.namaAlat));
     return result;
+  }
+
+  static bool _shouldExcludeFromCatalog(LabInventory item) {
+    final normalized = _normalizeAssetName(item.namaAlat);
+    return normalized.contains('lab jaringan') ||
+        normalized.contains('jaringan komputer');
   }
 
   static String getLocalAssetPath(String name) {
@@ -706,14 +715,8 @@ class DashboardModel {
         'assets/images/monitor ultrawide.jpg',
       final value when value.contains('area luar ruangan') =>
         'assets/images/area luar ruangan.jpg',
-      final value when value.contains('ruangan rektor') =>
-        'assets/images/ruangan_rektorat.png',
       final value when value.contains('simulasi klinik') =>
         'assets/images/lab simulasi klinik.jpg',
-      final value
-          when value.contains('jaringan komputer') ||
-              value.contains('komputer') =>
-        'assets/images/lab_jaringan_komputer.png',
       final value when value.contains('mediasi digital') =>
         'assets/images/lab mediasi digital.jpg',
       final value when value.contains('legal tech') =>

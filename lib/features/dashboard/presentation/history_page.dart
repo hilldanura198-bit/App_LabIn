@@ -131,18 +131,32 @@ class _HistoryFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const filters = ['Semua', 'Alat', 'Ruangan Lab'];
-    return SegmentedButton<String>(
-      segments: filters
-          .map(
-            (filter) => ButtonSegment<String>(
-              value: filter,
-              icon: Icon(_icon(filter)),
-              label: Text(filter),
-            ),
-          )
-          .toList(),
-      selected: {value},
-      onSelectionChanged: (selected) => onChanged(selected.first),
+    return Center(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: filters
+              .map(
+                (filter) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(
+                      filter,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    selected: value == filter,
+                    avatar: Icon(_icon(filter), size: 18),
+                    onSelected: (_) => onChanged(filter),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ),
     );
   }
 
@@ -208,38 +222,19 @@ class _HistoryCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
-                        if (role != UserRole.mahasiswa) ...[
-                          Text(
-                            booking.borrowerName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme.muted,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${booking.borrowerIdentity ?? '-'} | ${booking.labDisplayName}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: AppTheme.muted),
-                          ),
-                        ] else ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            booking.labDisplayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme.muted,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                        ],
+                        const SizedBox(height: 2),
+                        Text(
+                          role == UserRole.mahasiswa
+                              ? booking.labDisplayName
+                              : '${booking.borrowerName} | ${booking.borrowerIdentity ?? '-'} | ${booking.labDisplayName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppTheme.muted,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
                       ],
                     ),
                   ),

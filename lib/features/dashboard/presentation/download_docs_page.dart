@@ -29,7 +29,9 @@ class DownloadDocsPage extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final bookings = snapshot.data!.where(_isKalabApproved).toList();
+            final bookings = snapshot.data!
+                .where((booking) => booking.status != 'rejected')
+                .toList();
             if (bookings.isEmpty) {
               return const Center(
                 child: Text('Belum ada booking yang bisa diunduh.'),
@@ -88,6 +90,7 @@ class _BookingPdfCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canDownload = _isFinalApprovedByKalab(booking);
     final createdTime = DateFormat('HH:mm').format(booking.createdAt);
     final endTime = booking.endTime.isNotEmpty
         ? booking.endTime
@@ -206,10 +209,20 @@ class _BookingPdfCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: CyberGradientButton(
-                onPressed: onDownload,
+                onPressed: canDownload ? onDownload : null,
                 child: const Text('Unduh PDF'),
               ),
             ),
+            if (!canDownload) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Pending - Menunggu ACC Kalab untuk mengunduh',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
             if (booking.status == 'returned') ...[
               const SizedBox(height: 14),
               _ReturnedBookingReviewCard(
@@ -224,7 +237,7 @@ class _BookingPdfCard extends StatelessWidget {
   }
 }
 
-bool _isKalabApproved(LabBooking booking) {
+bool _isFinalApprovedByKalab(LabBooking booking) {
   return switch (booking.status) {
     'approved_kalab' || 'active' || 'returned' || 'late' => true,
     _ => false,

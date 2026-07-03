@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'widgets/glass_app_bar.dart';
@@ -17,17 +19,21 @@ class RoomSchedulePage extends StatefulWidget {
 
 class _RoomSchedulePageState extends State<RoomSchedulePage> {
   late Stream<List<LabBooking>> _scheduleStream;
+  late Stream<List<LabRoom>> _roomStream;
   DateTime _selectedDay = DateTime.now();
+  final Set<String> _manualBlockedSlots = <String>{};
 
   @override
   void initState() {
     super.initState();
     _scheduleStream = widget.repository.watchRoomSchedule();
+    _roomStream = widget.repository.watchLaboratories();
   }
 
   void _refresh() {
     setState(() {
       _scheduleStream = widget.repository.watchRoomSchedule();
+      _roomStream = widget.repository.watchLaboratories();
     });
   }
 
@@ -35,105 +41,199 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
     final dayFormatter = DateFormat.yMMMMEEEEd(locale);
+    final role = _currentRole(context);
+    final canManageSlots = role != UserRole.mahasiswa;
     return Scaffold(
       appBar: const GlassAppBar(title: 'Jadwal Ruangan'),
       body: SafeArea(
-        child: StreamBuilder<List<LabBooking>>(
-          stream: _scheduleStream,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Center(child: Text(snapshot.error.toString()));
+        child: StreamBuilder<List<LabRoom>>(
+          stream: _roomStream,
+          builder: (context, roomSnapshot) {
+            if (roomSnapshot.hasError) {
+              return Center(child: Text(roomSnapshot.error.toString()));
             }
-            if (!snapshot.hasData) {
+            if (!roomSnapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final bookings = snapshot.data!.where(_isRelevantBooking).toList()
-              ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
-            final todaysBookings = bookings
-                .where((booking) => _matchesDay(booking, _selectedDay))
-                .toList();
-            return RefreshIndicator(
-              onRefresh: () async => _refresh(),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-                children: [
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 860),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                    'Jadwal Keterpakaian Ruangan',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(fontWeight: FontWeight.w900),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Kalender berikut menampilkan reservasi aktif, pending, dan approved yang masih berjalan.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(color: AppTheme.muted),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: CalendarDatePicker(
-                                initialDate: _selectedDay,
-                                firstDate: DateTime.now().subtract(
-                                  const Duration(days: 90),
-                                ),
-                                lastDate: DateTime.now().add(
-                                  const Duration(days: 180),
-                                ),
-                                onDateChanged: (date) {
-                                  setState(() => _selectedDay = date);
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 54,
-                                    height: 54,
-                                    decoration: BoxDecoration(
-                                      gradient: AppTheme.campusGradientOf(
-                                        context,
+            final rooms = roomSnapshot.data ?? const <LabRoom>[];
+            final globallyLocked = rooms.any(
+              (room) => room.status.toLowerCase() != 'aktif',
+            );
+            return StreamBuilder<List<LabBooking>>(
+              stream: _scheduleStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text(snapshot.error.toString()));
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final bookings =
+                    snapshot.data!.where(_isRelevantBooking).toList()..sort(
+                      (a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam),
+                    );
+                final todaysBookings = bookings
+                    .where((booking) => _matchesDay(booking, _selectedDay))
+                    .toList();
+                return RefreshIndicator(
+                  onRefresh: () async => _refresh(),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+                    children: [
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 860),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(
+                                        'Jadwal Keterpakaian Ruangan',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w900,
+                                            ),
                                       ),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: const Icon(
-                                      Icons.calendar_month_rounded,
-                                      color: Colors.white,
-                                    ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Kalender berikut menampilkan reservasi aktif, pending, dan approved yang masih berjalan.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(color: AppTheme.muted),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (canManageSlots) ...[
+                                        _StatusBanner(
+                                          title: 'Mode Kalab',
+                                          message:
+                                              'Kalab dapat mengetuk slot untuk block atau unblock manual. Status booking yang sudah ada tetap menjadi acuan utama.',
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Ketuk slot untuk block/unblock manual.',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                        if (globallyLocked) ...[
+                                          const SizedBox(height: 8),
+                                          _StatusBanner(
+                                            title: 'Tutup Lab aktif',
+                                            message:
+                                                'Satu atau lebih laboratorium sedang ditutup sehingga slot mahasiswa ditandai tidak tersedia.',
+                                          ),
+                                        ],
+                                      ] else ...[
+                                        Text(
+                                          'Mahasiswa hanya melihat slot booking aktif agar pengajuan tidak dobel.',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(color: AppTheme.muted),
+                                        ),
+                                      ],
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: CalendarDatePicker(
+                                    initialDate: _selectedDay,
+                                    firstDate: DateTime.now().subtract(
+                                      const Duration(days: 90),
+                                    ),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 180),
+                                    ),
+                                    onDateChanged: (date) {
+                                      setState(() => _selectedDay = date);
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 54,
+                                        height: 54,
+                                        decoration: BoxDecoration(
+                                          gradient: AppTheme.campusGradientOf(
+                                            context,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.calendar_month_rounded,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              dayFormatter.format(_selectedDay),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w900,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '${todaysBookings.length} reservasi pada tanggal ini',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: AppTheme.muted,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (canManageSlots) ...[
+                                const SizedBox(height: 16),
+                                Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                          CrossAxisAlignment.stretch,
                                       children: [
                                         Text(
-                                          dayFormatter.format(_selectedDay),
+                                          'Ketersediaan Slot Hari Ini',
                                           style: Theme.of(context)
                                               .textTheme
                                               .titleMedium
@@ -141,9 +241,65 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                                 fontWeight: FontWeight.w900,
                                               ),
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: 10),
+                                        ..._availabilitySlots(
+                                          bookings: todaysBookings,
+                                          day: _selectedDay,
+                                        ).map((slot) {
+                                          final blocked = _manualBlockedSlots
+                                              .contains(_slotKey(slot.start));
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 10,
+                                            ),
+                                            child: _AvailabilitySlotCard(
+                                              slot: slot,
+                                              manuallyBlocked: blocked,
+                                              globallyLocked:
+                                                  globallyLocked &&
+                                                  role == UserRole.mahasiswa,
+                                              canManage: canManageSlots,
+                                              onTap: canManageSlots
+                                                  ? () =>
+                                                        _toggleManualBlock(slot)
+                                                  : null,
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ] else ...[
+                                const SizedBox(height: 16),
+                                Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(22),
+                                    child: Column(
+                                      children: [
+                                        const Icon(
+                                          Icons.event_available_outlined,
+                                          size: 42,
+                                        ),
+                                        const SizedBox(height: 10),
                                         Text(
-                                          '${todaysBookings.length} reservasi pada tanggal ini',
+                                          todaysBookings.isEmpty
+                                              ? 'Ruangan Kosong (Tersedia untuk dipinjam)'
+                                              : 'Ruangan Telah Dipinjam (Tidak tersedia)',
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          todaysBookings.isEmpty
+                                              ? 'Belum ada booking aktif pada tanggal ini.'
+                                              : '${todaysBookings.length} reservasi aktif pada tanggal ini',
+                                          textAlign: TextAlign.center,
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall
@@ -152,84 +308,151 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                    'Ketersediaan Slot Hari Ini',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w900),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ..._availabilitySlots(
-                                    bookings: todaysBookings,
-                                    day: _selectedDay,
-                                  ).map(
-                                    (slot) => Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 10,
-                                      ),
-                                      child: _AvailabilitySlotCard(slot: slot),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (todaysBookings.isEmpty)
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(22),
-                                child: Column(
-                                  children: [
-                                    const Icon(
-                                      Icons.event_busy_outlined,
-                                      size: 42,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      'Tidak ada jadwal ruangan pada hari ini.',
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                    ),
-                                  ],
                                 ),
-                              ),
-                            )
-                          else
-                            ...todaysBookings.map(
-                              (booking) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _ScheduleCard(booking: booking),
-                              ),
-                            ),
-                        ],
+                              ],
+                              if (canManageSlots) ...[
+                                const SizedBox(height: 16),
+                                if (todaysBookings.isEmpty)
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(22),
+                                      child: Column(
+                                        children: [
+                                          const Icon(
+                                            Icons.event_busy_outlined,
+                                            size: 42,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            'Tidak ada jadwal ruangan pada hari ini.',
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                else ...[
+                                  Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 48,
+                                            height: 48,
+                                            decoration: BoxDecoration(
+                                              gradient:
+                                                  AppTheme.campusGradientOf(
+                                                    context,
+                                                  ),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            child: const Icon(
+                                              Icons.event_available_rounded,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Ruangan Telah Dipinjam (Tidak tersedia)',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleMedium
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w900,
+                                                      ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  '${todaysBookings.length} reservasi aktif pada tanggal ini',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: AppTheme.muted,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...todaysBookings.map(
+                                    (booking) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: _ScheduleCard(booking: booking),
+                                    ),
+                                  ),
+                                ],
+                              ] else if (todaysBookings.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                ...todaysBookings.map(
+                                  (booking) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _ScheduleCard(booking: booking),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
       ),
     );
+  }
+
+  UserRole _currentRole(BuildContext context) {
+    final state = context.read<AuthBloc>().state;
+    if (state is Authenticated) {
+      return state.role;
+    }
+    return UserRole.mahasiswa;
+  }
+
+  void _toggleManualBlock(_RoomAvailabilitySlot slot) {
+    final key = _slotKey(slot.start);
+    if (slot.booking != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Slot ini sedang dipakai booking aktif.')),
+      );
+      return;
+    }
+    setState(() {
+      if (_manualBlockedSlots.contains(key)) {
+        _manualBlockedSlots.remove(key);
+      } else {
+        _manualBlockedSlots.add(key);
+      }
+    });
+  }
+
+  String _slotKey(DateTime start) {
+    return DateFormat('yyyy-MM-dd-HH').format(start);
   }
 
   bool _isRelevantBooking(LabBooking booking) {
@@ -287,71 +510,101 @@ class _RoomAvailabilitySlot {
 }
 
 class _AvailabilitySlotCard extends StatelessWidget {
-  const _AvailabilitySlotCard({required this.slot});
+  const _AvailabilitySlotCard({
+    required this.slot,
+    required this.manuallyBlocked,
+    required this.globallyLocked,
+    required this.canManage,
+    this.onTap,
+  });
 
   final _RoomAvailabilitySlot slot;
+  final bool manuallyBlocked;
+  final bool globallyLocked;
+  final bool canManage;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isBusy = slot.booking != null;
-    final color = isBusy
+    final isBooked = slot.booking != null;
+    final isBusy = isBooked || manuallyBlocked || globallyLocked;
+    final color = isBooked
         ? _statusColor(context, slot.booking!.status)
+        : isBusy
+        ? Theme.of(context).colorScheme.error
         : Theme.of(context).colorScheme.tertiary;
     final time =
         '${DateFormat.Hm().format(slot.start)} - ${DateFormat.Hm().format(slot.end)}';
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+    final description = isBooked
+        ? '${slot.booking!.labDisplayName} | ${slot.booking!.statusLabel}'
+        : manuallyBlocked
+        ? 'Slot diblokir manual oleh Kalab'
+        : globallyLocked
+        ? 'Tutup Lab aktif untuk mahasiswa'
+        : 'Ruangan Kosong (Tersedia untuk dipinjam)';
+    final badgeLabel = isBusy ? 'Tidak Tersedia' : 'Tersedia';
+    final effectiveTap = canManage ? onTap : null;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: effectiveTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              isBusy ? Icons.event_busy_outlined : Icons.event_available,
-              color: color,
-            ),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  time,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  isBusy
-                      ? '${slot.booking!.labDisplayName} | ${slot.booking!.statusLabel}'
-                      : 'Ruangan Kosong (Tersedia untuk dipinjam)',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Icon(
+                  isBusy ? Icons.event_busy_outlined : Icons.event_available,
+                  color: color,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      time,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Chip(
+                label: Text(badgeLabel),
+                labelStyle: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                ),
+                backgroundColor: color.withValues(alpha: 0.12),
+                side: BorderSide(color: color.withValues(alpha: 0.22)),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Chip(
-            label: Text(isBusy ? 'Terpakai' : 'Tersedia'),
-            labelStyle: TextStyle(color: color, fontWeight: FontWeight.w900),
-            backgroundColor: color.withValues(alpha: 0.12),
-            side: BorderSide(color: color.withValues(alpha: 0.22)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -418,16 +671,63 @@ class _ScheduleCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Chip(
-              label: Text(_statusLabel(booking.status)),
+              label: const Text('Tidak Tersedia'),
               labelStyle: TextStyle(
-                color: statusColor,
+                color: Colors.white,
                 fontWeight: FontWeight.w900,
               ),
-              backgroundColor: statusColor.withValues(alpha: 0.12),
-              side: BorderSide(color: statusColor.withValues(alpha: 0.24)),
+              backgroundColor: const Color(0xFFEF4444),
+              side: BorderSide.none,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.title, required this.message});
+
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.do_not_disturb_on_rounded, color: scheme.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: scheme.error,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -441,16 +741,5 @@ Color _statusColor(BuildContext context, String status) {
     'active' => Theme.of(context).colorScheme.primaryContainer,
     'late' => Theme.of(context).colorScheme.error,
     _ => Theme.of(context).colorScheme.secondary,
-  };
-}
-
-String _statusLabel(String status) {
-  return switch (status) {
-    'pending' => 'Pending',
-    'approved_aslab' => 'Approved Aslab',
-    'approved_kalab' => 'Approved Kalab',
-    'active' => 'Active',
-    'late' => 'Terlambat',
-    _ => 'Selesai',
   };
 }

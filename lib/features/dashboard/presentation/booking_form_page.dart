@@ -169,21 +169,13 @@ class _BookingFormPageState extends State<BookingFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
+    final campusGradient = campus.gradient;
     return Scaffold(
-      backgroundColor: AppTheme.vibrantPurple.withValues(alpha: 0.12),
+      backgroundColor: Colors.transparent,
       appBar: const GlassAppBar(title: 'Formulir Peminjaman'),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.vibrantPurple.withValues(alpha: 0.22),
-              AppTheme.electricBlue.withValues(alpha: 0.10),
-              Theme.of(context).colorScheme.surface,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: campusGradient),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : SafeArea(
@@ -203,13 +195,11 @@ class _BookingFormPageState extends State<BookingFormPage> {
                               color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: AppTheme.electricBlue.withValues(
-                                  alpha: 0.12,
-                                ),
+                                color: campus.primary.withValues(alpha: 0.14),
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.vibrantPurple.withValues(
+                                  color: campus.secondary.withValues(
                                     alpha: 0.16,
                                   ),
                                   blurRadius: 32,
@@ -241,7 +231,9 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                   data: Theme.of(context).copyWith(
                                     colorScheme: Theme.of(context).colorScheme
                                         .copyWith(
-                                          primary: AppTheme.electricBlue,
+                                          primary: campus.primary,
+                                          secondary: campus.secondary,
+                                          tertiary: campus.tertiary,
                                         ),
                                   ),
                                   child: Stepper(
@@ -336,9 +328,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                       'Pinjam untuk diri sendiri',
                                                     ),
                                                     subtitle: Text(
-                                                      _borrowForSelf
-                                                          ? 'Identitas session aktif akan diisi otomatis.'
-                                                          : 'Isi manual identitas orang lain yang didelegasikan.',
+                                                      'Centang jika Anda meminjam untuk diri sendiri. Kosongkan pilihan jika Anda didelegasikan untuk mengisi identitas pengguna lain.',
                                                     ),
                                                     secondary: Icon(
                                                       _borrowForSelf
@@ -1403,15 +1393,14 @@ class _InventoryChecklist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     if (inventories.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.electricBlue.withValues(alpha: 0.08),
+          color: campus.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.electricBlue.withValues(alpha: 0.14),
-          ),
+          border: Border.all(color: campus.primary.withValues(alpha: 0.14)),
         ),
         child: const Text(
           'Belum ada inventaris yang tersedia untuk laboratorium ini.',
@@ -1459,6 +1448,7 @@ class _InventoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     final isAvailable = inventory.isAvailable;
     final quantity = draft?.quantity ?? 1;
     return Container(
@@ -1467,8 +1457,8 @@ class _InventoryTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: selected
-              ? AppTheme.electricBlue
-              : AppTheme.electricBlue.withValues(alpha: 0.14),
+              ? campus.primary
+              : campus.primary.withValues(alpha: 0.14),
         ),
       ),
       child: Column(
@@ -1489,7 +1479,7 @@ class _InventoryTile extends StatelessWidget {
             ),
             secondary: Icon(
               isAvailable ? Icons.inventory_2_outlined : Icons.block_outlined,
-              color: isAvailable ? AppTheme.electricBlue : Colors.red,
+              color: isAvailable ? campus.primary : Colors.red,
             ),
           ),
           if (selected)
@@ -1563,6 +1553,7 @@ class _ReviewPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     final dateFormatter = DateFormat('dd/MM/yyyy');
     final items = selectedItems;
 
@@ -1572,7 +1563,7 @@ class _ReviewPanel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: AppTheme.campusGradientOf(context),
+            gradient: campus.gradient,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Wrap(
@@ -1693,7 +1684,7 @@ class _ReviewPanel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppTheme.electricBlue.withValues(alpha: 0.08),
+            color: campus.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
@@ -1780,18 +1771,17 @@ class _SelectedItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppTheme.electricBlue.withValues(alpha: 0.14),
-        ),
+        border: Border.all(color: campus.primary.withValues(alpha: 0.14)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.inventory_2_outlined, color: AppTheme.electricBlue),
+          Icon(Icons.inventory_2_outlined, color: campus.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

@@ -56,8 +56,9 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   static const _campusOptions = [
     'Kampus Rektorat',
     'Kampus 1',
-    'Kampus Kesehatan Sondakan',
-    'Kampus Cemani',
+    'Kampus 2',
+    'Kampus 3',
+    'Kampus 4',
   ];
 
   int _selectedIndex = 0;
