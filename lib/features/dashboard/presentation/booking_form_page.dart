@@ -169,21 +169,12 @@ class _BookingFormPageState extends State<BookingFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final campusGradient = AppTheme.campusGradientOf(context);
     return Scaffold(
-      backgroundColor: AppTheme.vibrantPurple.withValues(alpha: 0.12),
+      backgroundColor: Colors.transparent,
       appBar: const GlassAppBar(title: 'Formulir Peminjaman'),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.vibrantPurple.withValues(alpha: 0.22),
-              AppTheme.electricBlue.withValues(alpha: 0.10),
-              Theme.of(context).colorScheme.surface,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: campusGradient),
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : SafeArea(

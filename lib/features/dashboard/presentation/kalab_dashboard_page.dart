@@ -449,6 +449,12 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                     ),
                     const SizedBox(height: 16),
                     _BorrowedReportCard(reportFuture: _reportFuture),
+                    const SizedBox(height: 16),
+                    _OperationalControlCard(
+                      repository: widget.repository,
+                      roomsFuture: _roomsFuture,
+                      onChanged: () => setState(_refresh),
+                    ),
                   ],
                 ),
               ),
@@ -1086,7 +1092,7 @@ class _MaintenanceReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: FutureBuilder<List<MaintenanceReportEntry>>(
           future: maintenanceFuture,
           builder: (context, snapshot) {
@@ -1100,7 +1106,7 @@ class _MaintenanceReportCard extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 if (!snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (rows.isEmpty)
@@ -1181,51 +1187,129 @@ class _MaintenanceReportCard extends StatelessWidget {
                                               ),
                                             ),
                                           ),
-                                          errorWidget: (context, _, _) =>
-                                              Icon(
-                                                Icons.handyman_outlined,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.secondary,
-                                              ),
+                                          errorWidget: (context, _, _) => Icon(
+                                            Icons.handyman_outlined,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                          ),
                                         ),
                                 ),
                               ),
                             ),
                             DataCell(
-                              Chip(
-                                label: Text(_maintenanceLabel(row.status)),
-                                labelStyle: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
                                 ),
-                                backgroundColor: _maintenanceColor(
-                                  context,
-                                  row.status,
+                                decoration: BoxDecoration(
+                                  color: _maintenanceColor(
+                                    context,
+                                    row.status,
+                                  ).withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _maintenanceColor(
+                                      context,
+                                      row.status,
+                                    ).withValues(alpha: 0.24),
+                                  ),
+                                ),
+                                child: Text(
+                                  _maintenanceLabel(row.status),
+                                  style: Theme.of(context).textTheme.labelMedium
+                                      ?.copyWith(
+                                        color: _maintenanceColor(
+                                          context,
+                                          row.status,
+                                        ),
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                 ),
                               ),
                             ),
                             DataCell(
-                              CyberGradientButton(
-                                height: 42,
-                                onPressed:
-                                    _maintenanceAction(row.status) == null
-                                    ? null
-                                    : () async {
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  SizedBox(
+                                    width: 92,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        minimumSize: const Size(92, 36),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 8,
+                                        ),
+                                        visualDensity: VisualDensity.compact,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () async {
                                         try {
                                           await repository
                                               .updateMaintenanceReportStatus(
                                                 reportId: row.id,
-                                                status: _maintenanceAction(
-                                                  row.status,
-                                                )!,
+                                                status: 'ditolak',
                                               );
                                           onChanged();
                                           if (!context.mounted) return;
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Laporan maintenance ditolak.',
+                                              ),
+                                            ),
+                                          );
+                                        } on Object catch (error) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             SnackBar(
+                                              content: Text(
+                                                error.toString().replaceFirst(
+                                                  'Exception: ',
+                                                  '',
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: const Text('Tolak'),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 92,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(92, 36),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 8,
+                                        ),
+                                        visualDensity: VisualDensity.compact,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () async {
+                                        try {
+                                          await repository
+                                              .updateMaintenanceReportStatus(
+                                                reportId: row.id,
+                                                status: 'diproses',
+                                              );
+                                          onChanged();
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
                                               content: Text(
                                                 'Status maintenance diperbarui.',
                                               ),
@@ -1247,10 +1331,10 @@ class _MaintenanceReportCard extends StatelessWidget {
                                           );
                                         }
                                       },
-                                child: Text(
-                                  _maintenanceActionLabel(row.status),
-                                  textAlign: TextAlign.center,
-                                ),
+                                      child: const Text('Terima'),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -1268,36 +1352,161 @@ class _MaintenanceReportCard extends StatelessWidget {
 }
 
 String _maintenanceLabel(String status) {
-  return switch (status) {
+  return switch (status.toLowerCase()) {
+    'pending' || 'diterima' => 'Pending',
     'diproses' => 'Diproses',
-    'selesai_diperbaiki' => 'Selesai Diperbaiki',
-    _ => 'Terima',
-  };
-}
-
-String? _maintenanceAction(String status) {
-  return switch (status) {
-    'diterima' => 'diproses',
-    'diproses' => 'selesai_diperbaiki',
-    _ => null,
-  };
-}
-
-String _maintenanceActionLabel(String status) {
-  return switch (status) {
-    'diterima' => 'Terima',
-    'diproses' => 'Selesai Diperbaiki',
-    'selesai_diperbaiki' => 'Selesai',
-    _ => 'Terima',
+    'selesai_diperbaiki' || 'selesai' => 'Selesai',
+    'ditolak' => 'Ditolak',
+    _ => 'Pending',
   };
 }
 
 Color _maintenanceColor(BuildContext context, String status) {
-  return switch (status) {
+  return switch (status.toLowerCase()) {
+    'pending' || 'diterima' => Theme.of(context).colorScheme.secondary,
     'diproses' => Theme.of(context).colorScheme.primary,
-    'selesai_diperbaiki' => Theme.of(context).colorScheme.tertiary,
+    'selesai_diperbaiki' || 'selesai' => Theme.of(context).colorScheme.tertiary,
+    'ditolak' => Theme.of(context).colorScheme.error,
     _ => Theme.of(context).colorScheme.secondary,
   };
+}
+
+class _OperationalControlCard extends StatelessWidget {
+  const _OperationalControlCard({
+    required this.repository,
+    required this.roomsFuture,
+    required this.onChanged,
+  });
+
+  final DashboardRepository repository;
+  final Future<List<LabRoom>> roomsFuture;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: FutureBuilder<List<LabRoom>>(
+          future: roomsFuture,
+          builder: (context, snapshot) {
+            final rooms = snapshot.data ?? const <LabRoom>[];
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Kontrol Operasional Ruangan',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (!snapshot.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (rooms.isEmpty)
+                  const Text('Belum ada ruangan laboratorium.')
+                else
+                  ...rooms.map(
+                    (room) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant
+                                .withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.campusGradientOf(context),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.meeting_room_outlined,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    room.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    room.location,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: AppTheme.muted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  room.status == 'aktif'
+                                      ? 'Buka Lab'
+                                      : 'Tutup Lab',
+                                  style: Theme.of(context).textTheme.labelMedium
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                                Switch(
+                                  value: room.status == 'aktif',
+                                  onChanged: (value) async {
+                                    try {
+                                      await repository.updateLaboratoryStatus(
+                                        laboratoryId: room.id,
+                                        isOpen: value,
+                                      );
+                                      onChanged();
+                                    } on Object catch (error) {
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            error.toString().replaceFirst(
+                                              'Exception: ',
+                                              '',
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 class _KalabApprovalCard extends StatelessWidget {

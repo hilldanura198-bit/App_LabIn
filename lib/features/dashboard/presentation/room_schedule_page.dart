@@ -418,13 +418,13 @@ class _ScheduleCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Chip(
-              label: Text(_statusLabel(booking.status)),
+              label: const Text('Tidak Tersedia'),
               labelStyle: TextStyle(
-                color: statusColor,
+                color: Colors.white,
                 fontWeight: FontWeight.w900,
               ),
-              backgroundColor: statusColor.withValues(alpha: 0.12),
-              side: BorderSide(color: statusColor.withValues(alpha: 0.24)),
+              backgroundColor: const Color(0xFFEF4444),
+              side: BorderSide.none,
             ),
           ],
         ),
@@ -441,16 +441,5 @@ Color _statusColor(BuildContext context, String status) {
     'active' => Theme.of(context).colorScheme.primaryContainer,
     'late' => Theme.of(context).colorScheme.error,
     _ => Theme.of(context).colorScheme.secondary,
-  };
-}
-
-String _statusLabel(String status) {
-  return switch (status) {
-    'pending' => 'Pending',
-    'approved_aslab' => 'Approved Aslab',
-    'approved_kalab' => 'Approved Kalab',
-    'active' => 'Active',
-    'late' => 'Terlambat',
-    _ => 'Selesai',
   };
 }

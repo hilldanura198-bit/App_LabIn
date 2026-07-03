@@ -130,14 +130,14 @@ class _SettingsPageState extends State<SettingsPage> {
               child: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
+                    padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 620),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildProfileHeader(context),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 14),
                           _buildMenuCard(
                             context,
                             children: [
@@ -250,37 +250,22 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.14,
-                child: CustomPaint(
-                  painter: _HeaderOrnamentPainter(gradient.colors),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -10,
-            top: -12,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.10),
-              ),
-            ),
-          ),
           Positioned(
             left: 10,
             bottom: 12,
             child: Text(
-              'LabIn - Manajemen Fasilitas',
+              'LabIn',
               style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.18),
+                color: Colors.white,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
+                letterSpacing: 0.2,
+                shadows: const [
+                  Shadow(
+                    color: Color(0x66000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ),
@@ -945,52 +930,5 @@ class _SettingsPageState extends State<SettingsPage> {
       'deleteAccountSubtitle': 'Request LabIn account deletion',
     };
     return (_language == 'en' ? en : id)[key] ?? key;
-  }
-}
-
-class _HeaderOrnamentPainter extends CustomPainter {
-  _HeaderOrnamentPainter(this.colors);
-
-  final List<Color> colors;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..shader = LinearGradient(
-        colors: colors,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(Offset.zero & size);
-    final path = Path();
-    path.moveTo(size.width * 0.06, size.height * 0.22);
-    path.cubicTo(
-      size.width * 0.24,
-      size.height * 0.02,
-      size.width * 0.45,
-      size.height * 0.38,
-      size.width * 0.80,
-      size.height * 0.18,
-    );
-    path.cubicTo(
-      size.width * 0.92,
-      size.height * 0.10,
-      size.width * 0.94,
-      size.height * 0.62,
-      size.width * 0.64,
-      size.height * 0.76,
-    );
-    canvas.drawPath(path, paint);
-    canvas.drawCircle(
-      Offset(size.width * 0.88, size.height * 0.28),
-      size.shortestSide * 0.10,
-      Paint()..color = colors.last.withValues(alpha: 0.12),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _HeaderOrnamentPainter oldDelegate) {
-    return oldDelegate.colors != colors;
   }
 }
