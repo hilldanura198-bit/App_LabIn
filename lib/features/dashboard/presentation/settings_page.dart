@@ -36,7 +36,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
-  bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
   String _language = 'id';
@@ -93,7 +92,6 @@ class _SettingsPageState extends State<SettingsPage> {
             : fallbackEmail;
         _avatarUrl = profile.avatarUrl;
         _role = profile.role;
-        _loading = false;
       });
     } on Object catch (error) {
       final currentUser = widget.repository.currentUser;
@@ -115,7 +113,6 @@ class _SettingsPageState extends State<SettingsPage> {
             .trim();
         _avatarUrl = null;
         _role = 'mahasiswa';
-        _loading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -127,129 +124,111 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final campus = AppTheme.campusColorsOf(context);
-    final background = BoxDecoration(gradient: campus.gradient);
-
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: widget.showAppBar ? GlassAppBar(title: 'profile'.tr()) : null,
-      body: Container(
-        decoration: background,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxWidth = constraints.maxWidth >= 720
-                  ? 620.0
-                  : constraints.maxWidth;
-              return Stack(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth >= 720
+                ? 620.0
+                : constraints.maxWidth;
+            return RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 18),
                 children: [
-                  RefreshIndicator(
-                    onRefresh: _load,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(22, 4, 22, 18),
-                      children: [
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: maxWidth),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildProfileHeader(context),
-                                const SizedBox(height: 8),
-                                _buildMenuCard(
-                                  context,
-                                  children: [
-                                    _profileTile(
-                                      icon: Icons.edit_outlined,
-                                      title: _label('editProfile'),
-                                      subtitle: _label('editProfileSubtitle'),
-                                      onTap: _showEditProfileSheet,
-                                    ),
-                                    _profileTile(
-                                      icon: Icons.language_rounded,
-                                      title: _label('language'),
-                                      subtitle: _language == 'id'
-                                          ? 'Bahasa Indonesia'
-                                          : 'English',
-                                      onTap: _showLanguageSheet,
-                                    ),
-                                    _profileTile(
-                                      icon: Icons.lock_outline,
-                                      title: _label('changePassword'),
-                                      subtitle: _label(
-                                        'changePasswordSubtitle',
-                                      ),
-                                      onTap: _showPasswordSheet,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                _buildMenuCard(
-                                  context,
-                                  children: [
-                                    BlocBuilder<ThemeCubit, ThemeMode>(
-                                      builder: (context, mode) {
-                                        return _switchTile(
-                                          icon: Icons.dark_mode_outlined,
-                                          title: _label('darkMode'),
-                                          subtitle: _label('darkModeSubtitle'),
-                                          value: mode == ThemeMode.dark,
-                                          onChanged: (value) {
-                                            context
-                                                .read<ThemeCubit>()
-                                                .setDarkMode(value);
-                                            _persistSettings();
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                _buildMenuCard(
-                                  context,
-                                  children: [
-                                    _profileTile(
-                                      icon: Icons.logout_rounded,
-                                      title: _label('logout'),
-                                      subtitle: _label('logoutSubtitle'),
-                                      iconColor: Colors.redAccent,
-                                      onTap: _logout,
-                                    ),
-                                    _profileTile(
-                                      icon: Icons.delete_outline_rounded,
-                                      title: _label('deleteAccount'),
-                                      subtitle: _label('deleteAccountSubtitle'),
-                                      iconColor: Colors.redAccent,
-                                      onTap: _showDeleteAccountDialog,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'active_role'.tr(namedArgs: {'role': _role}),
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: AppTheme.muted),
-                                ),
-                              ],
-                            ),
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildProfileHeader(context),
+                          const SizedBox(height: 8),
+                          _buildMenuCard(
+                            context,
+                            children: [
+                              _profileTile(
+                                icon: Icons.edit_outlined,
+                                title: _label('editProfile'),
+                                subtitle: _label('editProfileSubtitle'),
+                                onTap: _showEditProfileSheet,
+                              ),
+                              _profileTile(
+                                icon: Icons.language_rounded,
+                                title: _label('language'),
+                                subtitle: _language == 'id'
+                                    ? 'Bahasa Indonesia'
+                                    : 'English',
+                                onTap: _showLanguageSheet,
+                              ),
+                              _profileTile(
+                                icon: Icons.lock_outline,
+                                title: _label('changePassword'),
+                                subtitle: _label('changePasswordSubtitle'),
+                                onTap: _showPasswordSheet,
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 14),
+                          _buildMenuCard(
+                            context,
+                            children: [
+                              BlocBuilder<ThemeCubit, ThemeMode>(
+                                builder: (context, mode) {
+                                  return _switchTile(
+                                    icon: Icons.dark_mode_outlined,
+                                    title: _label('darkMode'),
+                                    subtitle: _label('darkModeSubtitle'),
+                                    value: mode == ThemeMode.dark,
+                                    onChanged: (value) {
+                                      context.read<ThemeCubit>().setDarkMode(
+                                        value,
+                                      );
+                                      _persistSettings();
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildMenuCard(
+                            context,
+                            children: [
+                              _profileTile(
+                                icon: Icons.logout_rounded,
+                                title: _label('logout'),
+                                subtitle: _label('logoutSubtitle'),
+                                iconColor: Colors.redAccent,
+                                onTap: _logout,
+                              ),
+                              _profileTile(
+                                icon: Icons.delete_outline_rounded,
+                                title: _label('deleteAccount'),
+                                subtitle: _label('deleteAccountSubtitle'),
+                                iconColor: Colors.redAccent,
+                                onTap: _showDeleteAccountDialog,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'active_role'.tr(namedArgs: {'role': _role}),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.muted),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  if (_loading)
-                    const Positioned(
-                      top: 12,
-                      left: 0,
-                      right: 0,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
                 ],
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
