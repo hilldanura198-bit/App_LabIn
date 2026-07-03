@@ -643,7 +643,7 @@ class DashboardRepository {
       'inventory_id': inventory.id,
       'deskripsi': description.trim(),
       'foto_url': photoUrl,
-      'status_perbaikan': 'diterima',
+      'status_perbaikan': 'pending',
     });
     await _insertNotification(
       userId: userId,
@@ -666,7 +666,7 @@ class DashboardRepository {
         .single();
     await _supabase
         .from('maintenance_reports')
-        .update({'status_perbaikan': 'Diproses / Selesai Diperbaiki'})
+        .update({'status_perbaikan': 'diproses'})
         .eq('id', reportId);
     final inventory = row['inventories'];
     final inventoryName = inventory is Map
@@ -678,6 +678,32 @@ class DashboardRepository {
       message: inventoryName == null || inventoryName.trim().isEmpty
           ? 'Laporan kerusakan sudah diproses oleh Kalab.'
           : 'Laporan kerusakan untuk $inventoryName sudah diproses oleh Kalab.',
+      kind: 'maintenance_report',
+      targetType: 'maintenance',
+      targetId: reportId,
+    );
+  }
+
+  Future<void> rejectMaintenanceReport(String reportId) async {
+    final row = await _supabase
+        .from('maintenance_reports')
+        .select('user_id,inventory_id,profiles(nama),inventories(nama_alat)')
+        .eq('id', reportId)
+        .single();
+    await _supabase
+        .from('maintenance_reports')
+        .update({'status_perbaikan': 'ditolak'})
+        .eq('id', reportId);
+    final inventory = row['inventories'];
+    final inventoryName = inventory is Map
+        ? inventory['nama_alat']?.toString()
+        : null;
+    await _insertNotification(
+      userId: row['user_id'] as String,
+      title: 'Laporan maintenance ditolak',
+      message: inventoryName == null || inventoryName.trim().isEmpty
+          ? 'Laporan kerusakan tidak dapat diproses oleh Kalab.'
+          : 'Laporan kerusakan untuk $inventoryName tidak dapat diproses oleh Kalab.',
       kind: 'maintenance_report',
       targetType: 'maintenance',
       targetId: reportId,

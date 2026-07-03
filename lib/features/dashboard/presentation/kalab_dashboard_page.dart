@@ -1077,9 +1077,10 @@ class _MaintenanceReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: FutureBuilder<List<MaintenanceReportEntry>>(
           future: maintenanceFuture,
           builder: (context, snapshot) {
@@ -1093,7 +1094,7 @@ class _MaintenanceReportCard extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 if (!snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (rows.isEmpty)
@@ -1174,51 +1175,121 @@ class _MaintenanceReportCard extends StatelessWidget {
                                         ),
                                 ),
                                 DataCell(
-                                  Chip(
-                                    label: Text(row.status),
-                                    labelStyle: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 8,
                                     ),
-                                    backgroundColor: AppTheme.richBronze,
+                                    decoration: BoxDecoration(
+                                      color: _maintenanceStatusColor(
+                                        row.statusLabel,
+                                        campus,
+                                      ).withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _maintenanceStatusColor(
+                                          row.statusLabel,
+                                          campus,
+                                        ).withValues(alpha: 0.28),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      row.statusLabel,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: _maintenanceStatusColor(
+                                              row.statusLabel,
+                                              campus,
+                                            ),
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                    ),
                                   ),
                                 ),
                                 DataCell(
-                                  TextButton.icon(
-                                    onPressed: () async {
-                                      try {
-                                        await repository
-                                            .acceptMaintenanceReport(row.id);
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Laporan maintenance diterima.',
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      OutlinedButton.icon(
+                                        onPressed: () async {
+                                          try {
+                                            await repository
+                                                .rejectMaintenanceReport(
+                                                  row.id,
+                                                );
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Laporan maintenance ditolak.',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            onUpdated();
+                                          } catch (error) {
+                                            if (!context.mounted) return;
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  error.toString().replaceFirst(
+                                                    'Exception: ',
+                                                    '',
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        }
-                                        onUpdated();
-                                      } catch (error) {
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              error.toString().replaceFirst(
-                                                'Exception: ',
-                                                '',
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(Icons.close_rounded),
+                                        label: const Text('Tolak'),
+                                      ),
+                                      ElevatedButton.icon(
+                                        onPressed: () async {
+                                          try {
+                                            await repository
+                                                .acceptMaintenanceReport(
+                                                  row.id,
+                                                );
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Laporan maintenance diterima.',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            onUpdated();
+                                          } catch (error) {
+                                            if (!context.mounted) return;
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  error.toString().replaceFirst(
+                                                    'Exception: ',
+                                                    '',
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    icon: const Icon(Icons.done_rounded),
-                                    label: const Text('Terima'),
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(Icons.done_rounded),
+                                        label: const Text('Terima'),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -1234,6 +1305,16 @@ class _MaintenanceReportCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Color _maintenanceStatusColor(String status, CampusThemeExtension campus) {
+  return switch (status.toLowerCase()) {
+    'pending' => const Color(0xFFF59E0B),
+    'diproses' => const Color(0xFF3B82F6),
+    'selesai' => const Color(0xFF10B981),
+    'ditolak' => const Color(0xFFEF4444),
+    _ => campus.primary,
+  };
 }
 
 class _KalabApprovalCard extends StatelessWidget {

@@ -176,6 +176,21 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                             fontWeight: FontWeight.w900,
                                           ),
                                     ),
+                                    const SizedBox(height: 10),
+                                    Chip(
+                                      label: const Text('Tersedia'),
+                                      avatar: const Icon(
+                                        Icons.check_circle_outline,
+                                        size: 16,
+                                      ),
+                                      labelStyle: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                      backgroundColor: const Color(0xFFDCFCE7),
+                                      side: const BorderSide(
+                                        color: Color(0xFF22C55E),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -227,6 +242,19 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                           ),
                                         ],
                                       ),
+                                    ),
+                                    Chip(
+                                      label: const Text('Tidak Tersedia'),
+                                      avatar: const Icon(
+                                        Icons.block_rounded,
+                                        size: 16,
+                                      ),
+                                      labelStyle: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                      backgroundColor: const Color(0xFFEF4444),
+                                      side: BorderSide.none,
                                     ),
                                   ],
                                 ),
@@ -328,18 +356,26 @@ class _ScheduleCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    label: const Text(
+                      'Tidak Tersedia',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    avatar: Icon(
+                      Icons.block_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    backgroundColor: const Color(0xFFEF4444),
+                    side: BorderSide.none,
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(width: 10),
-            Chip(
-              label: Text(_statusLabel(booking.status)),
-              labelStyle: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.w900,
-              ),
-              backgroundColor: statusColor.withValues(alpha: 0.12),
-              side: BorderSide(color: statusColor.withValues(alpha: 0.24)),
             ),
           ],
         ),
@@ -356,16 +392,5 @@ Color _statusColor(String status) {
     'active' => const Color(0xFF10B981),
     'late' => const Color(0xFFEF4444),
     _ => AppTheme.electricBlue,
-  };
-}
-
-String _statusLabel(String status) {
-  return switch (status) {
-    'pending' => 'Pending',
-    'approved_aslab' => 'Approved Aslab',
-    'approved_kalab' => 'Approved Kalab',
-    'active' => 'Active',
-    'late' => 'Terlambat',
-    _ => 'Selesai',
   };
 }

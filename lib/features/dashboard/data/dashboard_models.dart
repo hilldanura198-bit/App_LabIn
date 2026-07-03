@@ -710,14 +710,14 @@ class DashboardModel {
           when value.contains('ruangan rektor') ||
               value.contains('ruang rektor') ||
               value.contains('rektorat') =>
-        'assets/images/ruangan_rektorat.png',
+        'assets/images/ruangan_rektorat.jpg',
       final value when value.contains('simulasi klinik') =>
         'assets/images/lab simulasi klinik.jpg',
       final value
           when value.contains('jaringan komputer') ||
               value.contains('lab jaringan') ||
               value.contains('komputer') =>
-        'assets/images/lab_jaringan_komputer.png',
+        'assets/images/lab_jaringan_komputer.jpg',
       final value when value.contains('mediasi digital') =>
         'assets/images/lab mediasi digital.jpg',
       final value when value.contains('legal tech') =>
@@ -948,7 +948,7 @@ class MaintenanceReportEntry {
       inventoryId: map['inventory_id'] as String? ?? '',
       description: map['deskripsi'] as String? ?? '',
       photoUrl: map['foto_url'] as String?,
-      status: map['status_perbaikan'] as String? ?? 'diterima',
+      status: map['status_perbaikan'] as String? ?? 'pending',
       createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
       reporterName: _profileNameFromMap(map['profiles']),
       reporterIdentity: _profileIdentityFromMap(map['profiles']),
@@ -979,6 +979,16 @@ class MaintenanceReportEntry {
     if (value is Map<String, dynamic>) return value['lab_id'] as String?;
     if (value is Map) return value['lab_id'] as String?;
     return null;
+  }
+
+  String get statusLabel {
+    return switch (status.toLowerCase()) {
+      'pending' || 'diterima' => 'Pending',
+      'diproses' => 'Diproses',
+      'selesai' => 'Selesai',
+      'ditolak' => 'Ditolak',
+      _ => status.capitalize(),
+    };
   }
 }
 

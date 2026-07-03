@@ -131,31 +131,27 @@ class _HistoryFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const filters = ['Semua', 'Alat', 'Ruangan Lab'];
-    return Center(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: filters
-              .map(
-                (filter) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(
-                      filter,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    selected: value == filter,
-                    avatar: Icon(_icon(filter), size: 18),
-                    onSelected: (_) => onChanged(filter),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: filters
+            .map(
+              (filter) => Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: ChoiceChip(
+                  selected: value == filter,
+                  onSelected: (_) => onChanged(filter),
+                  avatar: Icon(_icon(filter), size: 18),
+                  label: Text(
+                    filter,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              )
-              .toList(),
-        ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
