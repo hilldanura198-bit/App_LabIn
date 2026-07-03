@@ -1088,6 +1088,51 @@ class DashboardRepository {
     );
   }
 
+  Future<void> updateLaboratory({
+    required String laboratoryId,
+    required String name,
+    required String location,
+    XFile? image,
+  }) async {
+    if (laboratoryId.trim().isEmpty) {
+      throw Exception('ID ruangan tidak valid.');
+    }
+    if (name.trim().isEmpty || location.trim().isEmpty) {
+      throw Exception('Nama dan lokasi ruangan wajib diisi.');
+    }
+    final payload = <String, dynamic>{
+      'nama_lab': name.trim(),
+      'lokasi': location.trim(),
+    };
+    if (image != null) {
+      payload['foto_url'] = await uploadSarprasImage(image);
+    }
+    await _supabase.from('laboratories').update(payload).eq('id', laboratoryId);
+    await _appendConsensusLog(
+      entityTable: 'laboratories',
+      entityId: laboratoryId,
+      command: 'update_laboratory',
+      payload: {
+        'nama_lab': name.trim(),
+        'lokasi': location.trim(),
+        if (image != null) 'foto_changed': true,
+      },
+    );
+  }
+
+  Future<void> deleteLaboratory(String laboratoryId) async {
+    if (laboratoryId.trim().isEmpty) {
+      throw Exception('ID ruangan tidak valid.');
+    }
+    await _supabase.from('laboratories').delete().eq('id', laboratoryId);
+    await _appendConsensusLog(
+      entityTable: 'laboratories',
+      entityId: laboratoryId,
+      command: 'delete_laboratory',
+      payload: const {'deleted': true},
+    );
+  }
+
   Future<void> updateLaboratoryStatus({
     required String laboratoryId,
     required bool isOpen,

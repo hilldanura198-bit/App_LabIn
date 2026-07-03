@@ -386,7 +386,6 @@ class KalabControlPanel extends StatefulWidget {
 }
 
 class _KalabControlPanelState extends State<KalabControlPanel> {
-  late Future<List<LabRoom>> _roomsFuture;
   late Future<List<UserAccountSummary>> _usersFuture;
   late Future<List<BorrowedInventoryReport>> _reportFuture;
 
@@ -397,7 +396,6 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
   }
 
   void _refresh() {
-    _roomsFuture = widget.repository.fetchLaboratories();
     _usersFuture = widget.repository.fetchUserAccounts();
     _reportFuture = widget.repository.fetchBorrowedInventoryReport();
   }
@@ -417,17 +415,6 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _PanelShortcutGrid(repository: widget.repository),
-                    const SizedBox(height: 16),
-                    _InventoryCreateCard(
-                      roomsFuture: _roomsFuture,
-                      repository: widget.repository,
-                      onSaved: () => setState(_refresh),
-                    ),
-                    const SizedBox(height: 16),
-                    _RoomCreateCard(
-                      repository: widget.repository,
-                      onSaved: () => setState(_refresh),
-                    ),
                     const SizedBox(height: 16),
                     _AslabVerificationCard(
                       usersFuture: _usersFuture,

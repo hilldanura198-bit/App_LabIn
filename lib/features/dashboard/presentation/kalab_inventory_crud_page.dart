@@ -16,47 +16,439 @@ class KalabInventoryCrudPage extends StatefulWidget {
   State<KalabInventoryCrudPage> createState() => _KalabInventoryCrudPageState();
 }
 
-class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage> {
-  late Future<List<LabRoom>> _roomsFuture;
+class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _roomsFuture = widget.repository.fetchLaboratories();
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(_handleTabChanged);
   }
 
-  void _refreshRooms() {
-    setState(() {
-      _roomsFuture = widget.repository.fetchLaboratories();
-    });
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleTabChanged() {
+    if (_tabController.indexIsChanging) {
+      return;
+    }
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Scaffold(
-      appBar: const GlassAppBar(title: 'CRUD Sarpras'),
+      appBar: GlassAppBar(
+        title: 'Manajemen Sarpras',
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: campus.primary,
+          labelColor: campus.primary,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          tabs: const [
+            Tab(text: 'Daftar Sarana'),
+            Tab(text: 'Daftar Ruangan'),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openCurrentForm(context),
+        backgroundColor: campus.primary,
+        foregroundColor: Colors.white,
+        icon: Icon(
+          _tabController.index == 0
+              ? Icons.inventory_2_outlined
+              : Icons.meeting_room_outlined,
+        ),
+        label: Text(
+          _tabController.index == 0 ? 'Tambah Sarana' : 'Tambah Ruangan',
+        ),
+      ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(18),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _InventoryTab(repository: widget.repository),
+            _RoomTab(
+              repository: widget.repository,
+              onEditRoom: (room) => _openRoomForm(context, room: room),
+              onDeleteRoom: (room) => _confirmDeleteRoom(context, room),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openCurrentForm(BuildContext context) async {
+    if (_tabController.index == 0) {
+      await _openInventoryForm(context);
+      return;
+    }
+    await _openRoomForm(context);
+  }
+
+  Future<void> _openInventoryForm(BuildContext context) async {
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _InventoryFormSheet(repository: widget.repository),
+    );
+    if (created == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inventaris berhasil ditambahkan.')),
+      );
+    }
+  }
+
+  Future<void> _openRoomForm(BuildContext context, {LabRoom? room}) async {
+    final createdOrUpdated = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _RoomFormSheet(repository: widget.repository, room: room),
+    );
+    if (createdOrUpdated == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            room == null
+                ? 'Ruangan berhasil ditambahkan.'
+                : 'Ruangan berhasil diperbarui.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteRoom(BuildContext context, LabRoom room) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Hapus Ruangan'),
+          content: Text('Hapus ruangan "${room.name}" dari database?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldDelete != true || !context.mounted) {
+      return;
+    }
+    try {
+      await widget.repository.deleteLaboratory(room.id);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ruangan berhasil dihapus.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+}
+
+class _InventoryTab extends StatelessWidget {
+  const _InventoryTab({required this.repository});
+
+  final DashboardRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<LabRoom>>(
+      stream: repository.watchLaboratories(),
+      builder: (context, roomSnapshot) {
+        if (roomSnapshot.hasError) {
+          return Center(child: Text(roomSnapshot.error.toString()));
+        }
+        if (!roomSnapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final rooms = roomSnapshot.data ?? const <LabRoom>[];
+        final roomById = {for (final room in rooms) room.id: room.name};
+        return StreamBuilder<List<LabInventory>>(
+          stream: repository.watchInventories(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            }
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final inventories = snapshot.data!;
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _SummaryCard(
+                          title: 'Daftar Sarana',
+                          subtitle:
+                              'Seluruh inventaris sarana tampil dalam format tabel agar mudah dipantau.',
+                          icon: Icons.inventory_2_outlined,
+                          total: inventories.length,
+                        ),
+                        const SizedBox(height: 14),
+                        _InventoryTable(
+                          inventories: inventories,
+                          roomById: roomById,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _InventoryTable extends StatelessWidget {
+  const _InventoryTable({required this.inventories, required this.roomById});
+
+  final List<LabInventory> inventories;
+  final Map<String, String> roomById;
+
+  @override
+  Widget build(BuildContext context) {
+    if (inventories.isEmpty) {
+      return const _EmptyStateCard(
+        title: 'Belum ada sarana.',
+        subtitle: 'Tambahkan inventaris pertama melalui tombol +.',
+      );
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            headingRowColor: WidgetStatePropertyAll(
+              AppTheme.campusColorsOf(context).primary.withValues(alpha: 0.08),
+            ),
+            columns: const [
+              DataColumn(label: Text('Nama Sarana')),
+              DataColumn(label: Text('Ruangan')),
+              DataColumn(label: Text('Kategori')),
+              DataColumn(label: Text('Stok')),
+              DataColumn(label: Text('Kondisi')),
+            ],
+            rows: inventories.map((inventory) {
+              final roomName = roomById[inventory.labId] ?? inventory.labId;
+              return DataRow(
+                cells: [
+                  DataCell(
+                    SizedBox(
+                      width: 220,
+                      child: Text(
+                        inventory.namaAlat,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                  DataCell(SizedBox(width: 180, child: Text(roomName))),
+                  DataCell(Text(_inventoryTypeLabel(inventory.type))),
+                  DataCell(
+                    Text('${inventory.stokTersedia}/${inventory.totalStok}'),
+                  ),
+                  DataCell(
+                    Chip(
+                      label: Text(
+                        inventory.kondisi,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _inventoryTypeLabel(String type) {
+    return switch (type.toLowerCase()) {
+      'ruangan' => 'Ruangan',
+      'room' => 'Room',
+      _ => 'Alat/Bahan',
+    };
+  }
+}
+
+class _RoomTab extends StatelessWidget {
+  const _RoomTab({
+    required this.repository,
+    required this.onEditRoom,
+    required this.onDeleteRoom,
+  });
+
+  final DashboardRepository repository;
+  final ValueChanged<LabRoom> onEditRoom;
+  final ValueChanged<LabRoom> onDeleteRoom;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<LabRoom>>(
+      stream: repository.watchLaboratories(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text(snapshot.error.toString()));
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final rooms = snapshot.data!;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 820),
+                constraints: const BoxConstraints(maxWidth: 980),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _InventoryForm(
-                      roomsFuture: _roomsFuture,
-                      repository: widget.repository,
+                    _SummaryCard(
+                      title: 'Daftar Ruangan',
+                      subtitle:
+                          'Kelola daftar ruangan laboratorium dengan aksi edit dan hapus langsung.',
+                      icon: Icons.meeting_room_outlined,
+                      total: rooms.length,
                     ),
-                    const SizedBox(height: 16),
-                    _RoomForm(
-                      repository: widget.repository,
-                      onSaved: _refreshRooms,
-                    ),
+                    const SizedBox(height: 14),
+                    if (rooms.isEmpty)
+                      const _EmptyStateCard(
+                        title: 'Belum ada ruangan.',
+                        subtitle:
+                            'Tambah ruangan pertama melalui tombol + di bawah.',
+                      )
+                    else
+                      ...rooms.map(
+                        (room) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _RoomCard(
+                            room: room,
+                            onEdit: () => onEditRoom(room),
+                            onDelete: () => onDeleteRoom(room),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RoomCard extends StatelessWidget {
+  const _RoomCard({
+    required this.room,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final LabRoom room;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _RoomPreview(imageUrl: room.imageUrl),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    room.location,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Chip(
+                        label: Text(
+                          room.status,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        backgroundColor: scheme.primary.withValues(alpha: 0.08),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              children: [
+                IconButton(
+                  tooltip: 'Edit',
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+                IconButton(
+                  tooltip: 'Hapus',
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
             ),
           ],
         ),
@@ -65,17 +457,62 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage> {
   }
 }
 
-class _InventoryForm extends StatefulWidget {
-  const _InventoryForm({required this.roomsFuture, required this.repository});
+class _RoomPreview extends StatelessWidget {
+  const _RoomPreview({required this.imageUrl});
 
-  final Future<List<LabRoom>> roomsFuture;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final placeholder = Container(
+      width: 88,
+      height: 88,
+      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+      alignment: Alignment.center,
+      child: const Icon(Icons.meeting_room_outlined),
+    );
+    if (imageUrl == null || imageUrl!.trim().isEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: placeholder,
+      );
+    }
+    final url = imageUrl!.trim();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        width: 88,
+        height: 88,
+        child: url.startsWith('http')
+            ? Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return placeholder;
+                },
+              )
+            : Image.asset(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return placeholder;
+                },
+              ),
+      ),
+    );
+  }
+}
+
+class _InventoryFormSheet extends StatefulWidget {
+  const _InventoryFormSheet({required this.repository});
+
   final DashboardRepository repository;
 
   @override
-  State<_InventoryForm> createState() => _InventoryFormState();
+  State<_InventoryFormSheet> createState() => _InventoryFormSheetState();
 }
 
-class _InventoryFormState extends State<_InventoryForm> {
+class _InventoryFormSheetState extends State<_InventoryFormSheet> {
   final _name = TextEditingController();
   final _total = TextEditingController(text: '1');
   final _available = TextEditingController(text: '1');
@@ -97,117 +534,141 @@ class _InventoryFormState extends State<_InventoryForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<LabRoom>>(
-          future: widget.roomsFuture,
-          builder: (context, snapshot) {
-            final rooms = snapshot.data ?? const <LabRoom>[];
-            _labId ??= rooms.isEmpty ? null : rooms.first.id;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _SectionTitle(
-                  icon: Icons.inventory_2_outlined,
-                  title: 'Tambah Sarana',
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _name,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama alat/bahan',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _labId,
-                  decoration: const InputDecoration(labelText: 'Ruangan induk'),
-                  items: rooms
-                      .map(
-                        (room) => DropdownMenuItem(
-                          value: room.id,
-                          child: Text(room.name),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() => _labId = value),
-                ),
-                const SizedBox(height: 10),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final fieldWidth = constraints.maxWidth >= 520
-                        ? (constraints.maxWidth - 10) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: TextField(
-                            controller: _total,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Total',
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: fieldWidth,
-                          child: TextField(
-                            controller: _available,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Tersedia',
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _type,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Kategori'),
-                  items: const [
-                    DropdownMenuItem(value: 'alat', child: Text('Alat/Bahan')),
-                    DropdownMenuItem(
-                      value: 'ruangan',
-                      child: Text('Ruangan Laboratorium'),
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + bottomInset),
+        child: SingleChildScrollView(
+          child: FutureBuilder<List<LabRoom>>(
+            future: widget.repository.fetchLaboratories(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Text(snapshot.error.toString()),
+                );
+              }
+              if (!snapshot.hasData) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              final rooms = snapshot.data ?? const <LabRoom>[];
+              _labId ??= rooms.isEmpty ? null : rooms.first.id;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SheetHandle(title: 'Tambah Sarana'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _name,
+                    decoration: const InputDecoration(
+                      labelText: 'Nama alat/bahan',
+                      prefixIcon: Icon(Icons.inventory_2_outlined),
                     ),
-                  ],
-                  onChanged: (value) => setState(() => _type = value ?? 'alat'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _manualUrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Manual/PDF URL',
                   ),
-                ),
-                const SizedBox(height: 12),
-                _ImagePickerRow(
-                  imageName: _image?.name,
-                  emptyLabel: 'Tambah Gambar Barang',
-                  onPick: _pickImage,
-                ),
-                const SizedBox(height: 14),
-                FilledButton.icon(
-                  onPressed: _saving || _labId == null ? null : _save,
-                  icon: _saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _labId,
+                    decoration: const InputDecoration(labelText: 'Ruangan'),
+                    items: rooms
+                        .map(
+                          (room) => DropdownMenuItem(
+                            value: room.id,
+                            child: Text(room.name),
+                          ),
                         )
-                      : const Icon(Icons.save_outlined),
-                  label: const Text('Simpan Sarana'),
-                ),
-              ],
-            );
-          },
+                        .toList(),
+                    onChanged: (value) => setState(() => _labId = value),
+                  ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 560;
+                      return Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          SizedBox(
+                            width: wide
+                                ? (constraints.maxWidth - 12) / 2
+                                : constraints.maxWidth,
+                            child: TextField(
+                              controller: _total,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Total',
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: wide
+                                ? (constraints.maxWidth - 12) / 2
+                                : constraints.maxWidth,
+                            child: TextField(
+                              controller: _available,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Tersedia',
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _type,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Kategori'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'alat',
+                        child: Text('Alat/Bahan'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ruangan',
+                        child: Text('Ruangan Laboratorium'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _type = value ?? 'alat'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _manualUrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Manual/PDF URL',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _PickerTile(
+                    imageName: _image?.name,
+                    label: 'Pilih Gambar Sarana',
+                    icon: Icons.add_photo_alternate_outlined,
+                    onTap: _pickImage,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: _saving || _labId == null ? null : _save,
+                    icon: _saving
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_outlined),
+                    label: const Text('Simpan Sarana'),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -219,7 +680,7 @@ class _InventoryFormState extends State<_InventoryForm> {
       imageQuality: 78,
       maxWidth: 1280,
     );
-    if (image != null) {
+    if (image != null && mounted) {
       setState(() => _image = image);
     }
   }
@@ -236,18 +697,14 @@ class _InventoryFormState extends State<_InventoryForm> {
         manualUrl: _manualUrl.text,
         image: _image,
       );
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _image = null;
-        _name.clear();
-        _manualUrl.clear();
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sarana berhasil ditambahkan.')),
-      );
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -258,34 +715,43 @@ class _InventoryFormState extends State<_InventoryForm> {
   }
 }
 
-class _RoomForm extends StatefulWidget {
-  const _RoomForm({required this.repository, required this.onSaved});
+class _RoomFormSheet extends StatefulWidget {
+  const _RoomFormSheet({required this.repository, this.room});
 
   final DashboardRepository repository;
-  final VoidCallback onSaved;
+  final LabRoom? room;
 
   @override
-  State<_RoomForm> createState() => _RoomFormState();
+  State<_RoomFormSheet> createState() => _RoomFormSheetState();
 }
 
-class _RoomFormState extends State<_RoomForm> {
+class _RoomFormSheetState extends State<_RoomFormSheet> {
   final _name = TextEditingController();
   final _picker = ImagePicker();
-  late String _location;
   XFile? _image;
   bool _saving = false;
 
-  static final _locationOptions = <String>{
-    for (final lab in AppLabCatalog.labs) lab.location,
-    'Gedung Rektorat Lt. 1',
-    'Gedung Rektorat Lt. 2',
-    'Area Luar Ruangan',
-  }.toList();
+  String get _initialLocation =>
+      widget.room?.location ?? _locationOptions.first;
+
+  List<String> get _locationOptions {
+    final options = <String>{
+      for (final lab in AppLabCatalog.labs) lab.location,
+      'Gedung Rektorat Lt. 1',
+      'Gedung Rektorat Lt. 2',
+      'Area Luar Ruangan',
+      if (widget.room?.location != null) widget.room!.location,
+    }.toList();
+    options.sort((a, b) => a.compareTo(b));
+    return options;
+  }
+
+  late String _location = _initialLocation;
 
   @override
   void initState() {
     super.initState();
-    _location = _locationOptions.first;
+    _name.text = widget.room?.name ?? '';
   }
 
   @override
@@ -296,50 +762,73 @@ class _RoomFormState extends State<_RoomForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _SectionTitle(
-              icon: Icons.meeting_room_outlined,
-              title: 'Tambah Ruangan Laboratorium',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Nama ruangan lab'),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              initialValue: _location,
-              decoration: const InputDecoration(labelText: 'Lokasi'),
-              items: _locationOptions
-                  .map(
-                    (location) => DropdownMenuItem(
-                      value: location,
-                      child: Text(location),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() {
-                _location = value ?? _locationOptions.first;
-              }),
-            ),
-            const SizedBox(height: 12),
-            _ImagePickerRow(
-              imageName: _image?.name,
-              emptyLabel: 'Unggah Foto Ruangan',
-              onPick: _pickImage,
-            ),
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Simpan Ruangan'),
-            ),
-          ],
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + bottomInset),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SheetHandle(
+                title: widget.room == null ? 'Tambah Ruangan' : 'Edit Ruangan',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _name,
+                decoration: const InputDecoration(
+                  labelText: 'Nama ruangan lab',
+                  prefixIcon: Icon(Icons.meeting_room_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _location,
+                decoration: const InputDecoration(labelText: 'Lokasi'),
+                items: _locationOptions
+                    .map(
+                      (location) => DropdownMenuItem(
+                        value: location,
+                        child: Text(location),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() {
+                  _location = value ?? _initialLocation;
+                }),
+              ),
+              const SizedBox(height: 12),
+              _PickerTile(
+                imageName: _image?.name,
+                label: widget.room == null
+                    ? 'Unggah Foto Ruangan'
+                    : 'Ganti Foto Ruangan',
+                icon: Icons.add_photo_alternate_outlined,
+                onTap: _pickImage,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        widget.room == null
+                            ? Icons.meeting_room_outlined
+                            : Icons.save_outlined,
+                      ),
+                label: Text(
+                  widget.room == null ? 'Simpan Ruangan' : 'Perbarui Ruangan',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -351,7 +840,7 @@ class _RoomFormState extends State<_RoomForm> {
       imageQuality: 78,
       maxWidth: 1280,
     );
-    if (image != null) {
+    if (image != null && mounted) {
       setState(() => _image = image);
     }
   }
@@ -359,26 +848,28 @@ class _RoomFormState extends State<_RoomForm> {
   Future<void> _save() async {
     try {
       setState(() => _saving = true);
-      await widget.repository.createLaboratory(
-        name: _name.text,
-        location: _location,
-        image: _image,
-      );
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _image = null;
-        _name.clear();
-        _location = _locationOptions.first;
-      });
-      widget.onSaved();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ruangan laboratorium berhasil ditambahkan.'),
-        ),
-      );
+      if (widget.room == null) {
+        await widget.repository.createLaboratory(
+          name: _name.text,
+          location: _location,
+          image: _image,
+        );
+      } else {
+        await widget.repository.updateLaboratory(
+          laboratoryId: widget.room!.id,
+          name: _name.text,
+          location: _location,
+          image: _image,
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -389,22 +880,24 @@ class _RoomFormState extends State<_RoomForm> {
   }
 }
 
-class _ImagePickerRow extends StatelessWidget {
-  const _ImagePickerRow({
+class _PickerTile extends StatelessWidget {
+  const _PickerTile({
     required this.imageName,
-    required this.emptyLabel,
-    required this.onPick,
+    required this.label,
+    required this.icon,
+    required this.onTap,
   });
 
   final String? imageName;
-  final String emptyLabel;
-  final VoidCallback onPick;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
-      onTap: onPick,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
@@ -424,15 +917,12 @@ class _ImagePickerRow extends StatelessWidget {
                 color: scheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.add_photo_alternate_outlined,
-                color: scheme.primary,
-              ),
+              child: Icon(icon, color: scheme.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                imageName == null ? emptyLabel : 'Gambar dipilih: $imageName',
+                imageName == null ? label : 'Gambar dipilih: $imageName',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w900),
@@ -446,25 +936,140 @@ class _ImagePickerRow extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.icon, required this.title});
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.total,
+  });
 
+  final String title;
+  final String subtitle;
   final IconData icon;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
+    return Card(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              campus.primary.withValues(alpha: 0.12),
+              campus.secondary.withValues(alpha: 0.06),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: AppTheme.campusGradientOf(context),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: Colors.white),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Chip(
+              label: Text(
+                '$total data',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Icon(Icons.inbox_outlined, size: 42),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle({required this.title});
+
   final String title;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Icon(icon, color: AppTheme.deepTeal),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+        Container(
+          width: 54,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(999),
           ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
         ),
       ],
     );
