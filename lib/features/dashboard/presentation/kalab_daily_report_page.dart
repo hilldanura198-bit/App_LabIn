@@ -180,17 +180,21 @@ class _DateFilterCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SegmentedButton<_ReportPeriod>(
-              segments: _ReportPeriod.values
-                  .map(
-                    (item) => ButtonSegment<_ReportPeriod>(
-                      value: item,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _ReportPeriod.values.map((item) {
+                  final selected = item == period;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: ChoiceChip(
                       label: Text(item.label),
+                      selected: selected,
+                      onSelected: (_) => onPeriodChanged(item),
                     ),
-                  )
-                  .toList(),
-              selected: {period},
-              onSelectionChanged: (selected) => onPeriodChanged(selected.first),
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 14),
             Row(

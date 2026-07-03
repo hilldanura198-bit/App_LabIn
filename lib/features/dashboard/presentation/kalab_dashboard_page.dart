@@ -334,14 +334,22 @@ class _KalabHero extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: AppTheme.deepTeal,
+        gradient: AppTheme.campusGradientOf(context),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.verified_user_outlined,
-            color: Colors.white,
-            size: 44,
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: AppTheme.campusGradientOf(context),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Icon(
+              Icons.verified_user_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -435,7 +443,9 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                     ),
                     const SizedBox(height: 16),
                     _MaintenanceReportCard(
+                      repository: widget.repository,
                       maintenanceFuture: widget.maintenanceFuture,
+                      onChanged: () => setState(_refresh),
                     ),
                     const SizedBox(height: 16),
                     _BorrowedReportCard(reportFuture: _reportFuture),
@@ -514,7 +524,11 @@ class _PanelShortcutGrid extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(action.$1, color: AppTheme.deepTeal, size: 32),
+                      Icon(
+                        action.$1,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 32,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -1058,9 +1072,15 @@ class _BorrowedReportCard extends StatelessWidget {
 }
 
 class _MaintenanceReportCard extends StatelessWidget {
-  const _MaintenanceReportCard({required this.maintenanceFuture});
+  const _MaintenanceReportCard({
+    required this.repository,
+    required this.maintenanceFuture,
+    required this.onChanged,
+  });
 
+  final DashboardRepository repository;
   final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1086,105 +1106,156 @@ class _MaintenanceReportCard extends StatelessWidget {
                 else if (rows.isEmpty)
                   const Text('Belum ada laporan kerusakan dari mahasiswa.')
                 else
-                  ...rows.map(
-                    (row) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                          ),
-                        ),
-                        child: Wrap(
-                          spacing: 14,
-                          runSpacing: 10,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                width: 92,
-                                height: 72,
-                                color: AppTheme.vibrantPurple.withValues(
-                                  alpha: 0.12,
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 20,
+                      headingRowHeight: 44,
+                      dataRowMinHeight: 88,
+                      dataRowMaxHeight: 124,
+                      columns: const [
+                        DataColumn(label: Text('Nama Alat')),
+                        DataColumn(label: Text('Deskripsi Kerusakan')),
+                        DataColumn(label: Text('Foto Bukti')),
+                        DataColumn(label: Text('Status')),
+                        DataColumn(label: Text('Aksi')),
+                      ],
+                      rows: rows.map((row) {
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              SizedBox(
+                                width: 170,
+                                child: Text(
+                                  row.inventoryName ?? row.inventoryId,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
-                                child:
-                                    row.photoUrl == null ||
-                                        row.photoUrl!.trim().isEmpty
-                                    ? const Icon(
-                                        Icons.handyman_outlined,
-                                        color: AppTheme.vibrantPurple,
-                                      )
-                                    : CachedNetworkImage(
-                                        imageUrl: row.photoUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, _) => Container(
-                                          color: AppTheme.vibrantPurple
-                                              .withValues(alpha: 0.12),
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
+                              ),
+                            ),
+                            DataCell(
+                              SizedBox(
+                                width: 280,
+                                child: Text(
+                                  row.description,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  width: 92,
+                                  height: 72,
+                                  color: Theme.of(context).colorScheme.secondary
+                                      .withValues(alpha: 0.12),
+                                  child:
+                                      row.photoUrl == null ||
+                                          row.photoUrl!.trim().isEmpty
+                                      ? Icon(
+                                          Icons.handyman_outlined,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                        )
+                                      : CachedNetworkImage(
+                                          imageUrl: row.photoUrl!,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, _) => Container(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .secondary
+                                                .withValues(alpha: 0.12),
+                                            child: const Center(
+                                              child: SizedBox.square(
+                                                dimension: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              ),
                                             ),
                                           ),
+                                          errorWidget: (context, _, _) =>
+                                              Icon(
+                                                Icons.handyman_outlined,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.secondary,
+                                              ),
                                         ),
-                                        errorWidget: (context, _, _) =>
-                                            const Icon(
-                                              Icons.handyman_outlined,
-                                              color: AppTheme.vibrantPurple,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Chip(
+                                label: Text(_maintenanceLabel(row.status)),
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                                backgroundColor: _maintenanceColor(
+                                  context,
+                                  row.status,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              CyberGradientButton(
+                                height: 42,
+                                onPressed:
+                                    _maintenanceAction(row.status) == null
+                                    ? null
+                                    : () async {
+                                        try {
+                                          await repository
+                                              .updateMaintenanceReportStatus(
+                                                reportId: row.id,
+                                                status: _maintenanceAction(
+                                                  row.status,
+                                                )!,
+                                              );
+                                          onChanged();
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Status maintenance diperbarui.',
+                                              ),
                                             ),
-                                      ),
+                                          );
+                                        } on Object catch (error) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                error.toString().replaceFirst(
+                                                  'Exception: ',
+                                                  '',
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                child: Text(
+                                  _maintenanceActionLabel(row.status),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                            ),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 420),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    row.inventoryName ?? row.inventoryId,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    row.description,
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(color: AppTheme.muted),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    row.reporterName == null
-                                        ? DateFormat(
-                                            'dd MMM yyyy, HH:mm',
-                                          ).format(row.createdAt)
-                                        : '${row.reporterName} | ${row.reporterIdentity ?? '-'}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Chip(
-                              label: Text(row.status),
-                              labelStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
-                              backgroundColor: AppTheme.richBronze,
                             ),
                           ],
-                        ),
-                      ),
+                        );
+                      }).toList(),
                     ),
                   ),
               ],
@@ -1194,6 +1265,39 @@ class _MaintenanceReportCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _maintenanceLabel(String status) {
+  return switch (status) {
+    'diproses' => 'Diproses',
+    'selesai_diperbaiki' => 'Selesai Diperbaiki',
+    _ => 'Terima',
+  };
+}
+
+String? _maintenanceAction(String status) {
+  return switch (status) {
+    'diterima' => 'diproses',
+    'diproses' => 'selesai_diperbaiki',
+    _ => null,
+  };
+}
+
+String _maintenanceActionLabel(String status) {
+  return switch (status) {
+    'diterima' => 'Terima',
+    'diproses' => 'Selesai Diperbaiki',
+    'selesai_diperbaiki' => 'Selesai',
+    _ => 'Terima',
+  };
+}
+
+Color _maintenanceColor(BuildContext context, String status) {
+  return switch (status) {
+    'diproses' => Theme.of(context).colorScheme.primary,
+    'selesai_diperbaiki' => Theme.of(context).colorScheme.tertiary,
+    _ => Theme.of(context).colorScheme.secondary,
+  };
 }
 
 class _KalabApprovalCard extends StatelessWidget {
@@ -1319,8 +1423,12 @@ class _KalabStatusBadge extends StatelessWidget {
       label: const Text('Menunggu Kalab'),
       avatar: const Icon(Icons.verified_user_outlined, size: 16),
       labelStyle: const TextStyle(fontWeight: FontWeight.w900),
-      backgroundColor: AppTheme.electricBlue.withValues(alpha: 0.12),
-      side: BorderSide(color: AppTheme.electricBlue.withValues(alpha: 0.24)),
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.12),
+      side: BorderSide(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
+      ),
     );
   }
 }
@@ -1341,7 +1449,7 @@ class _CompactInfo extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppTheme.electricBlue, size: 18),
+        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 18),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -1387,9 +1495,9 @@ class _InventoryAlert extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.warning_amber_rounded,
-                  color: AppTheme.richBronze,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 const SizedBox(width: 10),
                 Expanded(

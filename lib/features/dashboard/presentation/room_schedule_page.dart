@@ -116,7 +116,9 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                     width: 54,
                                     height: 54,
                                     decoration: BoxDecoration(
-                                      gradient: AppTheme.cyberGradient,
+                                      gradient: AppTheme.campusGradientOf(
+                                        context,
+                                      ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Icon(
@@ -148,6 +150,36 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                               ?.copyWith(color: AppTheme.muted),
                                         ),
                                       ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Ketersediaan Slot Hari Ini',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w900),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ..._availabilitySlots(
+                                    bookings: todaysBookings,
+                                    day: _selectedDay,
+                                  ).map(
+                                    (slot) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 10,
+                                      ),
+                                      child: _AvailabilitySlotCard(slot: slot),
                                     ),
                                   ),
                                 ],
@@ -217,6 +249,112 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
     return booking.tanggalPinjam.isBefore(end) &&
         booking.tanggalKembali.isAfter(start);
   }
+
+  List<_RoomAvailabilitySlot> _availabilitySlots({
+    required List<LabBooking> bookings,
+    required DateTime day,
+  }) {
+    final slots = <_RoomAvailabilitySlot>[];
+    for (var hour = 7; hour <= 16; hour++) {
+      final start = DateTime(day.year, day.month, day.day, hour, 0);
+      final end = start.add(const Duration(hours: 1));
+      final activeBooking = bookings.where((booking) {
+        return booking.tanggalPinjam.isBefore(end) &&
+            booking.tanggalKembali.isAfter(start);
+      }).toList();
+      slots.add(
+        _RoomAvailabilitySlot(
+          start: start,
+          end: end,
+          booking: activeBooking.isEmpty ? null : activeBooking.first,
+        ),
+      );
+    }
+    return slots;
+  }
+}
+
+class _RoomAvailabilitySlot {
+  const _RoomAvailabilitySlot({
+    required this.start,
+    required this.end,
+    required this.booking,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final LabBooking? booking;
+}
+
+class _AvailabilitySlotCard extends StatelessWidget {
+  const _AvailabilitySlotCard({required this.slot});
+
+  final _RoomAvailabilitySlot slot;
+
+  @override
+  Widget build(BuildContext context) {
+    final isBusy = slot.booking != null;
+    final color = isBusy
+        ? _statusColor(context, slot.booking!.status)
+        : Theme.of(context).colorScheme.tertiary;
+    final time =
+        '${DateFormat.Hm().format(slot.start)} - ${DateFormat.Hm().format(slot.end)}';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              isBusy ? Icons.event_busy_outlined : Icons.event_available,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  time,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  isBusy
+                      ? '${slot.booking!.labDisplayName} | ${slot.booking!.statusLabel}'
+                      : 'Ruangan Kosong (Tersedia untuk dipinjam)',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Chip(
+            label: Text(isBusy ? 'Terpakai' : 'Tersedia'),
+            labelStyle: TextStyle(color: color, fontWeight: FontWeight.w900),
+            backgroundColor: color.withValues(alpha: 0.12),
+            side: BorderSide(color: color.withValues(alpha: 0.22)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ScheduleCard extends StatelessWidget {
@@ -227,7 +365,7 @@ class _ScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final statusColor = _statusColor(booking.status);
+    final statusColor = _statusColor(context, booking.status);
     final startTime = booking.startTime.isNotEmpty
         ? booking.startTime
         : DateFormat.Hm().format(booking.tanggalPinjam);
@@ -295,14 +433,14 @@ class _ScheduleCard extends StatelessWidget {
   }
 }
 
-Color _statusColor(String status) {
+Color _statusColor(BuildContext context, String status) {
   return switch (status) {
-    'pending' => const Color(0xFFF59E0B),
-    'approved_aslab' => const Color(0xFF3B82F6),
-    'approved_kalab' => const Color(0xFF8B5CF6),
-    'active' => const Color(0xFF10B981),
-    'late' => const Color(0xFFEF4444),
-    _ => AppTheme.electricBlue,
+    'pending' => Theme.of(context).colorScheme.secondary,
+    'approved_aslab' => Theme.of(context).colorScheme.primary,
+    'approved_kalab' => Theme.of(context).colorScheme.tertiary,
+    'active' => Theme.of(context).colorScheme.primaryContainer,
+    'late' => Theme.of(context).colorScheme.error,
+    _ => Theme.of(context).colorScheme.secondary,
   };
 }
 

@@ -115,8 +115,12 @@ class _SettingsPageState extends State<SettingsPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.vibrantPurple.withValues(alpha: 0.18),
-                    AppTheme.electricBlue.withValues(alpha: 0.08),
+                    Theme.of(
+                      context,
+                    ).colorScheme.secondary.withValues(alpha: 0.18),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.08),
                     Theme.of(context).colorScheme.surface,
                   ],
                   begin: Alignment.topCenter,
@@ -225,110 +229,160 @@ class _SettingsPageState extends State<SettingsPage> {
     final nim = _nimController.text.trim().isEmpty
         ? 'Lengkapi profil Anda'
         : _nimController.text.trim();
+    final gradient = AppTheme.campusGradientOf(context);
+    final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(minHeight: 180),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: AppTheme.campusGradientOf(context),
-        borderRadius: BorderRadius.circular(26),
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.vibrantPurple.withValues(alpha: 0.22),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.24),
             blurRadius: 28,
             offset: const Offset(0, 16),
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          GestureDetector(
-            onTap: _pickAvatar,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundColor: Colors.white.withValues(alpha: 0.22),
-                  child: _avatarUrl == null
-                      ? const Icon(Icons.person, color: Colors.white, size: 34)
-                      : ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: _avatarUrl!,
-                            width: 68,
-                            height: 68,
-                            fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 180),
-                            placeholder: (context, _) => const Center(
-                              child: SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.14,
+                child: CustomPaint(
+                  painter: _HeaderOrnamentPainter(gradient.colors),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -10,
+            top: -12,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 10,
+            bottom: 12,
+            child: Text(
+              'LabIn - Manajemen Fasilitas',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.18),
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _pickAvatar,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CircleAvatar(
+                      radius: 38,
+                      backgroundColor: Colors.white.withValues(alpha: 0.22),
+                      child: _avatarUrl == null
+                          ? const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 38,
+                            )
+                          : ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: _avatarUrl!,
+                                width: 76,
+                                height: 76,
+                                fit: BoxFit.cover,
+                                fadeInDuration: const Duration(
+                                  milliseconds: 180,
+                                ),
+                                placeholder: (context, _) => const Center(
+                                  child: SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, _, _) => const Icon(
+                                  Icons.person,
                                   color: Colors.white,
+                                  size: 38,
                                 ),
                               ),
                             ),
-                            errorWidget: (context, _, _) => const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 34,
-                            ),
-                          ),
+                    ),
+                    Positioned(
+                      right: -3,
+                      bottom: -3,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
-                ),
-                Positioned(
-                  right: -3,
-                  bottom: -3,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          size: 15,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: 15,
-                      color: AppTheme.electricBlue,
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Text(
+                      nim,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
+              ),
+              IconButton.filled(
+                onPressed: _showEditProfileSheet,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.18),
+                  foregroundColor: Colors.white,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  nim,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton.filled(
-            onPressed: _showEditProfileSheet,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.18),
-              foregroundColor: Colors.white,
-            ),
-            icon: const Icon(Icons.edit_rounded),
-            tooltip: _label('editProfile'),
+                icon: const Icon(Icons.edit_rounded),
+                tooltip: _label('editProfile'),
+              ),
+            ],
           ),
         ],
       ),
@@ -357,7 +411,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required VoidCallback onTap,
     Color? iconColor,
   }) {
-    final color = iconColor ?? AppTheme.electricBlue;
+    final color = iconColor ?? Theme.of(context).colorScheme.primary;
     return ListTile(
       onTap: onTap,
       leading: _tileIcon(icon, color),
@@ -376,7 +430,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required ValueChanged<bool>? onChanged,
   }) {
     return ListTile(
-      leading: _tileIcon(icon, AppTheme.vibrantPurple),
+      leading: _tileIcon(icon, Theme.of(context).colorScheme.secondary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       subtitle: Text(subtitle),
       trailing: Switch(value: value, onChanged: onChanged),
@@ -389,7 +443,14 @@ class _SettingsPageState extends State<SettingsPage> {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.20),
+            color.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, color: color),
@@ -529,7 +590,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: _tileIcon(
                   Icons.translate_rounded,
-                  AppTheme.electricBlue,
+                  Theme.of(context).colorScheme.primary,
                 ),
                 title: const Text('Bahasa Indonesia'),
                 trailing: _language == 'id'
@@ -543,7 +604,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: _tileIcon(
                   Icons.translate_rounded,
-                  AppTheme.vibrantPurple,
+                  Theme.of(context).colorScheme.secondary,
                 ),
                 title: const Text('English'),
                 trailing: _language == 'en'
@@ -807,7 +868,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: _tileIcon(
                     Icons.photo_library_outlined,
-                    AppTheme.electricBlue,
+                    Theme.of(context).colorScheme.primary,
                   ),
                   title: Text(
                     'pick_from_gallery'.tr(),
@@ -819,7 +880,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: _tileIcon(
                     Icons.photo_camera_outlined,
-                    AppTheme.vibrantPurple,
+                    Theme.of(context).colorScheme.secondary,
                   ),
                   title: Text(
                     'take_from_camera'.tr(),
@@ -884,5 +945,52 @@ class _SettingsPageState extends State<SettingsPage> {
       'deleteAccountSubtitle': 'Request LabIn account deletion',
     };
     return (_language == 'en' ? en : id)[key] ?? key;
+  }
+}
+
+class _HeaderOrnamentPainter extends CustomPainter {
+  _HeaderOrnamentPainter(this.colors);
+
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..shader = LinearGradient(
+        colors: colors,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Offset.zero & size);
+    final path = Path();
+    path.moveTo(size.width * 0.06, size.height * 0.22);
+    path.cubicTo(
+      size.width * 0.24,
+      size.height * 0.02,
+      size.width * 0.45,
+      size.height * 0.38,
+      size.width * 0.80,
+      size.height * 0.18,
+    );
+    path.cubicTo(
+      size.width * 0.92,
+      size.height * 0.10,
+      size.width * 0.94,
+      size.height * 0.62,
+      size.width * 0.64,
+      size.height * 0.76,
+    );
+    canvas.drawPath(path, paint);
+    canvas.drawCircle(
+      Offset(size.width * 0.88, size.height * 0.28),
+      size.shortestSide * 0.10,
+      Paint()..color = colors.last.withValues(alpha: 0.12),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HeaderOrnamentPainter oldDelegate) {
+    return oldDelegate.colors != colors;
   }
 }

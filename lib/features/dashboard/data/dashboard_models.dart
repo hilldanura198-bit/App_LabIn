@@ -707,13 +707,13 @@ class DashboardModel {
       final value when value.contains('area luar ruangan') =>
         'assets/images/area luar ruangan.jpg',
       final value when value.contains('ruangan rektor') =>
-        'assets/images/ruangan rektor.jpg',
+        'assets/images/ruangan_rektorat.png',
       final value when value.contains('simulasi klinik') =>
         'assets/images/lab simulasi klinik.jpg',
       final value
           when value.contains('jaringan komputer') ||
               value.contains('komputer') =>
-        'assets/images/lab jaringan komputer.jpg',
+        'assets/images/lab_jaringan_komputer.png',
       final value when value.contains('mediasi digital') =>
         'assets/images/lab mediasi digital.jpg',
       final value when value.contains('legal tech') =>

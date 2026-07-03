@@ -1203,6 +1203,34 @@ class DashboardRepository {
         .toList();
   }
 
+  Future<void> updateMaintenanceReportStatus({
+    required String reportId,
+    required String status,
+  }) async {
+    final normalizedStatus = status.trim();
+    if (normalizedStatus.isEmpty) {
+      throw Exception('Status maintenance tidak valid.');
+    }
+    final report = await _supabase
+        .from('maintenance_reports')
+        .select('id,user_id,inventory_id,status_perbaikan')
+        .eq('id', reportId)
+        .single();
+    await _supabase
+        .from('maintenance_reports')
+        .update({'status_perbaikan': normalizedStatus})
+        .eq('id', reportId);
+    await _insertNotification(
+      userId: report['user_id'] as String,
+      title: 'Status maintenance diperbarui',
+      message:
+          'Laporan ${report['inventory_id'] as String? ?? reportId} kini berstatus $normalizedStatus.',
+      kind: 'maintenance_report',
+      targetType: 'maintenance',
+      targetId: reportId,
+    );
+  }
+
   Stream<List<LabBooking>> watchReturnableBookings() {
     return watchBookingsByStatus(const ['active']);
   }

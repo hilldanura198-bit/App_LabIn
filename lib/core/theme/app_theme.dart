@@ -76,7 +76,20 @@ class AppTheme {
         ),
       );
     }
-    if (normalized.contains('kampus 3')) {
+    if (normalized.contains('sondakan') || normalized.contains('kesehatan')) {
+      return const CampusPalette(
+        primary: warmAmber,
+        secondary: warmOrange,
+        tertiary: Color(0xFFF97316),
+        darkSurface: Color(0xFF1F1300),
+        gradient: LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFF97316), Color(0xFFEA580C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
+    }
+    if (normalized.contains('cemani') || normalized.contains('kampus 3')) {
       return const CampusPalette(
         primary: crimsonRed,
         secondary: coralRose,

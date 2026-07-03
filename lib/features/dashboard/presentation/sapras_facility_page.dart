@@ -469,7 +469,7 @@ class _UsageStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(status);
+    final color = _statusColor(context, status);
     return InputChip(
       onPressed: () {},
       avatar: Icon(_statusIcon(status), color: color, size: 18),
@@ -532,13 +532,13 @@ class _UsageScheduleChip extends StatelessWidget {
   }
 }
 
-Color _statusColor(String status) {
-  final primary = AppTheme.electricBlue;
+Color _statusColor(BuildContext context, String status) {
+  final primary = Theme.of(context).colorScheme.primary;
   return switch (status) {
     'approved_aslab' || 'approved_kalab' || 'active' => primary,
     'pending' => const Color(0xFFFFB020),
     'rejected' => const Color(0xFFFF4D6D),
-    _ => const Color(0xFF22D3EE),
+    _ => Theme.of(context).colorScheme.secondary,
   };
 }
 
@@ -732,14 +732,14 @@ class _CampusMapTabs extends StatelessWidget {
       ],
     ),
     _CampusMapData(
-      title: 'Kampus 2',
+      title: 'Kampus Kesehatan Sondakan',
       address: 'Jl. KH Samanhudi No.93, Sondakan, Laweyan, Surakarta',
       subtitle: 'Fokus pada klinik, simulasi, dan layanan kesehatan.',
       mapAssetPath: 'assets/images/denah kampus 2.jpeg',
       rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
     ),
     _CampusMapData(
-      title: 'Kampus 3',
+      title: 'Kampus Cemani',
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
       mapAssetPath: 'assets/images/denah kampus 3.jpeg',
@@ -749,19 +749,6 @@ class _CampusMapTabs extends StatelessWidget {
         'Auditorium',
         'Seminar',
         'Parkir',
-      ],
-    ),
-    _CampusMapData(
-      title: 'Kampus 4',
-      address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
-      subtitle: 'Blok lanjutan untuk praktikum, diskusi, dan kegiatan modern.',
-      mapAssetPath: 'assets/images/denah kampus 4.jpeg',
-      rooms: [
-        'Ruang Diskusi',
-        'Lab Presentasi',
-        'Studio Multimedia',
-        'Co-Working',
-        'Rooftop',
       ],
     ),
   ];
@@ -1289,7 +1276,9 @@ class _ReviewQuoteCard extends StatelessWidget {
         border: Border.all(color: scheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.electricBlue.withValues(alpha: 0.06),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -1302,12 +1291,14 @@ class _ReviewQuoteCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppTheme.vibrantPurple.withValues(alpha: 0.10),
+              color: Theme.of(
+                context,
+              ).colorScheme.secondary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.format_quote_rounded,
-              color: AppTheme.vibrantPurple,
+              color: Theme.of(context).colorScheme.secondary,
             ),
           ),
           const SizedBox(width: 12),
@@ -1555,8 +1546,10 @@ class _MiniScoreRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: score / 100,
               minHeight: 14,
-              color: AppTheme.vibrantPurple,
-              backgroundColor: AppTheme.electricBlue.withValues(alpha: 0.12),
+              color: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.12),
             ),
           ),
         ],
