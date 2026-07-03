@@ -126,7 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(22, 14, 22, 22),
+                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 620),
                       child: Column(
@@ -227,7 +227,7 @@ class _SettingsPageState extends State<SettingsPage> {
         : _nimController.text.trim();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: AppTheme.campusGradientOf(context),
         borderRadius: BorderRadius.circular(26),

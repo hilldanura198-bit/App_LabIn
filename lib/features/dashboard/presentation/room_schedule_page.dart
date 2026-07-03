@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/dashboard_models.dart';
@@ -15,28 +16,30 @@ class RoomSchedulePage extends StatefulWidget {
 }
 
 class _RoomSchedulePageState extends State<RoomSchedulePage> {
-  late Future<List<LabRoom>> _roomsFuture;
-  bool _loading = false;
+  late Stream<List<LabBooking>> _scheduleStream;
+  DateTime _selectedDay = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _roomsFuture = widget.repository.fetchLaboratories();
+    _scheduleStream = widget.repository.watchRoomSchedule();
   }
 
   void _refresh() {
     setState(() {
-      _roomsFuture = widget.repository.fetchLaboratories();
+      _scheduleStream = widget.repository.watchRoomSchedule();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toString();
+    final dayFormatter = DateFormat.yMMMMEEEEd(locale);
     return Scaffold(
-      appBar: const GlassAppBar(title: 'Atur Ketersediaan Ruangan Lab'),
+      appBar: const GlassAppBar(title: 'Jadwal Ruangan'),
       body: SafeArea(
-        child: FutureBuilder<List<LabRoom>>(
-          future: _roomsFuture,
+        child: StreamBuilder<List<LabBooking>>(
+          stream: _scheduleStream,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(child: Text(snapshot.error.toString()));
@@ -44,8 +47,10 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final rooms = snapshot.data!
-                .where((room) => room.status.isNotEmpty)
+            final bookings = snapshot.data!.where(_isRelevantBooking).toList()
+              ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
+            final todaysBookings = bookings
+                .where((booking) => _matchesDay(booking, _selectedDay))
                 .toList();
             return RefreshIndicator(
               onRefresh: () async => _refresh(),
@@ -54,7 +59,7 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                 children: [
                   Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 820),
+                      constraints: const BoxConstraints(maxWidth: 860),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -65,7 +70,7 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Text(
-                                    'Kontrol Operasional Ruangan',
+                                    'Jadwal Keterpakaian Ruangan',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleLarge
@@ -73,7 +78,7 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Gunakan switch untuk membuka atau menutup akses ruangan lab secara cepat.',
+                                    'Kalender berikut menampilkan reservasi aktif, pending, dan approved yang masih berjalan.',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyMedium
@@ -84,21 +89,104 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          ...rooms.map(
-                            (room) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _RoomControlCard(
-                                room: room,
-                                repository: widget.repository,
-                                isBusy: _loading,
-                                onChanged: () {
-                                  setState(() => _loading = true);
-                                  _refresh();
-                                  setState(() => _loading = false);
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: CalendarDatePicker(
+                                initialDate: _selectedDay,
+                                firstDate: DateTime.now().subtract(
+                                  const Duration(days: 90),
+                                ),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 180),
+                                ),
+                                onDateChanged: (date) {
+                                  setState(() => _selectedDay = date);
                                 },
                               ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 54,
+                                    height: 54,
+                                    decoration: BoxDecoration(
+                                      gradient: AppTheme.cyberGradient,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Icon(
+                                      Icons.calendar_month_rounded,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          dayFormatter.format(_selectedDay),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${todaysBookings.length} reservasi pada tanggal ini',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(color: AppTheme.muted),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (todaysBookings.isEmpty)
+                            Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(22),
+                                child: Column(
+                                  children: [
+                                    const Icon(
+                                      Icons.event_busy_outlined,
+                                      size: 42,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Tidak ada jadwal ruangan pada hari ini.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ...todaysBookings.map(
+                              (booking) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _ScheduleCard(booking: booking),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -111,41 +199,54 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
       ),
     );
   }
+
+  bool _isRelevantBooking(LabBooking booking) {
+    return switch (booking.status) {
+      'pending' ||
+      'approved_aslab' ||
+      'approved_kalab' ||
+      'active' ||
+      'late' => true,
+      _ => false,
+    };
+  }
+
+  bool _matchesDay(LabBooking booking, DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return booking.tanggalPinjam.isBefore(end) &&
+        booking.tanggalKembali.isAfter(start);
+  }
 }
 
-class _RoomControlCard extends StatelessWidget {
-  const _RoomControlCard({
-    required this.room,
-    required this.repository,
-    required this.onChanged,
-    required this.isBusy,
-  });
+class _ScheduleCard extends StatelessWidget {
+  const _ScheduleCard({required this.booking});
 
-  final LabRoom room;
-  final DashboardRepository repository;
-  final VoidCallback onChanged;
-  final bool isBusy;
+  final LabBooking booking;
 
   @override
   Widget build(BuildContext context) {
-    final isOpen = room.status == 'aktif';
-    final statusColor = isOpen ? AppTheme.emerald : AppTheme.richBronze;
+    final scheme = Theme.of(context).colorScheme;
+    final statusColor = _statusColor(booking.status);
+    final startTime = booking.startTime.isNotEmpty
+        ? booking.startTime
+        : DateFormat.Hm().format(booking.tanggalPinjam);
+    final endTime = booking.endTime.isNotEmpty
+        ? booking.endTime
+        : DateFormat.Hm().format(booking.tanggalKembali);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              width: 54,
-              height: 54,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                isOpen ? Icons.meeting_room_outlined : Icons.lock_outline,
-                color: statusColor,
-              ),
+              child: Icon(Icons.meeting_room_outlined, color: statusColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -153,48 +254,65 @@ class _RoomControlCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    room.name,
+                    booking.labDisplayName,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
-                    room.location,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                    booking.reservationNo,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$startTime - $endTime',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Switch.adaptive(
-                  value: isOpen,
-                  onChanged: isBusy
-                      ? null
-                      : (value) async {
-                          await repository.updateLaboratoryStatus(
-                            laboratoryId: room.id,
-                            isOpen: value,
-                          );
-                          onChanged();
-                        },
-                ),
-                Text(
-                  isOpen ? 'Buka Lab' : 'Tutup Lab',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 10),
+            Chip(
+              label: Text(_statusLabel(booking.status)),
+              labelStyle: TextStyle(
+                color: statusColor,
+                fontWeight: FontWeight.w900,
+              ),
+              backgroundColor: statusColor.withValues(alpha: 0.12),
+              side: BorderSide(color: statusColor.withValues(alpha: 0.24)),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+Color _statusColor(String status) {
+  return switch (status) {
+    'pending' => const Color(0xFFF59E0B),
+    'approved_aslab' => const Color(0xFF3B82F6),
+    'approved_kalab' => const Color(0xFF8B5CF6),
+    'active' => const Color(0xFF10B981),
+    'late' => const Color(0xFFEF4444),
+    _ => AppTheme.electricBlue,
+  };
+}
+
+String _statusLabel(String status) {
+  return switch (status) {
+    'pending' => 'Pending',
+    'approved_aslab' => 'Approved Aslab',
+    'approved_kalab' => 'Approved Kalab',
+    'active' => 'Active',
+    'late' => 'Terlambat',
+    _ => 'Selesai',
+  };
 }

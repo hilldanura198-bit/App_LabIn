@@ -34,8 +34,9 @@ class RoomStockStreamBanner extends StatelessWidget {
           child: Text(
             totalAvailable == null
                 ? 'loading_room_stock'.tr()
-                : 'rooms_stock_available'
-                    .tr(namedArgs: {'count': '$totalAvailable'}),
+                : 'rooms_stock_available'.tr(
+                    namedArgs: {'count': '$totalAvailable'},
+                  ),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white,

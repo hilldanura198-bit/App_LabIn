@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -477,7 +478,7 @@ class _PanelShortcutGrid extends StatelessWidget {
       ),
       (
         Icons.meeting_room_outlined,
-        'Atur Ruangan',
+        'Jadwal Ruangan',
         () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => RoomSchedulePage(repository: repository),
@@ -1074,7 +1075,7 @@ class _MaintenanceReportCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Laporan Maintenance / Kerusakan Alat',
+                  'Laporan Maintenance Mahasiswa',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                   ),
@@ -1104,18 +1105,39 @@ class _MaintenanceReportCard extends StatelessWidget {
                           runSpacing: 10,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: 92,
+                                height: 72,
                                 color: AppTheme.vibrantPurple.withValues(
                                   alpha: 0.12,
                                 ),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(
-                                Icons.handyman_outlined,
-                                color: AppTheme.vibrantPurple,
+                                child:
+                                    row.photoUrl == null ||
+                                        row.photoUrl!.trim().isEmpty
+                                    ? const Icon(
+                                        Icons.handyman_outlined,
+                                        color: AppTheme.vibrantPurple,
+                                      )
+                                    : CachedNetworkImage(
+                                        imageUrl: row.photoUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, _) => Container(
+                                          color: AppTheme.vibrantPurple
+                                              .withValues(alpha: 0.12),
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        ),
+                                        errorWidget: (context, _, _) =>
+                                            const Icon(
+                                              Icons.handyman_outlined,
+                                              color: AppTheme.vibrantPurple,
+                                            ),
+                                      ),
                               ),
                             ),
                             ConstrainedBox(

@@ -323,40 +323,29 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                               runSpacing: 14,
                                               children: [
                                                 SizedBox(
-                                                  width:
-                                                      constraints.maxWidth >=
-                                                          720
-                                                      ? constraints.maxWidth
-                                                      : double.infinity,
-                                                  child: SegmentedButton<bool>(
-                                                    segments: const [
-                                                      ButtonSegment<bool>(
-                                                        value: true,
-                                                        icon: Icon(
-                                                          Icons
-                                                              .account_circle_outlined,
+                                                  width: constraints.maxWidth,
+                                                  child: CheckboxListTile(
+                                                    value: _borrowForSelf,
+                                                    onChanged: (value) =>
+                                                        _setBorrowerDelegation(
+                                                          value ?? false,
                                                         ),
-                                                        label: Text(
-                                                          'Atas Nama Diri Sendiri',
-                                                        ),
-                                                      ),
-                                                      ButtonSegment<bool>(
-                                                        value: false,
-                                                        icon: Icon(
-                                                          Icons
-                                                              .supervisor_account_outlined,
-                                                        ),
-                                                        label: Text(
-                                                          'Atas Nama Orang Lain',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                    selected: {_borrowForSelf},
-                                                    onSelectionChanged:
-                                                        (selected) =>
-                                                            _setBorrowerDelegation(
-                                                              selected.first,
-                                                            ),
+                                                    contentPadding:
+                                                        EdgeInsets.zero,
+                                                    title: const Text(
+                                                      'Pinjam untuk diri sendiri',
+                                                    ),
+                                                    subtitle: Text(
+                                                      _borrowForSelf
+                                                          ? 'Identitas session aktif akan diisi otomatis.'
+                                                          : 'Isi manual identitas orang lain yang didelegasikan.',
+                                                    ),
+                                                    secondary: Icon(
+                                                      _borrowForSelf
+                                                          ? Icons.person_outline
+                                                          : Icons
+                                                                .supervisor_account_outlined,
+                                                    ),
                                                   ),
                                                 ),
                                                 _fieldBox(
@@ -393,7 +382,19 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                   context: context,
                                                   child: TextFormField(
                                                     controller: _nimController,
-                                                    readOnly: true,
+                                                    readOnly: _borrowForSelf,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
                                                     decoration:
                                                         const InputDecoration(
                                                           labelText:
@@ -410,7 +411,19 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                   child: TextFormField(
                                                     controller:
                                                         _programStudiController,
-                                                    readOnly: true,
+                                                    readOnly: _borrowForSelf,
+                                                    autovalidateMode:
+                                                        AutovalidateMode
+                                                            .onUserInteraction,
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value
+                                                              .trim()
+                                                              .isEmpty) {
+                                                        return _invalidMessage;
+                                                      }
+                                                      return null;
+                                                    },
                                                     decoration:
                                                         const InputDecoration(
                                                           labelText:

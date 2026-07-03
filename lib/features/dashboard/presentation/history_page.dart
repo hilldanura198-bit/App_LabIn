@@ -208,24 +208,38 @@ class _HistoryCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
-                        Text(
-                          booking.borrowerName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: AppTheme.muted,
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${booking.borrowerIdentity ?? '-'} | ${booking.labDisplayName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppTheme.muted),
-                        ),
+                        if (role != UserRole.mahasiswa) ...[
+                          Text(
+                            booking.borrowerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.muted,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${booking.borrowerIdentity ?? '-'} | ${booking.labDisplayName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.muted),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            booking.labDisplayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.muted,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -576,17 +576,32 @@ class DashboardRepository {
     final path =
         '$userId/sarpras-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
     final bytes = await image.readAsBytes();
-    await _supabase.storage
-        .from('sarpras-media')
-        .uploadBinary(
-          path,
-          bytes,
-          fileOptions: FileOptions(
-            upsert: true,
-            contentType: image.mimeType ?? 'image/$safeExtension',
-          ),
-        );
-    return _supabase.storage.from('sarpras-media').getPublicUrl(path);
+    final bucketNames = ['sarpras_assets', 'images'];
+    Object? lastError;
+    for (final bucketName in bucketNames) {
+      try {
+        await _supabase.storage
+            .from(bucketName)
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: FileOptions(
+                upsert: true,
+                contentType: image.mimeType ?? 'image/$safeExtension',
+              ),
+            );
+        return _supabase.storage.from(bucketName).getPublicUrl(path);
+      } on Object catch (error) {
+        lastError = error;
+        final message = error.toString().toLowerCase();
+        if (!message.contains('bucket not found') && !message.contains('404')) {
+          rethrow;
+        }
+      }
+    }
+    throw Exception(
+      'Bucket sarpras tidak ditemukan: ${lastError ?? 'unknown error'}',
+    );
   }
 
   Future<void> updatePassword(String password) async {
@@ -989,7 +1004,7 @@ class DashboardRepository {
       'kondisi': 'bagus',
       'type': type.trim().isEmpty ? 'alat' : type.trim(),
       'manual_url': _optionalTrimmed(manualUrl),
-      'image_url': imageUrl,
+      'foto_url': imageUrl,
     });
     await _appendConsensusLog(
       entityTable: 'inventories',
@@ -1012,7 +1027,7 @@ class DashboardRepository {
       'nama_lab': name.trim(),
       'lokasi': location.trim(),
       'status_operasional': 'aktif',
-      'image_url': imageUrl,
+      'foto_url': imageUrl,
     });
     await _appendConsensusLog(
       entityTable: 'laboratories',
