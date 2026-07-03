@@ -1065,6 +1065,64 @@ class DashboardRepository {
     );
   }
 
+  Future<void> updateInventory({
+    required String inventoryId,
+    required String labId,
+    required String name,
+    required int totalStock,
+    required int availableStock,
+    required String type,
+    String? manualUrl,
+    XFile? image,
+  }) async {
+    if (inventoryId.trim().isEmpty) {
+      throw Exception('ID inventaris tidak valid.');
+    }
+    if (name.trim().isEmpty) {
+      throw Exception('Nama inventaris wajib diisi.');
+    }
+    if (totalStock < 0 || availableStock < 0 || availableStock > totalStock) {
+      throw Exception('Jumlah stok tidak valid.');
+    }
+    final payload = <String, dynamic>{
+      'lab_id': labId,
+      'nama_alat': name.trim(),
+      'total_stok': totalStock,
+      'stok_tersedia': availableStock,
+      'kondisi': 'bagus',
+      'type': type.trim().isEmpty ? 'alat' : type.trim(),
+      'manual_url': _optionalTrimmed(manualUrl),
+    };
+    if (image != null) {
+      payload['foto_url'] = await uploadSarprasImage(image);
+    }
+    await _supabase.from('inventories').update(payload).eq('id', inventoryId);
+    await _appendConsensusLog(
+      entityTable: 'inventories',
+      entityId: inventoryId,
+      command: 'update_inventory',
+      payload: {
+        'lab_id': labId,
+        'type': type,
+        'total_stok': totalStock,
+        'stok_tersedia': availableStock,
+      },
+    );
+  }
+
+  Future<void> deleteInventory(String inventoryId) async {
+    if (inventoryId.trim().isEmpty) {
+      throw Exception('ID inventaris tidak valid.');
+    }
+    await _supabase.from('inventories').delete().eq('id', inventoryId);
+    await _appendConsensusLog(
+      entityTable: 'inventories',
+      entityId: inventoryId,
+      command: 'delete_inventory',
+      payload: const {'deleted': true},
+    );
+  }
+
   Future<void> createLaboratory({
     required String name,
     required String location,

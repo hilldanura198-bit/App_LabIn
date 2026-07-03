@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/lab_catalog.dart';
 import '../../../core/theme/app_theme.dart';
@@ -75,7 +76,13 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
         child: TabBarView(
           controller: _tabController,
           children: [
-            _InventoryTab(repository: widget.repository),
+            _InventoryTab(
+              repository: widget.repository,
+              onEditInventory: (inventory) =>
+                  _openInventoryForm(context, inventory: inventory),
+              onDeleteInventory: (inventory) =>
+                  _confirmDeleteInventory(context, inventory),
+            ),
             _RoomTab(
               repository: widget.repository,
               onEditRoom: (room) => _openRoomForm(context, room: room),
@@ -95,16 +102,28 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
     await _openRoomForm(context);
   }
 
-  Future<void> _openInventoryForm(BuildContext context) async {
+  Future<void> _openInventoryForm(
+    BuildContext context, {
+    LabInventory? inventory,
+  }) async {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _InventoryFormSheet(repository: widget.repository),
+      builder: (_) => _InventoryFormSheet(
+        repository: widget.repository,
+        inventory: inventory,
+      ),
     );
     if (created == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inventaris berhasil ditambahkan.')),
+        SnackBar(
+          content: Text(
+            inventory == null
+                ? 'Inventaris berhasil ditambahkan.'
+                : 'Inventaris berhasil diperbarui.',
+          ),
+        ),
       );
     }
   }
@@ -171,12 +190,64 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
       );
     }
   }
+
+  Future<void> _confirmDeleteInventory(
+    BuildContext context,
+    LabInventory inventory,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Hapus Sarana'),
+          content: Text('Hapus sarana "${inventory.namaAlat}" dari database?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldDelete != true || !context.mounted) {
+      return;
+    }
+    try {
+      await widget.repository.deleteInventory(inventory.id);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sarana berhasil dihapus.')));
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
 }
 
 class _InventoryTab extends StatelessWidget {
-  const _InventoryTab({required this.repository});
+  const _InventoryTab({
+    required this.repository,
+    required this.onEditInventory,
+    required this.onDeleteInventory,
+  });
 
   final DashboardRepository repository;
+  final ValueChanged<LabInventory> onEditInventory;
+  final ValueChanged<LabInventory> onDeleteInventory;
 
   @override
   Widget build(BuildContext context) {
@@ -213,15 +284,31 @@ class _InventoryTab extends StatelessWidget {
                         _SummaryCard(
                           title: 'Daftar Sarana',
                           subtitle:
-                              'Seluruh inventaris sarana tampil dalam format tabel agar mudah dipantau.',
+                              'Seluruh inventaris sarana tampil dalam kartu premium bergambar agar mudah dipantau.',
                           icon: Icons.inventory_2_outlined,
                           total: inventories.length,
                         ),
                         const SizedBox(height: 14),
-                        _InventoryTable(
-                          inventories: inventories,
-                          roomById: roomById,
-                        ),
+                        if (inventories.isEmpty)
+                          const _EmptyStateCard(
+                            title: 'Belum ada sarana.',
+                            subtitle:
+                                'Tambahkan inventaris pertama melalui tombol +.',
+                          )
+                        else
+                          ...inventories.map(
+                            (inventory) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _InventoryCard(
+                                inventory: inventory,
+                                roomName:
+                                    roomById[inventory.labId] ??
+                                    inventory.labId,
+                                onEdit: () => onEditInventory(inventory),
+                                onDelete: () => onDeleteInventory(inventory),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -235,68 +322,114 @@ class _InventoryTab extends StatelessWidget {
   }
 }
 
-class _InventoryTable extends StatelessWidget {
-  const _InventoryTable({required this.inventories, required this.roomById});
+class _InventoryCard extends StatelessWidget {
+  const _InventoryCard({
+    required this.inventory,
+    required this.roomName,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
-  final List<LabInventory> inventories;
-  final Map<String, String> roomById;
+  final LabInventory inventory;
+  final String roomName;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    if (inventories.isEmpty) {
-      return const _EmptyStateCard(
-        title: 'Belum ada sarana.',
-        subtitle: 'Tambahkan inventaris pertama melalui tombol +.',
-      );
-    }
+    final scheme = Theme.of(context).colorScheme;
+    final campus = AppTheme.campusColorsOf(context);
+    final imageUrl = inventory.imageUrl;
+    final imageWidget = _InventoryPreview(imageUrl: imageUrl);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStatePropertyAll(
-              AppTheme.campusColorsOf(context).primary.withValues(alpha: 0.08),
-            ),
-            columns: const [
-              DataColumn(label: Text('Nama Sarana')),
-              DataColumn(label: Text('Ruangan')),
-              DataColumn(label: Text('Kategori')),
-              DataColumn(label: Text('Stok')),
-              DataColumn(label: Text('Kondisi')),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              campus.primary.withValues(alpha: 0.05),
+              campus.secondary.withValues(alpha: 0.03),
             ],
-            rows: inventories.map((inventory) {
-              final roomName = roomById[inventory.labId] ?? inventory.labId;
-              return DataRow(
-                cells: [
-                  DataCell(
-                    SizedBox(
-                      width: 220,
-                      child: Text(
-                        inventory.namaAlat,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ),
-                  DataCell(SizedBox(width: 180, child: Text(roomName))),
-                  DataCell(Text(_inventoryTypeLabel(inventory.type))),
-                  DataCell(
-                    Text('${inventory.stokTersedia}/${inventory.totalStok}'),
-                  ),
-                  DataCell(
-                    Chip(
-                      label: Text(
-                        inventory.kondisi,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
           ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                imageWidget,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        inventory.namaAlat,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        roomName,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _InfoChip(
+                            icon: Icons.category_outlined,
+                            label: _inventoryTypeLabel(inventory.type),
+                          ),
+                          _InfoChip(
+                            icon: Icons.inventory_2_outlined,
+                            label:
+                                'Stok ${inventory.stokTersedia}/${inventory.totalStok}',
+                          ),
+                          _InfoChip(
+                            icon: Icons.health_and_safety_outlined,
+                            label: inventory.kondisi,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit',
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined),
+                    ),
+                    IconButton(
+                      tooltip: 'Hapus',
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LinearProgressIndicator(
+              value: inventory.totalStok <= 0
+                  ? 0
+                  : inventory.stokTersedia / inventory.totalStok,
+              minHeight: 8,
+              backgroundColor: scheme.outlineVariant.withValues(alpha: 0.35),
+              color: inventory.isCritical
+                  ? Colors.orangeAccent
+                  : campus.primary,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ],
         ),
       ),
     );
@@ -394,7 +527,16 @@ class _RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              scheme.primary.withValues(alpha: 0.05),
+              scheme.secondary.withValues(alpha: 0.02),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
         padding: const EdgeInsets.all(14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,6 +572,14 @@ class _RoomCard extends StatelessWidget {
                         ),
                         backgroundColor: scheme.primary.withValues(alpha: 0.08),
                       ),
+                      _InfoChip(
+                        icon: Icons.photo_outlined,
+                        label:
+                            room.imageUrl == null ||
+                                room.imageUrl!.trim().isEmpty
+                            ? 'Tanpa gambar'
+                            : 'Ada gambar',
+                      ),
                     ],
                   ),
                 ],
@@ -457,6 +607,70 @@ class _RoomCard extends StatelessWidget {
   }
 }
 
+class _InventoryPreview extends StatelessWidget {
+  const _InventoryPreview({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final placeholder = Container(
+      width: 104,
+      height: 104,
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(Icons.inventory_2_outlined),
+    );
+    if (imageUrl == null || imageUrl!.trim().isEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: placeholder,
+      );
+    }
+    final url = imageUrl!.trim();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        width: 104,
+        height: 104,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            url.startsWith('http')
+                ? CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.cover,
+                    errorWidget: (context, error, stackTrace) => placeholder,
+                    placeholder: (context, url) => placeholder,
+                  )
+                : Image.asset(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => placeholder,
+                  ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    scheme.primary.withValues(alpha: 0.22),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RoomPreview extends StatelessWidget {
   const _RoomPreview({required this.imageUrl});
 
@@ -465,8 +679,8 @@ class _RoomPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final placeholder = Container(
-      width: 88,
-      height: 88,
+      width: 96,
+      height: 96,
       color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
       alignment: Alignment.center,
       child: const Icon(Icons.meeting_room_outlined),
@@ -479,24 +693,21 @@ class _RoomPreview extends StatelessWidget {
     }
     final url = imageUrl!.trim();
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: SizedBox(
-        width: 88,
-        height: 88,
+        width: 96,
+        height: 96,
         child: url.startsWith('http')
-            ? Image.network(
-                url,
+            ? CachedNetworkImage(
+                imageUrl: url,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return placeholder;
-                },
+                errorWidget: (context, error, stackTrace) => placeholder,
+                placeholder: (context, url) => placeholder,
               )
             : Image.asset(
                 url,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return placeholder;
-                },
+                errorBuilder: (context, error, stackTrace) => placeholder,
               ),
       ),
     );
@@ -504,9 +715,10 @@ class _RoomPreview extends StatelessWidget {
 }
 
 class _InventoryFormSheet extends StatefulWidget {
-  const _InventoryFormSheet({required this.repository});
+  const _InventoryFormSheet({required this.repository, this.inventory});
 
   final DashboardRepository repository;
+  final LabInventory? inventory;
 
   @override
   State<_InventoryFormSheet> createState() => _InventoryFormSheetState();
@@ -522,6 +734,20 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
   String _type = 'alat';
   XFile? _image;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final inventory = widget.inventory;
+    if (inventory != null) {
+      _name.text = inventory.namaAlat;
+      _total.text = inventory.totalStok.toString();
+      _available.text = inventory.stokTersedia.toString();
+      _manualUrl.text = inventory.manualUrl ?? '';
+      _labId = inventory.labId;
+      _type = inventory.type;
+    }
+  }
 
   @override
   void dispose() {
@@ -559,11 +785,17 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
                 );
               }
               final rooms = snapshot.data ?? const <LabRoom>[];
-              _labId ??= rooms.isEmpty ? null : rooms.first.id;
+              _labId ??=
+                  widget.inventory?.labId ??
+                  (rooms.isEmpty ? null : rooms.first.id);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _SheetHandle(title: 'Tambah Sarana'),
+                  _SheetHandle(
+                    title: widget.inventory == null
+                        ? 'Tambah Sarana'
+                        : 'Edit Sarana',
+                  ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _name,
@@ -688,15 +920,30 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
   Future<void> _save() async {
     try {
       setState(() => _saving = true);
-      await widget.repository.createInventory(
-        labId: _labId!,
-        name: _name.text,
-        totalStock: int.tryParse(_total.text) ?? 0,
-        availableStock: int.tryParse(_available.text) ?? 0,
-        type: _type,
-        manualUrl: _manualUrl.text,
-        image: _image,
-      );
+      final totalStock = int.tryParse(_total.text) ?? 0;
+      final availableStock = int.tryParse(_available.text) ?? 0;
+      if (widget.inventory == null) {
+        await widget.repository.createInventory(
+          labId: _labId!,
+          name: _name.text,
+          totalStock: totalStock,
+          availableStock: availableStock,
+          type: _type,
+          manualUrl: _manualUrl.text,
+          image: _image,
+        );
+      } else {
+        await widget.repository.updateInventory(
+          inventoryId: widget.inventory!.id,
+          labId: _labId!,
+          name: _name.text,
+          totalStock: totalStock,
+          availableStock: availableStock,
+          type: _type,
+          manualUrl: _manualUrl.text,
+          image: _image,
+        );
+      }
       if (!mounted) {
         return;
       }
@@ -712,6 +959,22 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
         ),
       );
     }
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+    );
   }
 }
 
