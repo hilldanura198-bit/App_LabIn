@@ -337,6 +337,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
+                      'LabIn - Manajemen Fasilitas',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -345,7 +355,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       nim,
                       maxLines: 1,
@@ -353,6 +363,27 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.82),
                         fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18),
+                        ),
+                      ),
+                      child: Text(
+                        _roleLabel(_role),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -440,6 +471,14 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Icon(icon, color: color),
     );
+  }
+
+  String _roleLabel(String role) {
+    return switch (role.toLowerCase()) {
+      'kalab' => 'Kalab',
+      'aslab' => 'Aslab',
+      _ => 'Mahasiswa',
+    };
   }
 
   void _showEditProfileSheet() {
