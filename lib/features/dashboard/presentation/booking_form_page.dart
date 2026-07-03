@@ -327,9 +327,7 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                       'Pinjam untuk diri sendiri',
                                                     ),
                                                     subtitle: Text(
-                                                      _borrowForSelf
-                                                          ? 'Identitas session aktif akan diisi otomatis.'
-                                                          : 'Isi manual identitas orang lain yang didelegasikan.',
+                                                      'Centang jika Anda meminjam untuk diri sendiri. Kosongkan pilihan jika Anda didelegasikan untuk mengisi identitas pengguna lain.',
                                                     ),
                                                     secondary: Icon(
                                                       _borrowForSelf

@@ -212,13 +212,66 @@ class _RoomSchedulePageState extends State<RoomSchedulePage> {
                                 ),
                               ),
                             )
-                          else
+                          else ...[
+                            Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        gradient: AppTheme.campusGradientOf(
+                                          context,
+                                        ),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: const Icon(
+                                        Icons.event_available_rounded,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Ruangan Telah Dipinjam (Tidak tersedia)',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${todaysBookings.length} reservasi aktif pada tanggal ini',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: AppTheme.muted,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                             ...todaysBookings.map(
                               (booking) => Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: _ScheduleCard(booking: booking),
                               ),
                             ),
+                          ],
                         ],
                       ),
                     ),
