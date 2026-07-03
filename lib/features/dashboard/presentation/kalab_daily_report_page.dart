@@ -183,17 +183,18 @@ class _DateFilterCard extends StatelessWidget {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _ReportPeriod.values.map((item) {
-                  final selected = item == period;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: ChoiceChip(
-                      label: Text(item.label),
-                      selected: selected,
-                      onSelected: (_) => onPeriodChanged(item),
-                    ),
-                  );
-                }).toList(),
+                children: _ReportPeriod.values
+                    .map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: ChoiceChip(
+                          label: Text(item.label),
+                          selected: period == item,
+                          onSelected: (_) => onPeriodChanged(item),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             const SizedBox(height: 14),

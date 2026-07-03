@@ -656,6 +656,34 @@ class DashboardRepository {
     );
   }
 
+  Future<void> acceptMaintenanceReport(String reportId) async {
+    final row = await _supabase
+        .from('maintenance_reports')
+        .select(
+          'user_id,inventory_id,deskripsi,profiles(nama),inventories(nama_alat)',
+        )
+        .eq('id', reportId)
+        .single();
+    await _supabase
+        .from('maintenance_reports')
+        .update({'status_perbaikan': 'Diproses / Selesai Diperbaiki'})
+        .eq('id', reportId);
+    final inventory = row['inventories'];
+    final inventoryName = inventory is Map
+        ? inventory['nama_alat']?.toString()
+        : null;
+    await _insertNotification(
+      userId: row['user_id'] as String,
+      title: 'Laporan maintenance diterima',
+      message: inventoryName == null || inventoryName.trim().isEmpty
+          ? 'Laporan kerusakan sudah diproses oleh Kalab.'
+          : 'Laporan kerusakan untuk $inventoryName sudah diproses oleh Kalab.',
+      kind: 'maintenance_report',
+      targetType: 'maintenance',
+      targetId: reportId,
+    );
+  }
+
   Future<void> approveAslab(String bookingId, {String? note}) async {
     final booking = await _supabase
         .from('bookings')
@@ -774,22 +802,19 @@ class DashboardRepository {
       signatureUrl = _supabase.storage.from('signatures').getPublicUrl(path);
     }
 
-    final signaturePayload = signatureUrl == null
-        ? null
-        : {'signature_url': signatureUrl};
     final payload = <String, dynamic>{
       'status': 'approved_kalab',
       'approved_by_kalab_id': kalabId,
-      ...?signaturePayload,
     };
+    if (signatureUrl != null) {
+      payload['signature_url'] = signatureUrl;
+    }
     await _supabase
         .from('bookings')
         .update(payload)
         .eq('id', bookingId)
         .eq('status', 'approved_aslab');
-    if (_shouldDecrementStockOnApproval(previousStatus)) {
-      await _decrementInventoryStockForBooking(bookingId);
-    }
+    await _decrementInventoryStockForBooking(bookingId);
     await _insertNotification(
       userId: booking['user_id'] as String,
       title: 'Reservasi disetujui Kalab',
@@ -1152,39 +1177,38 @@ class DashboardRepository {
     }
   }
 
-  Stream<List<BorrowedInventoryReport>> watchBorrowedInventoryReport() {
-    return watchBookingsByStatus(const [
-      'approved_kalab',
-      'active',
-      'late',
-    ]).map((bookings) {
-      final totals = <String, ({String name, int quantity})>{};
-      for (final booking in bookings) {
-        for (final item in booking.itemsSnapshot) {
-          final inventoryId = item.inventoryId?.trim();
-          if (inventoryId == null || inventoryId.isEmpty) continue;
-          final current = totals[inventoryId];
-          totals[inventoryId] = (
-            name: current?.name ?? item.name,
-            quantity: (current?.quantity ?? 0) + item.quantity,
-          );
-        }
-      }
-      return totals.entries
-          .map(
-            (entry) => BorrowedInventoryReport(
-              inventoryId: entry.key,
-              name: entry.value.name,
-              quantity: entry.value.quantity,
-            ),
-          )
-          .toList()
-        ..sort((a, b) => b.quantity.compareTo(a.quantity));
-    });
-  }
-
   Future<List<BorrowedInventoryReport>> fetchBorrowedInventoryReport() async {
-    return watchBorrowedInventoryReport().first;
+    final rows = await _supabase
+        .from('booking_items')
+        .select('inventory_id,jumlah,bookings(status),inventories(nama_alat)')
+        .inFilter('bookings.status', ['approved_kalab', 'active', 'late']);
+    final totals = <String, ({String name, int quantity})>{};
+    for (final row in rows) {
+      final inventoryId = row['inventory_id']?.toString() ?? '';
+      if (inventoryId.isEmpty) continue;
+      final inventory = row['inventories'];
+      final name = inventory is Map
+          ? inventory['nama_alat'] as String? ?? 'Inventaris'
+          : 'Inventaris';
+      final quantity = row['jumlah'] as int? ?? 0;
+      final current = totals[inventoryId];
+      totals[inventoryId] = (
+        name: current?.name ?? name,
+        quantity: (current?.quantity ?? 0) + quantity,
+      );
+    }
+    final report =
+        totals.entries
+            .map(
+              (entry) => BorrowedInventoryReport(
+                inventoryId: entry.key,
+                name: entry.value.name,
+                quantity: entry.value.quantity,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.quantity.compareTo(a.quantity));
+    return report;
   }
 
   Future<List<MaintenanceReportEntry>> fetchMaintenanceReports() async {
@@ -1202,34 +1226,6 @@ class DashboardRepository {
           ),
         )
         .toList();
-  }
-
-  Future<void> updateMaintenanceReportStatus({
-    required String reportId,
-    required String status,
-  }) async {
-    final normalizedStatus = status.trim();
-    if (normalizedStatus.isEmpty) {
-      throw Exception('Status maintenance tidak valid.');
-    }
-    final report = await _supabase
-        .from('maintenance_reports')
-        .select('id,user_id,inventory_id,status_perbaikan')
-        .eq('id', reportId)
-        .single();
-    await _supabase
-        .from('maintenance_reports')
-        .update({'status_perbaikan': normalizedStatus})
-        .eq('id', reportId);
-    await _insertNotification(
-      userId: report['user_id'] as String,
-      title: 'Status maintenance diperbarui',
-      message:
-          'Laporan ${report['inventory_id'] as String? ?? reportId} kini berstatus $normalizedStatus.',
-      kind: 'maintenance_report',
-      targetType: 'maintenance',
-      targetId: reportId,
-    );
   }
 
   Stream<List<LabBooking>> watchReturnableBookings() {
@@ -1448,10 +1444,6 @@ class DashboardRepository {
         inventoryId: row['inventory_id']?.toString(),
       );
     }).toList();
-  }
-
-  bool _shouldDecrementStockOnApproval(String previousStatus) {
-    return previousStatus == 'approved_aslab';
   }
 
   String _bookingIdFromQr(String rawCode) {

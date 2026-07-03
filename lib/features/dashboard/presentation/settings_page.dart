@@ -36,6 +36,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
+  bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
   String _language = 'id';
@@ -92,61 +93,47 @@ class _SettingsPageState extends State<SettingsPage> {
             : fallbackEmail;
         _avatarUrl = profile.avatarUrl;
         _role = profile.role;
+        _loading = false;
       });
     } on Object catch (error) {
-      final currentUser = widget.repository.currentUser;
-      final metadata = currentUser?.userMetadata ?? const <String, dynamic>{};
-      if (!mounted) return;
-      setState(() {
-        _nameController.text = (metadata['nama'] ?? metadata['name'] ?? '-')
-            .toString()
-            .trim();
-        _nimController.text = (metadata['nim_nip'] ?? metadata['nim'] ?? '-')
-            .toString()
-            .trim();
-        _waController.text =
-            (metadata['whatsapp_number'] ?? metadata['phone'] ?? '-')
-                .toString()
-                .trim();
-        _emailController.text = (metadata['email'] ?? currentUser?.email ?? '-')
-            .toString()
-            .trim();
-        _avatarUrl = null;
-        _role = 'mahasiswa';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: widget.showAppBar ? GlassAppBar(title: 'profile'.tr()) : null,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth >= 720
-                ? 620.0
-                : constraints.maxWidth;
-            return RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(22, 12, 22, 18),
-                children: [
-                  Center(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.vibrantPurple.withValues(alpha: 0.18),
+                    AppTheme.electricBlue.withValues(alpha: 0.08),
+                    Theme.of(context).colorScheme.surface,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      constraints: const BoxConstraints(maxWidth: 620),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildProfileHeader(context),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           _buildMenuCard(
                             context,
                             children: [
@@ -225,12 +212,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            );
-          },
-        ),
-      ),
+            ),
     );
   }
 
@@ -241,20 +225,15 @@ class _SettingsPageState extends State<SettingsPage> {
     final nim = _nimController.text.trim().isEmpty
         ? 'Lengkapi profil Anda'
         : _nimController.text.trim();
-    final gradient = AppTheme.campusGradientOf(context);
-    final theme = Theme.of(context);
 
     return Container(
       constraints: const BoxConstraints(minHeight: 172),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(30),
+        gradient: AppTheme.campusGradientOf(context),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(
-              context,
-            ).colorScheme.primary.withValues(alpha: 0.24),
+            color: AppTheme.vibrantPurple.withValues(alpha: 0.22),
             blurRadius: 28,
             offset: const Offset(0, 16),
           ),
@@ -263,154 +242,159 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Stack(
         children: [
           Positioned(
-            left: 10,
-            bottom: 12,
-            child: Text(
-              'LabIn',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.2,
-                shadows: const [
-                  Shadow(
-                    color: Color(0x66000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
+            top: -18,
+            right: -8,
+            child: _headerOrnament(
+              size: 92,
+              color: Colors.white.withValues(alpha: 0.16),
+            ),
+          ),
+          Positioned(
+            bottom: -26,
+            left: -18,
+            child: _headerOrnament(
+              size: 124,
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: _pickAvatar,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            CircleAvatar(
+                              radius: 36,
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.22,
+                              ),
+                              child: _avatarUrl == null
+                                  ? const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 34,
+                                    )
+                                  : ClipOval(
+                                      child: CachedNetworkImage(
+                                        imageUrl: _avatarUrl!,
+                                        width: 72,
+                                        height: 72,
+                                        fit: BoxFit.cover,
+                                        fadeInDuration: const Duration(
+                                          milliseconds: 180,
+                                        ),
+                                        placeholder: (context, _) =>
+                                            const Center(
+                                              child: SizedBox.square(
+                                                dimension: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
+                                              ),
+                                            ),
+                                        errorWidget: (context, _, _) =>
+                                            const Icon(
+                                              Icons.person,
+                                              color: Colors.white,
+                                              size: 34,
+                                            ),
+                                      ),
+                                    ),
+                            ),
+                            Positioned(
+                              right: -3,
+                              bottom: -3,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: 15,
+                                  color: AppTheme.electricBlue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'LabIn - Manajemen Fasilitas',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.84),
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              nim,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.84),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton.filled(
+                        onPressed: _showEditProfileSheet,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.edit_rounded),
+                        tooltip: _label('editProfile'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Kelola profil, login, dan sinkronisasi akun kampus dari satu tempat.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: _pickAvatar,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    CircleAvatar(
-                      radius: 38,
-                      backgroundColor: Colors.white.withValues(alpha: 0.22),
-                      child: _avatarUrl == null
-                          ? const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 38,
-                            )
-                          : ClipOval(
-                              child: CachedNetworkImage(
-                                imageUrl: _avatarUrl!,
-                                width: 76,
-                                height: 76,
-                                fit: BoxFit.cover,
-                                fadeInDuration: const Duration(
-                                  milliseconds: 180,
-                                ),
-                                placeholder: (context, _) => const Center(
-                                  child: SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, _, _) => const Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 38,
-                                ),
-                              ),
-                            ),
-                    ),
-                    Positioned(
-                      right: -3,
-                      bottom: -3,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.camera_alt_rounded,
-                          size: 15,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'LabIn - Manajemen Fasilitas...',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      nim,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.82),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.18),
-                        ),
-                      ),
-                      child: Text(
-                        _roleLabel(_role),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton.filled(
-                onPressed: _showEditProfileSheet,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.18),
-                  foregroundColor: Colors.white,
-                ),
-                icon: const Icon(Icons.edit_rounded),
-                tooltip: _label('editProfile'),
-              ),
-            ],
           ),
         ],
       ),
@@ -439,7 +423,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required VoidCallback onTap,
     Color? iconColor,
   }) {
-    final color = iconColor ?? AppTheme.campusColorsOf(context).primary;
+    final color = iconColor ?? AppTheme.electricBlue;
     return ListTile(
       onTap: onTap,
       leading: _tileIcon(icon, color),
@@ -458,7 +442,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required ValueChanged<bool>? onChanged,
   }) {
     return ListTile(
-      leading: _tileIcon(icon, AppTheme.campusColorsOf(context).secondary),
+      leading: _tileIcon(icon, AppTheme.vibrantPurple),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       subtitle: Text(subtitle),
       trailing: Switch(value: value, onChanged: onChanged),
@@ -471,26 +455,19 @@ class _SettingsPageState extends State<SettingsPage> {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.20),
-            color.withValues(alpha: 0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(icon, color: color),
     );
   }
 
-  String _roleLabel(String role) {
-    return switch (role.toLowerCase()) {
-      'kalab' => 'Kalab',
-      'aslab' => 'Aslab',
-      _ => 'Mahasiswa',
-    };
+  Widget _headerOrnament({required double size, required Color color}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    );
   }
 
   void _showEditProfileSheet() {
@@ -626,7 +603,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: _tileIcon(
                   Icons.translate_rounded,
-                  Theme.of(context).colorScheme.primary,
+                  AppTheme.electricBlue,
                 ),
                 title: const Text('Bahasa Indonesia'),
                 trailing: _language == 'id'
@@ -640,7 +617,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: _tileIcon(
                   Icons.translate_rounded,
-                  Theme.of(context).colorScheme.secondary,
+                  AppTheme.vibrantPurple,
                 ),
                 title: const Text('English'),
                 trailing: _language == 'en'
@@ -904,7 +881,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: _tileIcon(
                     Icons.photo_library_outlined,
-                    Theme.of(context).colorScheme.primary,
+                    AppTheme.electricBlue,
                   ),
                   title: Text(
                     'pick_from_gallery'.tr(),
@@ -916,7 +893,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: _tileIcon(
                     Icons.photo_camera_outlined,
-                    Theme.of(context).colorScheme.secondary,
+                    AppTheme.vibrantPurple,
                   ),
                   title: Text(
                     'take_from_camera'.tr(),

@@ -32,6 +32,7 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = Theme.of(context).colorScheme.onSurface;
+    final campus = AppTheme.campusColorsOf(context);
     final hasTrailingControls = actions.isNotEmpty || showProfileAvatar;
 
     return AppBar(
@@ -63,17 +64,19 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.white.withValues(alpha: 0.9),
-                        Colors.white.withValues(alpha: 0.68),
+                        campus.primary.withValues(alpha: 0.16),
+                        campus.secondary.withValues(alpha: 0.10),
                       ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: campus.primary.withValues(alpha: 0.16),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: campus.primary.withValues(alpha: 0.06),
                         blurRadius: 14,
                         offset: const Offset(0, 5),
                       ),

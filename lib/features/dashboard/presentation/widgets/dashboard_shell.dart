@@ -23,6 +23,7 @@ class DashboardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Scaffold(
       appBar: GlassAppBar(
         title: AppBrand.name,
@@ -31,14 +32,14 @@ class DashboardShell extends StatelessWidget {
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-            children: const [
+            children: [
               TextSpan(
                 text: 'Lab',
-                style: TextStyle(color: AppTheme.deepSpace),
+                style: TextStyle(color: campus.primary),
               ),
               TextSpan(
                 text: 'In',
-                style: TextStyle(color: AppTheme.electricBlue),
+                style: TextStyle(color: campus.secondary),
               ),
             ],
           ),
@@ -174,15 +175,16 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: AppTheme.deepTeal,
+        gradient: campus.gradient,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.deepTeal.withValues(alpha: 0.18),
+            color: campus.primary.withValues(alpha: 0.18),
             blurRadius: 28,
             offset: const Offset(0, 14),
           ),
@@ -191,7 +193,7 @@ class _Header extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.hub_outlined, color: AppTheme.cleanCyan, size: 34),
+          Icon(Icons.hub_outlined, color: campus.secondary, size: 34),
           const SizedBox(height: 14),
           Text(
             title,
@@ -220,6 +222,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -230,7 +233,7 @@ class _StatCard extends StatelessWidget {
             Text(
               stat.value,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: AppTheme.deepTeal,
+                color: campus.primary,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -256,6 +259,7 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -265,10 +269,10 @@ class _ActionTile extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppTheme.richBronze.withValues(alpha: 0.12),
+                gradient: campus.gradient,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(action.icon, color: AppTheme.deepTeal),
+              child: Icon(action.icon, color: Colors.white),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -291,7 +295,7 @@ class _ActionTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.deepTeal),
+            Icon(Icons.chevron_right_rounded, color: campus.secondary),
           ],
         ),
       ),

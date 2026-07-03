@@ -330,26 +330,19 @@ class _KalabHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: AppTheme.campusGradientOf(context),
+        gradient: campus.gradient,
       ),
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: AppTheme.campusGradientOf(context),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.verified_user_outlined,
-              color: Colors.white,
-              size: 30,
-            ),
+          const Icon(
+            Icons.verified_user_outlined,
+            color: Colors.white,
+            size: 44,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -395,7 +388,7 @@ class KalabControlPanel extends StatefulWidget {
 class _KalabControlPanelState extends State<KalabControlPanel> {
   late Future<List<LabRoom>> _roomsFuture;
   late Future<List<UserAccountSummary>> _usersFuture;
-  late Stream<List<BorrowedInventoryReport>> _reportStream;
+  late Future<List<BorrowedInventoryReport>> _reportFuture;
 
   @override
   void initState() {
@@ -406,7 +399,7 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
   void _refresh() {
     _roomsFuture = widget.repository.fetchLaboratories();
     _usersFuture = widget.repository.fetchUserAccounts();
-    _reportStream = widget.repository.watchBorrowedInventoryReport();
+    _reportFuture = widget.repository.fetchBorrowedInventoryReport();
   }
 
   @override
@@ -445,16 +438,10 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                     _MaintenanceReportCard(
                       repository: widget.repository,
                       maintenanceFuture: widget.maintenanceFuture,
-                      onChanged: () => setState(_refresh),
+                      onUpdated: () => setState(_refresh),
                     ),
                     const SizedBox(height: 16),
-                    _BorrowedReportCard(reportStream: _reportStream),
-                    const SizedBox(height: 16),
-                    _OperationalControlCard(
-                      repository: widget.repository,
-                      roomsFuture: _roomsFuture,
-                      onChanged: () => setState(_refresh),
-                    ),
+                    _BorrowedReportCard(reportFuture: _reportFuture),
                   ],
                 ),
               ),
@@ -473,6 +460,7 @@ class _PanelShortcutGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     final actions = [
       (
         Icons.inventory_2_outlined,
@@ -530,11 +518,7 @@ class _PanelShortcutGrid extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(
-                        action.$1,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 32,
-                      ),
+                      Icon(action.$1, color: campus.primary, size: 32),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -542,7 +526,10 @@ class _PanelShortcutGrid extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: campus.secondary,
+                      ),
                     ],
                   ),
                 ),
@@ -986,38 +973,18 @@ class _AslabVerificationCard extends StatelessWidget {
 }
 
 class _BorrowedReportCard extends StatelessWidget {
-  const _BorrowedReportCard({required this.reportStream});
+  const _BorrowedReportCard({required this.reportFuture});
 
-  final Stream<List<BorrowedInventoryReport>> reportStream;
+  final Future<List<BorrowedInventoryReport>> reportFuture;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: StreamBuilder<List<BorrowedInventoryReport>>(
-          stream: reportStream,
+        child: FutureBuilder<List<BorrowedInventoryReport>>(
+          future: reportFuture,
           builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Laporan Barang Dipinjam',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    snapshot.error.toString(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-              );
-            }
             final rows = snapshot.data ?? const <BorrowedInventoryReport>[];
             final max = rows.isEmpty ? 1 : rows.first.quantity;
             return Column(
@@ -1049,8 +1016,7 @@ class _BorrowedReportCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData)
+                if (!snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (rows.isEmpty)
                   const Text('Tidak ada barang yang sedang dipinjam.')
@@ -1102,18 +1068,18 @@ class _MaintenanceReportCard extends StatelessWidget {
   const _MaintenanceReportCard({
     required this.repository,
     required this.maintenanceFuture,
-    required this.onChanged,
+    required this.onUpdated,
   });
 
   final DashboardRepository repository;
   final Future<List<MaintenanceReportEntry>> maintenanceFuture;
-  final VoidCallback onChanged;
+  final VoidCallback onUpdated;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: FutureBuilder<List<MaintenanceReportEntry>>(
           future: maintenanceFuture,
           builder: (context, snapshot) {
@@ -1127,7 +1093,7 @@ class _MaintenanceReportCard extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 if (!snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (rows.isEmpty)
@@ -1136,10 +1102,6 @@ class _MaintenanceReportCard extends StatelessWidget {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
-                      columnSpacing: 20,
-                      headingRowHeight: 44,
-                      dataRowMinHeight: 88,
-                      dataRowMaxHeight: 124,
                       columns: const [
                         DataColumn(label: Text('Nama Alat')),
                         DataColumn(label: Text('Deskripsi Kerusakan')),
@@ -1147,378 +1109,122 @@ class _MaintenanceReportCard extends StatelessWidget {
                         DataColumn(label: Text('Status')),
                         DataColumn(label: Text('Aksi')),
                       ],
-                      rows: rows.map((row) {
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              SizedBox(
-                                width: 170,
-                                child: Text(
-                                  row.inventoryName ?? row.inventoryId,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
+                      rows: rows
+                          .map(
+                            (row) => DataRow(
+                              cells: [
+                                DataCell(
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 180,
+                                    ),
+                                    child: Text(
+                                      row.inventoryName ?? row.inventoryId,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            DataCell(
-                              SizedBox(
-                                width: 280,
-                                child: Text(
-                                  row.description,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
+                                DataCell(
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 300,
+                                    ),
+                                    child: Text(
+                                      row.description,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            DataCell(
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  width: 92,
-                                  height: 72,
-                                  color: Theme.of(context).colorScheme.secondary
-                                      .withValues(alpha: 0.12),
-                                  child:
-                                      row.photoUrl == null ||
+                                DataCell(
+                                  row.photoUrl == null ||
                                           row.photoUrl!.trim().isEmpty
-                                      ? Icon(
-                                          Icons.handyman_outlined,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                        )
-                                      : CachedNetworkImage(
-                                          imageUrl: row.photoUrl!,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, _) => Container(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary
-                                                .withValues(alpha: 0.12),
-                                            child: const Center(
-                                              child: SizedBox.square(
-                                                dimension: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              ),
-                                            ),
+                                      ? const Icon(Icons.image_not_supported)
+                                      : ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
-                                          errorWidget: (context, _, _) => Icon(
-                                            Icons.handyman_outlined,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.secondary,
+                                          child: CachedNetworkImage(
+                                            imageUrl: row.photoUrl!,
+                                            width: 86,
+                                            height: 60,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, _) =>
+                                                Container(
+                                                  width: 86,
+                                                  height: 60,
+                                                  color: AppTheme.vibrantPurple
+                                                      .withValues(alpha: 0.12),
+                                                  child: const Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  ),
+                                                ),
+                                            errorWidget: (context, _, _) =>
+                                                const Icon(
+                                                  Icons.image_not_supported,
+                                                ),
                                           ),
                                         ),
                                 ),
-                              ),
-                            ),
-                            DataCell(
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _maintenanceColor(
-                                    context,
-                                    row.status,
-                                  ).withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _maintenanceColor(
-                                      context,
-                                      row.status,
-                                    ).withValues(alpha: 0.24),
-                                  ),
-                                ),
-                                child: Text(
-                                  _maintenanceLabel(row.status),
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: _maintenanceColor(
-                                          context,
-                                          row.status,
-                                        ),
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  SizedBox(
-                                    width: 92,
-                                    child: OutlinedButton(
-                                      style: OutlinedButton.styleFrom(
-                                        minimumSize: const Size(92, 36),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 8,
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      onPressed: () async {
-                                        try {
-                                          await repository
-                                              .updateMaintenanceReportStatus(
-                                                reportId: row.id,
-                                                status: 'ditolak',
-                                              );
-                                          onChanged();
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Laporan maintenance ditolak.',
-                                              ),
-                                            ),
-                                          );
-                                        } on Object catch (error) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                error.toString().replaceFirst(
-                                                  'Exception: ',
-                                                  '',
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: const Text('Tolak'),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 92,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size(92, 36),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 8,
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      onPressed: () async {
-                                        try {
-                                          await repository
-                                              .updateMaintenanceReportStatus(
-                                                reportId: row.id,
-                                                status: 'diproses',
-                                              );
-                                          onChanged();
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Status maintenance diperbarui.',
-                                              ),
-                                            ),
-                                          );
-                                        } on Object catch (error) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                error.toString().replaceFirst(
-                                                  'Exception: ',
-                                                  '',
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: const Text('Terima'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-String _maintenanceLabel(String status) {
-  return switch (status.toLowerCase()) {
-    'pending' || 'diterima' => 'Pending',
-    'diproses' => 'Diproses',
-    'selesai_diperbaiki' || 'selesai' => 'Selesai',
-    'ditolak' => 'Ditolak',
-    _ => 'Pending',
-  };
-}
-
-Color _maintenanceColor(BuildContext context, String status) {
-  return switch (status.toLowerCase()) {
-    'pending' || 'diterima' => Theme.of(context).colorScheme.secondary,
-    'diproses' => Theme.of(context).colorScheme.primary,
-    'selesai_diperbaiki' || 'selesai' => Theme.of(context).colorScheme.tertiary,
-    'ditolak' => Theme.of(context).colorScheme.error,
-    _ => Theme.of(context).colorScheme.secondary,
-  };
-}
-
-class _OperationalControlCard extends StatelessWidget {
-  const _OperationalControlCard({
-    required this.repository,
-    required this.roomsFuture,
-    required this.onChanged,
-  });
-
-  final DashboardRepository repository;
-  final Future<List<LabRoom>> roomsFuture;
-  final VoidCallback onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: FutureBuilder<List<LabRoom>>(
-          future: roomsFuture,
-          builder: (context, snapshot) {
-            final rooms = snapshot.data ?? const <LabRoom>[];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Kontrol Operasional Ruangan',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (!snapshot.hasData)
-                  const Center(child: CircularProgressIndicator())
-                else if (rooms.isEmpty)
-                  const Text('Belum ada ruangan laboratorium.')
-                else
-                  ...rooms.map(
-                    (room) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withValues(alpha: 0.45),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant
-                                .withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                gradient: AppTheme.campusGradientOf(context),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.meeting_room_outlined,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    room.name,
-                                    style: const TextStyle(
+                                DataCell(
+                                  Chip(
+                                    label: Text(row.status),
+                                    labelStyle: const TextStyle(
+                                      color: Colors.white,
                                       fontWeight: FontWeight.w900,
                                     ),
+                                    backgroundColor: AppTheme.richBronze,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    room.location,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(color: AppTheme.muted),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  room.status == 'aktif'
-                                      ? 'Buka Lab'
-                                      : 'Tutup Lab',
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(fontWeight: FontWeight.w800),
                                 ),
-                                Switch(
-                                  value: room.status == 'aktif',
-                                  onChanged: (value) async {
-                                    try {
-                                      await repository.updateLaboratoryStatus(
-                                        laboratoryId: room.id,
-                                        isOpen: value,
-                                      );
-                                      onChanged();
-                                    } on Object catch (error) {
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            error.toString().replaceFirst(
-                                              'Exception: ',
-                                              '',
+                                DataCell(
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      try {
+                                        await repository
+                                            .acceptMaintenanceReport(row.id);
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Laporan maintenance diterima.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        onUpdated();
+                                      } catch (error) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              error.toString().replaceFirst(
+                                                'Exception: ',
+                                                '',
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.done_rounded),
+                                    label: const Text('Terima'),
+                                  ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
+                          )
+                          .toList(),
                     ),
                   ),
               ],
@@ -1649,16 +1355,13 @@ class _KalabStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Chip(
       label: const Text('Menunggu Kalab'),
       avatar: const Icon(Icons.verified_user_outlined, size: 16),
       labelStyle: const TextStyle(fontWeight: FontWeight.w900),
-      backgroundColor: Theme.of(
-        context,
-      ).colorScheme.primary.withValues(alpha: 0.12),
-      side: BorderSide(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
-      ),
+      backgroundColor: campus.primary.withValues(alpha: 0.12),
+      side: BorderSide(color: campus.primary.withValues(alpha: 0.24)),
     );
   }
 }
@@ -1676,10 +1379,11 @@ class _CompactInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 18),
+        Icon(icon, color: campus.primary, size: 18),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -1717,6 +1421,7 @@ class _InventoryAlert extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -1725,10 +1430,7 @@ class _InventoryAlert extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                Icon(Icons.warning_amber_rounded, color: campus.secondary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -1749,9 +1451,11 @@ class _InventoryAlert extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFE4E6),
+                    color: campus.secondary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE11D48)),
+                    border: Border.all(
+                      color: campus.secondary.withValues(alpha: 0.26),
+                    ),
                   ),
                   child: Wrap(
                     spacing: 12,
@@ -1775,7 +1479,7 @@ class _InventoryAlert extends StatelessWidget {
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
                         ),
-                        backgroundColor: const Color(0xFFE11D48),
+                        backgroundColor: campus.secondary,
                         side: BorderSide.none,
                       ),
                     ],
