@@ -155,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(22, 2, 22, 18),
+                      padding: const EdgeInsets.fromLTRB(22, 10, 22, 18),
                       children: [
                         Center(
                           child: ConstrainedBox(
@@ -240,16 +240,27 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 40),
+                                Divider(
+                                  color: AppTheme.muted.withValues(alpha: 0.18),
+                                ),
+
+                                const SizedBox(height: 12),
+
                                 Text(
-                                  'Role aktif: ${_roleLabel(_role)}',
+                                  'Role • ${_roleLabel(_role)}',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        color: AppTheme.muted,
-                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.muted.withValues(
+                                          alpha: 0.75,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.3,
                                       ),
                                 ),
+
+                                const SizedBox(height: 20),
                               ],
                             ),
                           ),
@@ -281,23 +292,22 @@ class _SettingsPageState extends State<SettingsPage> {
         ? 'Lengkapi profil Anda'
         : _nimController.text.trim();
     final campus = AppTheme.campusColorsOf(context);
-    final role = _roleLabel(_role);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 192),
+      width: double.infinity,
       decoration: BoxDecoration(
         gradient: campus.gradient,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: campus.primary.withValues(alpha: 0.24),
-            blurRadius: 30,
-            offset: const Offset(0, 18),
+            color: campus.primary.withValues(alpha: 0.20),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        padding: const EdgeInsets.all(20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -340,8 +350,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                   ),
                   Positioned(
-                    right: -2,
-                    bottom: -2,
+                    right: -4,
+                    bottom: -4,
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: const BoxDecoration(
@@ -358,29 +368,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'LabIn - Manajemen Fasilitas',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      shadows: [
-                        const Shadow(
-                          color: Color(0x66000000),
-                          blurRadius: 10,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
                     name,
                     maxLines: 1,
@@ -390,34 +383,27 @@ class _SettingsPageState extends State<SettingsPage> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     nim,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.92),
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
+                  const SizedBox(height: 24),
+
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
                       ),
-                    ),
-                    child: Text(
-                      role,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                      decoration: BoxDecoration(
+                        color: AppTheme.muted.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                   ),
@@ -430,8 +416,9 @@ class _SettingsPageState extends State<SettingsPage> {
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.18),
                 foregroundColor: Colors.white,
+                minimumSize: const Size(44, 44),
               ),
-              icon: const Icon(Icons.edit_rounded),
+              icon: const Icon(Icons.edit_rounded, size: 20),
               tooltip: _label('editProfile'),
             ),
           ],
