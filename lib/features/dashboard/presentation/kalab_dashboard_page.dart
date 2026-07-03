@@ -905,14 +905,17 @@ class _AslabVerificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<UserAccountSummary>>(
-          future: usersFuture,
-          builder: (context, snapshot) {
-            final users = snapshot.data ?? const <UserAccountSummary>[];
-            return Column(
+    return FutureBuilder<List<UserAccountSummary>>(
+      future: usersFuture,
+      builder: (context, snapshot) {
+        final users = snapshot.data ?? const <UserAccountSummary>[];
+        if (!snapshot.hasData || users.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
@@ -922,39 +925,34 @@ class _AslabVerificationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                if (!snapshot.hasData)
-                  const Center(child: CircularProgressIndicator())
-                else if (users.isEmpty)
-                  const Text('Belum ada akun pengguna.')
-                else
-                  ...users.map(
-                    (user) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        user.role == 'aslab'
-                            ? Icons.verified_user_outlined
-                            : Icons.person_outline,
-                      ),
-                      title: Text(user.name),
-                      subtitle: Text('${user.identity} | ${user.email}'),
-                      trailing: user.role == 'aslab'
-                          ? const Chip(label: Text('Aslab'))
-                          : user.role == 'kalab'
-                          ? const Chip(label: Text('Kalab'))
-                          : FilledButton(
-                              onPressed: () async {
-                                await repository.verifyAslabAccount(user.id);
-                                onUpdated();
-                              },
-                              child: const Text('Jadikan Aslab'),
-                            ),
+                ...users.map(
+                  (user) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      user.role == 'aslab'
+                          ? Icons.verified_user_outlined
+                          : Icons.person_outline,
                     ),
+                    title: Text(user.name),
+                    subtitle: Text('${user.identity} | ${user.email}'),
+                    trailing: user.role == 'aslab'
+                        ? const Chip(label: Text('Aslab'))
+                        : user.role == 'kalab'
+                        ? const Chip(label: Text('Kalab'))
+                        : FilledButton(
+                            onPressed: () async {
+                              await repository.verifyAslabAccount(user.id);
+                              onUpdated();
+                            },
+                            child: const Text('Jadikan Aslab'),
+                          ),
                   ),
+                ),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1075,219 +1073,555 @@ class _MaintenanceReportCard extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Laporan Maintenance Mahasiswa',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+                _SectionHeader(
+                  icon: Icons.build_circle_outlined,
+                  title: 'Laporan Maintenance Mahasiswa',
+                  subtitle:
+                      'Klik salah satu kartu untuk mengecek detail dan mengambil tindakan.',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 if (!snapshot.hasData)
-                  const Center(child: CircularProgressIndicator())
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
                 else if (rows.isEmpty)
-                  const Text('Belum ada laporan kerusakan dari mahasiswa.')
+                  const _EmptyStateCard(
+                    title: 'Belum ada laporan maintenance.',
+                    subtitle:
+                        'Mahasiswa belum mengirim laporan kerusakan pada data ini.',
+                  )
                 else
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Nama Alat')),
-                        DataColumn(label: Text('Deskripsi Kerusakan')),
-                        DataColumn(label: Text('Foto Bukti')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Aksi')),
-                      ],
-                      rows: rows
-                          .map(
-                            (row) => DataRow(
-                              cells: [
-                                DataCell(
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 180,
-                                    ),
-                                    child: Text(
-                                      row.inventoryName ?? row.inventoryId,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 300,
-                                    ),
-                                    child: Text(
-                                      row.description,
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  row.photoUrl == null ||
-                                          row.photoUrl!.trim().isEmpty
-                                      ? const Icon(Icons.image_not_supported)
-                                      : ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          child: CachedNetworkImage(
-                                            imageUrl: row.photoUrl!,
-                                            width: 86,
-                                            height: 60,
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, _) =>
-                                                Container(
-                                                  width: 86,
-                                                  height: 60,
-                                                  color: AppTheme.vibrantPurple
-                                                      .withValues(alpha: 0.12),
-                                                  child: const Center(
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                  ),
-                                                ),
-                                            errorWidget: (context, _, _) =>
-                                                const Icon(
-                                                  Icons.image_not_supported,
-                                                ),
-                                          ),
-                                        ),
-                                ),
-                                DataCell(
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _maintenanceStatusColor(
-                                        row.statusLabel,
-                                        campus,
-                                      ).withValues(alpha: 0.14),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: _maintenanceStatusColor(
-                                          row.statusLabel,
-                                          campus,
-                                        ).withValues(alpha: 0.28),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      row.statusLabel,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: _maintenanceStatusColor(
-                                              row.statusLabel,
-                                              campus,
-                                            ),
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      OutlinedButton.icon(
-                                        onPressed: () async {
-                                          try {
-                                            await repository
-                                                .rejectMaintenanceReport(
-                                                  row.id,
-                                                );
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Laporan maintenance ditolak.',
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                            onUpdated();
-                                          } catch (error) {
-                                            if (!context.mounted) return;
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  error.toString().replaceFirst(
-                                                    'Exception: ',
-                                                    '',
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        icon: const Icon(Icons.close_rounded),
-                                        label: const Text('Tolak'),
-                                      ),
-                                      ElevatedButton.icon(
-                                        onPressed: () async {
-                                          try {
-                                            await repository
-                                                .acceptMaintenanceReport(
-                                                  row.id,
-                                                );
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Laporan maintenance diterima.',
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                            onUpdated();
-                                          } catch (error) {
-                                            if (!context.mounted) return;
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  error.toString().replaceFirst(
-                                                    'Exception: ',
-                                                    '',
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        icon: const Icon(Icons.done_rounded),
-                                        label: const Text('Terima'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                          .toList(),
+                  ...rows.map(
+                    (row) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _MaintenanceReportTile(
+                        row: row,
+                        campus: campus,
+                        onTap: () => _openMaintenanceDetail(
+                          context,
+                          repository,
+                          row,
+                          onUpdated,
+                        ),
+                      ),
                     ),
                   ),
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _MaintenanceReportTile extends StatelessWidget {
+  const _MaintenanceReportTile({
+    required this.row,
+    required this.campus,
+    required this.onTap,
+  });
+
+  final MaintenanceReportEntry row;
+  final CampusThemeExtension campus;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _maintenanceStatusColor(row.statusLabel, campus);
+    final imageUrl = row.photoUrl;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                campus.primary.withValues(alpha: 0.06),
+                campus.secondary.withValues(alpha: 0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: campus.primary.withValues(alpha: 0.12)),
+          ),
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _MaintenancePreview(imageUrl: imageUrl),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.inventoryName ?? row.inventoryId,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      row.reporterName == null
+                          ? 'Pelapor: -'
+                          : 'Pelapor: ${row.reporterName}',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      row.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _InfoChip(
+                          icon: Icons.schedule_rounded,
+                          label: row.statusLabel,
+                        ),
+                        _InfoChip(
+                          icon: Icons.person_outline,
+                          label: row.reporterIdentity ?? '-',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.28),
+                        ),
+                      ),
+                      child: Text(
+                        'Tap untuk buka detail laporan',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, color: campus.secondary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MaintenancePreview extends StatelessWidget {
+  const _MaintenancePreview({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final placeholder = Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(Icons.build_circle_outlined),
+    );
+    if (imageUrl == null || imageUrl!.trim().isEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: placeholder,
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 96,
+        height: 96,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl!,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => placeholder,
+          errorWidget: (context, error, stackTrace) => placeholder,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _openMaintenanceDetail(
+  BuildContext context,
+  DashboardRepository repository,
+  MaintenanceReportEntry row,
+  VoidCallback onUpdated,
+) async {
+  final noteController = TextEditingController();
+  final result = await showModalBottomSheet<_MaintenanceActionResult>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return _MaintenanceDetailSheet(
+        row: row,
+        noteController: noteController,
+        onApprove: () =>
+            Navigator.of(sheetContext).pop(_MaintenanceActionResult.approve),
+        onReject: () =>
+            Navigator.of(sheetContext).pop(_MaintenanceActionResult.reject),
+      );
+    },
+  );
+  noteController.dispose();
+  if (result == null || !context.mounted) {
+    return;
+  }
+  try {
+    if (result == _MaintenanceActionResult.approve) {
+      await repository.acceptMaintenanceReport(row.id);
+    } else {
+      await repository.rejectMaintenanceReport(row.id);
+    }
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result == _MaintenanceActionResult.approve
+              ? 'Laporan maintenance diproses.'
+              : 'Laporan maintenance ditolak.',
+        ),
+      ),
+    );
+    onUpdated();
+  } catch (error) {
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+    );
+  }
+}
+
+enum _MaintenanceActionResult { approve, reject }
+
+class _MaintenanceDetailSheet extends StatelessWidget {
+  const _MaintenanceDetailSheet({
+    required this.row,
+    required this.noteController,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final MaintenanceReportEntry row;
+  final TextEditingController noteController;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final campus = AppTheme.campusColorsOf(context);
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + bottomInset),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SheetHandle(title: 'Detail Maintenance'),
+              const SizedBox(height: 16),
+              _MaintenancePreview(imageUrl: row.photoUrl),
+              const SizedBox(height: 16),
+              Text(
+                row.inventoryName ?? row.inventoryId,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                row.description,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 14),
+              _DetailLine(
+                icon: Icons.person_outline,
+                label: 'Pelapor',
+                value: row.reporterName ?? '-',
+              ),
+              _DetailLine(
+                icon: Icons.badge_outlined,
+                label: 'NIM',
+                value: row.reporterIdentity ?? '-',
+              ),
+              _DetailLine(
+                icon: Icons.schedule_rounded,
+                label: 'Status',
+                value: row.statusLabel,
+              ),
+              _DetailLine(
+                icon: Icons.event_outlined,
+                label: 'Dibuat',
+                value: DateFormat('dd MMM yyyy HH:mm').format(row.createdAt),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Keterangan Kalab',
+                  hintText: 'Opsional, jelaskan tindak lanjut maintenance...',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onReject,
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Tolak'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.campusGradientOf(context),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                        ),
+                        onPressed: onApprove,
+                        icon: const Icon(Icons.done_rounded),
+                        label: const Text('Diproses'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Status dan keterangan akan diteruskan ke mahasiswa melalui notifikasi.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: campus.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailLine extends StatelessWidget {
+  const _DetailLine({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppTheme.muted),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            gradient: AppTheme.campusGradientOf(context),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: Colors.white),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: campus.primary.withValues(alpha: 0.78),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+    );
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 54,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Icon(Icons.inbox_outlined, size: 42),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+            ),
+          ],
         ),
       ),
     );
