@@ -706,19 +706,8 @@ class DashboardModel {
         'assets/images/monitor ultrawide.jpg',
       final value when value.contains('area luar ruangan') =>
         'assets/images/area luar ruangan.jpg',
-      final value
-          when value.contains('ruang rektor') ||
-              value.contains('ruangan rektor') ||
-              value.contains('rektorat') =>
-        'assets/images/ruangan_rektorat.jpg',
       final value when value.contains('simulasi klinik') =>
         'assets/images/lab simulasi klinik.jpg',
-      final value
-          when value.contains('lab jaringan') ||
-              value.contains('jaringan komputer') ||
-              value.contains('lab jaringan komputer') ||
-              value.contains('komputer') =>
-        'assets/images/lab_jaringan_komputer.jpg',
       final value when value.contains('mediasi digital') =>
         'assets/images/lab mediasi digital.jpg',
       final value when value.contains('legal tech') =>

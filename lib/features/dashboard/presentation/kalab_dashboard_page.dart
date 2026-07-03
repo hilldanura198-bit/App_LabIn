@@ -395,7 +395,7 @@ class KalabControlPanel extends StatefulWidget {
 class _KalabControlPanelState extends State<KalabControlPanel> {
   late Future<List<LabRoom>> _roomsFuture;
   late Future<List<UserAccountSummary>> _usersFuture;
-  late Future<List<BorrowedInventoryReport>> _reportFuture;
+  late Stream<List<BorrowedInventoryReport>> _reportStream;
 
   @override
   void initState() {
@@ -406,7 +406,7 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
   void _refresh() {
     _roomsFuture = widget.repository.fetchLaboratories();
     _usersFuture = widget.repository.fetchUserAccounts();
-    _reportFuture = widget.repository.fetchBorrowedInventoryReport();
+    _reportStream = widget.repository.watchBorrowedInventoryReport();
   }
 
   @override
@@ -448,7 +448,7 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                       onChanged: () => setState(_refresh),
                     ),
                     const SizedBox(height: 16),
-                    _BorrowedReportCard(reportFuture: _reportFuture),
+                    _BorrowedReportCard(reportStream: _reportStream),
                     const SizedBox(height: 16),
                     _OperationalControlCard(
                       repository: widget.repository,
@@ -986,18 +986,38 @@ class _AslabVerificationCard extends StatelessWidget {
 }
 
 class _BorrowedReportCard extends StatelessWidget {
-  const _BorrowedReportCard({required this.reportFuture});
+  const _BorrowedReportCard({required this.reportStream});
 
-  final Future<List<BorrowedInventoryReport>> reportFuture;
+  final Stream<List<BorrowedInventoryReport>> reportStream;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<BorrowedInventoryReport>>(
-          future: reportFuture,
+        child: StreamBuilder<List<BorrowedInventoryReport>>(
+          stream: reportStream,
           builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Laporan Barang Dipinjam',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    snapshot.error.toString(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              );
+            }
             final rows = snapshot.data ?? const <BorrowedInventoryReport>[];
             final max = rows.isEmpty ? 1 : rows.first.quantity;
             return Column(
@@ -1029,7 +1049,8 @@ class _BorrowedReportCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (!snapshot.hasData)
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (rows.isEmpty)
                   const Text('Tidak ada barang yang sedang dipinjam.')

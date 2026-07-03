@@ -285,7 +285,6 @@ class _FacilityDetail extends StatelessWidget {
   String _roomName(String labId) {
     if (labId.startsWith('1111')) return 'Lab RPL';
     if (labId.startsWith('2222')) return 'Lab IoT';
-    if (labId.startsWith('3333')) return 'Lab Jaringan';
     return 'Ruang Lab';
   }
 }
@@ -596,25 +595,9 @@ class _InfrastructureList extends StatelessWidget {
         );
         addRoom(
           const LabRoom(
-            id: 'rektor',
-            name: 'Ruang Rektor',
-            location: 'Gedung A',
-            status: 'aktif',
-          ),
-        );
-        addRoom(
-          const LabRoom(
             id: 'fik-rpl-hall',
             name: 'Lab RPL',
             location: 'Gedung Teknologi Lt. 2',
-            status: 'aktif',
-          ),
-        );
-        addRoom(
-          const LabRoom(
-            id: 'fik-jaringan',
-            name: 'Lab Jaringan',
-            location: 'Gedung Teknologi Lt. 3',
             status: 'aktif',
           ),
         );
@@ -712,7 +695,6 @@ class _CampusMapTabs extends StatelessWidget {
       mapAssetPath: 'assets/images/denah rektorat.jpeg',
       rooms: [
         'Lobby Utama',
-        'Ruang Rektor',
         'Biro Akademik',
         'Ruang Rapat',
         'Aula',
@@ -734,14 +716,14 @@ class _CampusMapTabs extends StatelessWidget {
       ],
     ),
     _CampusMapData(
-      title: 'Kampus Kesehatan Sondakan',
+      title: 'Kampus 2',
       address: 'Jl. KH Samanhudi No.93, Sondakan, Laweyan, Surakarta',
       subtitle: 'Fokus pada klinik, simulasi, dan layanan kesehatan.',
       mapAssetPath: 'assets/images/denah kampus 2.jpeg',
       rooms: ['Klinik', 'Lab Simulasi', 'Farmasi', 'Ruang Dosen', 'Admin'],
     ),
     _CampusMapData(
-      title: 'Kampus Cemani',
+      title: 'Kampus 3',
       address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
       subtitle: 'Area pengembangan berbasis riset dan kegiatan lintas prodi.',
       mapAssetPath: 'assets/images/denah kampus 3.jpeg',
@@ -751,6 +733,19 @@ class _CampusMapTabs extends StatelessWidget {
         'Auditorium',
         'Seminar',
         'Parkir',
+      ],
+    ),
+    _CampusMapData(
+      title: 'Kampus 4',
+      address: 'Jl. Pinang Raya No.47, Jati, Cemani, Grogol, Sukoharjo',
+      subtitle: 'Area pengembangan berbasis praktik, kolaborasi, dan riset.',
+      mapAssetPath: 'assets/images/denah kampus 4.jpeg',
+      rooms: [
+        'Lab Akuntansi Digital',
+        'Lab Business Analytics',
+        'Ruang Diskusi',
+        'Studio Kreatif',
+        'Aula Serbaguna',
       ],
     ),
   ];
