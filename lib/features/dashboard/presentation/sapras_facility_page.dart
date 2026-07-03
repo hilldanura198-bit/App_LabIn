@@ -646,7 +646,7 @@ class _InfrastructureList extends StatelessWidget {
                     builder: (_) => _ImageDialog(
                       title: room.name,
                       subtitle: '${room.location} - Status ${room.status}',
-                      imageUrl: room.name,
+                      imageUrl: DashboardModel.getLocalAssetPath(room.name),
                       booking: null,
                       icon: Icons.apartment_rounded,
                     ),
@@ -662,7 +662,9 @@ class _InfrastructureList extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(14),
                               child: _RealtimeImage(
-                                assetName: room.name,
+                                assetName: DashboardModel.getLocalAssetPath(
+                                  room.name,
+                                ),
                                 height: double.infinity,
                                 fallbackIcon: Icons.apartment_rounded,
                               ),
