@@ -13,7 +13,6 @@ import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
 import 'components/kalab_menu_section.dart';
-import 'components/maintenance_list_section.dart';
 import 'history_page.dart';
 import 'kalab_detail_pengajuan_page.dart';
 import 'settings_page.dart';
@@ -48,7 +47,6 @@ class _KalabDashboardView extends StatefulWidget {
 class _KalabDashboardViewState extends State<_KalabDashboardView> {
   late final DashboardRepository _repository;
   late Future<List<Map<String, dynamic>>> _approvalFuture;
-  late final Stream<List<MaintenanceReportEntry>> _maintenanceStream;
   int _selectedIndex = 0;
 
   @override
@@ -56,7 +54,6 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
     super.initState();
     _repository = DashboardRepository(context.read<AuthRepository>().client);
     _loadInitialData();
-    _maintenanceStream = _repository.watchMaintenanceReports();
   }
 
   void _loadInitialData() {
@@ -120,10 +117,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
 
   Widget _buildBody() {
     if (_selectedIndex == 1) {
-      return KalabControlPanel(
-        repository: _repository,
-        maintenanceStream: _maintenanceStream,
-      );
+      return KalabControlPanel(repository: _repository);
     }
     if (_selectedIndex == 2) {
       return HistoryPage(
@@ -362,14 +356,9 @@ class _KalabHero extends StatelessWidget {
 }
 
 class KalabControlPanel extends StatefulWidget {
-  const KalabControlPanel({
-    super.key,
-    required this.repository,
-    required this.maintenanceStream,
-  });
+  const KalabControlPanel({super.key, required this.repository});
 
   final DashboardRepository repository;
-  final Stream<List<MaintenanceReportEntry>> maintenanceStream;
 
   @override
   State<KalabControlPanel> createState() => _KalabControlPanelState();
@@ -409,12 +398,6 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                   _AslabVerificationCard(
                     usersFuture: _usersFuture,
                     repository: widget.repository,
-                    onUpdated: () => setState(_refresh),
-                  ),
-                  const SizedBox(height: 16),
-                  MaintenanceListSection(
-                    repository: widget.repository,
-                    maintenanceStream: widget.maintenanceStream,
                     onUpdated: () => setState(_refresh),
                   ),
                   const SizedBox(height: 16),

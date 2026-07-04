@@ -4,6 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../data/dashboard_repository.dart';
 import '../kalab_daily_report_page.dart';
 import '../kalab_inventory_crud_page.dart';
+import '../maintenance_list_page.dart';
 import '../kalab_user_management_page.dart';
 import '../room_schedule_page.dart';
 
@@ -53,6 +54,16 @@ class KalabMenuSection extends StatelessWidget {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => KalabDailyReportPage(repository: repository),
+          ),
+        ),
+      ),
+      _KalabMenuAction(
+        icon: Icons.handyman_outlined,
+        title: 'Laporan Maintenance',
+        subtitle: 'Cek laporan kerusakan dan tindak lanjuti',
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MaintenanceListPage(repository: repository),
           ),
         ),
       ),
@@ -109,7 +120,11 @@ class KalabMenuSection extends StatelessWidget {
             const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 620 ? 2 : 1;
+                final columns = constraints.maxWidth >= 900
+                    ? 3
+                    : constraints.maxWidth >= 620
+                    ? 2
+                    : 1;
                 return GridView.count(
                   crossAxisCount: columns,
                   crossAxisSpacing: 12,
