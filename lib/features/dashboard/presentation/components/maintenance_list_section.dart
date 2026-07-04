@@ -52,30 +52,30 @@ class MaintenanceListSection extends StatelessWidget {
                           'Mahasiswa belum mengirim laporan kerusakan pada data ini.',
                     )
                   else
-                    SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: rows.length,
-                        itemBuilder: (context, index) {
-                          final row = rows[index];
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: index == rows.length - 1 ? 0 : 12,
-                            ),
-                            child: _MaintenanceReportTile(
-                              row: row,
-                              campus: campus,
-                              onTap: () => _openMaintenanceDetail(
-                                context,
-                                repository,
-                                row,
-                                onUpdated,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          children: rows.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final row = entry.value;
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom: index == rows.length - 1 ? 0 : 12,
                               ),
-                            ),
-                          );
-                        },
+                              child: _MaintenanceReportTile(
+                                row: row,
+                                campus: campus,
+                                onTap: () => _openMaintenanceDetail(
+                                  context,
+                                  repository,
+                                  row,
+                                  onUpdated,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
                 ],

@@ -187,19 +187,27 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
                                 else if (approvals.isEmpty)
                                   const _InfoCard('Belum ada approval Aslab.')
                                 else
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: approvals.length,
-                                    itemBuilder: (context, index) {
-                                      final booking = approvals[index];
-                                      return _KalabApprovalCard(
-                                        booking: booking,
-                                        onTap: () =>
-                                            _openKalabDetail(context, booking),
+                                  Column(
+                                    children: approvals.asMap().entries.map((
+                                      entry,
+                                    ) {
+                                      final index = entry.key;
+                                      final booking = entry.value;
+                                      return Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: index == approvals.length - 1
+                                              ? 0
+                                              : 12,
+                                        ),
+                                        child: _KalabApprovalCard(
+                                          booking: booking,
+                                          onTap: () => _openKalabDetail(
+                                            context,
+                                            booking,
+                                          ),
+                                        ),
                                       );
-                                    },
+                                    }).toList(),
                                   ),
                               ],
                             );
