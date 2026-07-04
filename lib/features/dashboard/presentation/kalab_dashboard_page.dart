@@ -1055,55 +1055,64 @@ class _MaintenanceReportCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: FutureBuilder<List<MaintenanceReportEntry>>(
-          future: maintenanceFuture,
-          builder: (context, snapshot) {
-            final rows = snapshot.data ?? const <MaintenanceReportEntry>[];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _SectionHeader(
-                  icon: Icons.build_circle_outlined,
-                  title: 'Laporan Maintenance Mahasiswa',
-                  subtitle:
-                      'Klik salah satu kartu untuk mengecek detail dan mengambil tindakan.',
-                ),
-                const SizedBox(height: 12),
-                if (!snapshot.hasData)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (rows.isEmpty)
-                  const _EmptyStateCard(
-                    title: 'Belum ada laporan maintenance.',
+        child: SizedBox(
+          height: 400,
+          child: FutureBuilder<List<MaintenanceReportEntry>>(
+            future: maintenanceFuture,
+            builder: (context, snapshot) {
+              final rows = snapshot.data ?? const <MaintenanceReportEntry>[];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SectionHeader(
+                    icon: Icons.build_circle_outlined,
+                    title: 'Laporan Maintenance Mahasiswa',
                     subtitle:
-                        'Mahasiswa belum mengirim laporan kerusakan pada data ini.',
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: rows.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final row = rows[index];
-                      return _MaintenanceReportTile(
-                        row: row,
-                        campus: campus,
-                        onTap: () => _openMaintenanceDetail(
-                          context,
-                          repository,
-                          row,
-                          onUpdated,
-                        ),
-                      );
-                    },
+                        'Klik salah satu kartu untuk mengecek detail dan mengambil tindakan.',
                   ),
-              ],
-            );
-          },
+                  const SizedBox(height: 12),
+                  if (!snapshot.hasData)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (rows.isEmpty)
+                    const _EmptyStateCard(
+                      title: 'Belum ada laporan maintenance.',
+                      subtitle:
+                          'Mahasiswa belum mengirim laporan kerusakan pada data ini.',
+                    )
+                  else
+                    SizedBox(
+                      height: 300,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: rows.length,
+                        itemBuilder: (context, index) {
+                          final row = rows[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == rows.length - 1 ? 0 : 12,
+                            ),
+                            child: _MaintenanceReportTile(
+                              row: row,
+                              campus: campus,
+                              onTap: () => _openMaintenanceDetail(
+                                context,
+                                repository,
+                                row,
+                                onUpdated,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1142,82 +1151,89 @@ class _MaintenanceReportTile extends StatelessWidget {
             border: Border.all(color: campus.primary.withValues(alpha: 0.12)),
           ),
           padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _MaintenancePreview(imageUrl: imageUrl),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      row.inventoryName ?? row.inventoryId,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      row.reporterName == null
-                          ? 'Pelapor: -'
-                          : 'Pelapor: ${row.reporterName}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      row.description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final textWidth = (constraints.maxWidth - 124)
+                  .clamp(0.0, 9999.0)
+                  .toDouble();
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _MaintenancePreview(imageUrl: imageUrl),
+                  const SizedBox(width: 14),
+                  SizedBox(
+                    width: textWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _InfoChip(
-                          icon: Icons.schedule_rounded,
-                          label: row.statusLabel,
+                        Text(
+                          row.inventoryName ?? row.inventoryId,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
                         ),
-                        _InfoChip(
-                          icon: Icons.person_outline,
-                          label: row.reporterIdentity ?? '-',
+                        const SizedBox(height: 4),
+                        Text(
+                          row.reporterName == null
+                              ? 'Pelapor: -'
+                              : 'Pelapor: ${row.reporterName}',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppTheme.muted),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          row.description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _InfoChip(
+                              icon: Icons.schedule_rounded,
+                              label: row.statusLabel,
+                            ),
+                            _InfoChip(
+                              icon: Icons.person_outline,
+                              label: row.reporterIdentity ?? '-',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: statusColor.withValues(alpha: 0.28),
+                            ),
+                          ),
+                          child: Text(
+                            'Tap untuk buka detail laporan',
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: statusColor.withValues(alpha: 0.28),
-                        ),
-                      ),
-                      child: Text(
-                        'Tap untuk buka detail laporan',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: statusColor,
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded, color: campus.secondary),
-            ],
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right_rounded, color: campus.secondary),
+                ],
+              );
+            },
           ),
         ),
       ),
