@@ -240,13 +240,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 40),
+                                const SizedBox(height: 80),
                                 Divider(
                                   color: AppTheme.muted.withValues(alpha: 0.18),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'wm by LabIn',
+                                  'Powered by LabIn 2026',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
@@ -257,7 +257,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                         letterSpacing: 0.4,
                                       ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 20),
                               ],
                             ),
                           ),
