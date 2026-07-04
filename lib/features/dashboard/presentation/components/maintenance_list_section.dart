@@ -10,12 +10,12 @@ class MaintenanceListSection extends StatelessWidget {
   const MaintenanceListSection({
     super.key,
     required this.repository,
-    required this.maintenanceFuture,
+    required this.maintenanceStream,
     required this.onUpdated,
   });
 
   final DashboardRepository repository;
-  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+  final Stream<List<MaintenanceReportEntry>> maintenanceStream;
   final VoidCallback onUpdated;
 
   @override
@@ -26,8 +26,8 @@ class MaintenanceListSection extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: SizedBox(
           height: 400,
-          child: FutureBuilder<List<MaintenanceReportEntry>>(
-            future: maintenanceFuture,
+          child: StreamBuilder<List<MaintenanceReportEntry>>(
+            stream: maintenanceStream,
             builder: (context, snapshot) {
               final rows = snapshot.data ?? const <MaintenanceReportEntry>[];
               return Column(
@@ -40,7 +40,8 @@ class MaintenanceListSection extends StatelessWidget {
                         'Klik salah satu kartu untuk mengecek detail dan mengambil tindakan.',
                   ),
                   const SizedBox(height: 12),
-                  if (!snapshot.hasData)
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Center(child: CircularProgressIndicator()),

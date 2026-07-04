@@ -1357,6 +1357,36 @@ class DashboardRepository {
         .toList();
   }
 
+  Stream<List<MaintenanceReportEntry>> watchMaintenanceReports() {
+    return _supabase
+        .from('maintenance_reports')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .asyncMap((rows) async {
+          final ids = rows
+              .map((row) => row['id']?.toString())
+              .whereType<String>()
+              .toList();
+          if (ids.isEmpty) {
+            return const <MaintenanceReportEntry>[];
+          }
+          final freshRows = await _supabase
+              .from('maintenance_reports')
+              .select(
+                'id,user_id,inventory_id,deskripsi,foto_url,status_perbaikan,created_at,profiles(nama,nim_nip),inventories(nama_alat,lab_id)',
+              )
+              .inFilter('id', ids)
+              .order('created_at', ascending: false);
+          return (freshRows as List<dynamic>)
+              .map(
+                (row) => MaintenanceReportEntry.fromMap(
+                  Map<String, dynamic>.from(row as Map),
+                ),
+              )
+              .toList();
+        });
+  }
+
   Stream<List<LabBooking>> watchReturnableBookings() {
     return watchBookingsByStatus(const ['active']);
   }

@@ -48,7 +48,7 @@ class _KalabDashboardView extends StatefulWidget {
 class _KalabDashboardViewState extends State<_KalabDashboardView> {
   late final DashboardRepository _repository;
   late Future<List<Map<String, dynamic>>> _approvalFuture;
-  late Future<List<MaintenanceReportEntry>> _maintenanceFuture;
+  late final Stream<List<MaintenanceReportEntry>> _maintenanceStream;
   int _selectedIndex = 0;
 
   @override
@@ -56,11 +56,11 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
     super.initState();
     _repository = DashboardRepository(context.read<AuthRepository>().client);
     _loadInitialData();
+    _maintenanceStream = _repository.watchMaintenanceReports();
   }
 
   void _loadInitialData() {
     _approvalFuture = _fetchKalabQueue();
-    _maintenanceFuture = _fetchMaintenanceReports();
   }
 
   Future<List<Map<String, dynamic>>> _fetchKalabQueue() async {
@@ -76,10 +76,6 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
         .eq('status', 'approved_aslab')
         .order('tanggal_pinjam');
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
-  }
-
-  Future<List<MaintenanceReportEntry>> _fetchMaintenanceReports() async {
-    return _repository.fetchMaintenanceReports();
   }
 
   void _refreshQueue() {
@@ -126,7 +122,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
     if (_selectedIndex == 1) {
       return KalabControlPanel(
         repository: _repository,
-        maintenanceFuture: _maintenanceFuture,
+        maintenanceStream: _maintenanceStream,
       );
     }
     if (_selectedIndex == 2) {
@@ -369,11 +365,11 @@ class KalabControlPanel extends StatefulWidget {
   const KalabControlPanel({
     super.key,
     required this.repository,
-    required this.maintenanceFuture,
+    required this.maintenanceStream,
   });
 
   final DashboardRepository repository;
-  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+  final Stream<List<MaintenanceReportEntry>> maintenanceStream;
 
   @override
   State<KalabControlPanel> createState() => _KalabControlPanelState();
@@ -418,7 +414,7 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
                   const SizedBox(height: 16),
                   MaintenanceListSection(
                     repository: widget.repository,
-                    maintenanceFuture: widget.maintenanceFuture,
+                    maintenanceStream: widget.maintenanceStream,
                     onUpdated: () => setState(_refresh),
                   ),
                   const SizedBox(height: 16),
