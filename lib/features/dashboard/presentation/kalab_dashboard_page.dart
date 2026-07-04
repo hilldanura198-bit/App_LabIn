@@ -49,13 +49,19 @@ class _KalabDashboardView extends StatefulWidget {
 }
 
 class _KalabDashboardViewState extends State<_KalabDashboardView> {
+  late final DashboardRepository _repository;
   late Future<List<Map<String, dynamic>>> _approvalFuture;
   late Future<List<MaintenanceReportEntry>> _maintenanceFuture;
   int _selectedIndex = 0;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    _repository = DashboardRepository(context.read<AuthRepository>().client);
+    _loadInitialData();
+  }
+
+  void _loadInitialData() {
     _approvalFuture = _fetchKalabQueue();
     _maintenanceFuture = _fetchMaintenanceReports();
   }
@@ -76,16 +82,12 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   }
 
   Future<List<MaintenanceReportEntry>> _fetchMaintenanceReports() async {
-    final repository = DashboardRepository(
-      context.read<AuthRepository>().client,
-    );
-    return repository.fetchMaintenanceReports();
+    return _repository.fetchMaintenanceReports();
   }
 
   void _refreshQueue() {
     setState(() {
-      _approvalFuture = _fetchKalabQueue();
-      _maintenanceFuture = _fetchMaintenanceReports();
+      _loadInitialData();
     });
   }
 
@@ -124,27 +126,21 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   }
 
   Widget _buildBody() {
-    final repository = DashboardRepository(
-      context.read<AuthRepository>().client,
-    );
     if (_selectedIndex == 1) {
       return KalabControlPanel(
-        repository: repository,
+        repository: _repository,
         maintenanceFuture: _maintenanceFuture,
       );
     }
     if (_selectedIndex == 2) {
       return HistoryPage(
-        repository: repository,
+        repository: _repository,
         role: UserRole.kalab,
         showAppBar: false,
       );
     }
     return BlocBuilder<DashboardBloc, DashboardState>(
       builder: (context, state) {
-        final repository = DashboardRepository(
-          context.read<AuthRepository>().client,
-        );
         return SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -173,7 +169,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
                                       state.lowStockInventories.length,
                                 ),
                                 const SizedBox(height: 16),
-                                RoomStockStreamBanner(repository: repository),
+                                RoomStockStreamBanner(repository: _repository),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Persetujuan Final Kalab',
@@ -242,16 +238,13 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   }
 
   void _openSettings(BuildContext context) {
-    final repository = DashboardRepository(
-      context.read<AuthRepository>().client,
-    );
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RepositoryProvider.value(
           value: context.read<AuthRepository>(),
           child: BlocProvider.value(
             value: context.read<AuthBloc>(),
-            child: SettingsPage(repository: repository),
+            child: SettingsPage(repository: _repository),
           ),
         ),
       ),
@@ -264,12 +257,8 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   ) async {
     final result = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => KalabDetailPengajuanPage(
-          booking: booking,
-          repository: DashboardRepository(
-            context.read<AuthRepository>().client,
-          ),
-        ),
+        builder: (_) =>
+            KalabDetailPengajuanPage(booking: booking, repository: _repository),
       ),
     );
     if (result != null && context.mounted) {
@@ -1092,10 +1081,15 @@ class _MaintenanceReportCard extends StatelessWidget {
                         'Mahasiswa belum mengirim laporan kerusakan pada data ini.',
                   )
                 else
-                  ...rows.map(
-                    (row) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _MaintenanceReportTile(
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: rows.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final row = rows[index];
+                      return _MaintenanceReportTile(
                         row: row,
                         campus: campus,
                         onTap: () => _openMaintenanceDetail(
@@ -1104,8 +1098,8 @@ class _MaintenanceReportCard extends StatelessWidget {
                           row,
                           onUpdated,
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
               ],
             );
@@ -1263,6 +1257,9 @@ class _MaintenancePreview extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: imageUrl!,
           fit: BoxFit.cover,
+          memCacheWidth: 192,
+          memCacheHeight: 192,
+          filterQuality: FilterQuality.low,
           placeholder: (context, url) => placeholder,
           errorWidget: (context, error, stackTrace) => placeholder,
         ),
