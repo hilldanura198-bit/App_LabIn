@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -12,9 +13,12 @@ import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../data/dashboard_models.dart';
 import '../data/dashboard_repository.dart';
-import 'components/kalab_menu_section.dart';
 import 'history_page.dart';
+import 'kalab_daily_report_page.dart';
 import 'kalab_detail_pengajuan_page.dart';
+import 'kalab_inventory_crud_page.dart';
+import 'kalab_user_management_page.dart';
+import 'room_schedule_page.dart';
 import 'settings_page.dart';
 import 'widgets/glass_app_bar.dart';
 import 'widgets/room_stock_stream_banner.dart';
@@ -45,19 +49,15 @@ class _KalabDashboardView extends StatefulWidget {
 }
 
 class _KalabDashboardViewState extends State<_KalabDashboardView> {
-  late final DashboardRepository _repository;
   late Future<List<Map<String, dynamic>>> _approvalFuture;
+  late Future<List<MaintenanceReportEntry>> _maintenanceFuture;
   int _selectedIndex = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _repository = DashboardRepository(context.read<AuthRepository>().client);
-    _loadInitialData();
-  }
-
-  void _loadInitialData() {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _approvalFuture = _fetchKalabQueue();
+    _maintenanceFuture = _fetchMaintenanceReports();
   }
 
   Future<List<Map<String, dynamic>>> _fetchKalabQueue() async {
@@ -75,9 +75,17 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
+  Future<List<MaintenanceReportEntry>> _fetchMaintenanceReports() async {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
+    return repository.fetchMaintenanceReports();
+  }
+
   void _refreshQueue() {
     setState(() {
-      _loadInitialData();
+      _approvalFuture = _fetchKalabQueue();
+      _maintenanceFuture = _fetchMaintenanceReports();
     });
   }
 
@@ -116,18 +124,27 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   }
 
   Widget _buildBody() {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
     if (_selectedIndex == 1) {
-      return KalabControlPanel(repository: _repository);
+      return KalabControlPanel(
+        repository: repository,
+        maintenanceFuture: _maintenanceFuture,
+      );
     }
     if (_selectedIndex == 2) {
       return HistoryPage(
-        repository: _repository,
+        repository: repository,
         role: UserRole.kalab,
         showAppBar: false,
       );
     }
     return BlocBuilder<DashboardBloc, DashboardState>(
       builder: (context, state) {
+        final repository = DashboardRepository(
+          context.read<AuthRepository>().client,
+        );
         return SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -156,7 +173,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
                                       state.lowStockInventories.length,
                                 ),
                                 const SizedBox(height: 16),
-                                RoomStockStreamBanner(repository: _repository),
+                                RoomStockStreamBanner(repository: repository),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Persetujuan Final Kalab',
@@ -177,27 +194,19 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
                                 else if (approvals.isEmpty)
                                   const _InfoCard('Belum ada approval Aslab.')
                                 else
-                                  Column(
-                                    children: approvals.asMap().entries.map((
-                                      entry,
-                                    ) {
-                                      final index = entry.key;
-                                      final booking = entry.value;
-                                      return Padding(
-                                        padding: EdgeInsets.only(
-                                          bottom: index == approvals.length - 1
-                                              ? 0
-                                              : 12,
-                                        ),
-                                        child: _KalabApprovalCard(
-                                          booking: booking,
-                                          onTap: () => _openKalabDetail(
-                                            context,
-                                            booking,
-                                          ),
-                                        ),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: approvals.length,
+                                    itemBuilder: (context, index) {
+                                      final booking = approvals[index];
+                                      return _KalabApprovalCard(
+                                        booking: booking,
+                                        onTap: () =>
+                                            _openKalabDetail(context, booking),
                                       );
-                                    }).toList(),
+                                    },
                                   ),
                               ],
                             );
@@ -233,13 +242,16 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   }
 
   void _openSettings(BuildContext context) {
+    final repository = DashboardRepository(
+      context.read<AuthRepository>().client,
+    );
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RepositoryProvider.value(
           value: context.read<AuthRepository>(),
           child: BlocProvider.value(
             value: context.read<AuthBloc>(),
-            child: SettingsPage(repository: _repository),
+            child: SettingsPage(repository: repository),
           ),
         ),
       ),
@@ -252,8 +264,12 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
   ) async {
     final result = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) =>
-            KalabDetailPengajuanPage(booking: booking, repository: _repository),
+        builder: (_) => KalabDetailPengajuanPage(
+          booking: booking,
+          repository: DashboardRepository(
+            context.read<AuthRepository>().client,
+          ),
+        ),
       ),
     );
     if (result != null && context.mounted) {
@@ -356,9 +372,14 @@ class _KalabHero extends StatelessWidget {
 }
 
 class KalabControlPanel extends StatefulWidget {
-  const KalabControlPanel({super.key, required this.repository});
+  const KalabControlPanel({
+    super.key,
+    required this.repository,
+    required this.maintenanceFuture,
+  });
 
   final DashboardRepository repository;
+  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
 
   @override
   State<KalabControlPanel> createState() => _KalabControlPanelState();
@@ -366,7 +387,6 @@ class KalabControlPanel extends StatefulWidget {
 
 class _KalabControlPanelState extends State<KalabControlPanel> {
   late Future<List<UserAccountSummary>> _usersFuture;
-  late Future<List<BorrowedInventoryReport>> _reportFuture;
 
   @override
   void initState() {
@@ -376,7 +396,6 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
 
   void _refresh() {
     _usersFuture = widget.repository.fetchUserAccounts();
-    _reportFuture = widget.repository.fetchBorrowedInventoryReport();
   }
 
   @override
@@ -384,28 +403,222 @@ class _KalabControlPanelState extends State<KalabControlPanel> {
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: () async => setState(_refresh),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+        child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 820),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  KalabMenuSection(repository: widget.repository),
-                  const SizedBox(height: 16),
-                  _AslabVerificationCard(
-                    usersFuture: _usersFuture,
-                    repository: widget.repository,
-                    onUpdated: () => setState(_refresh),
-                  ),
-                  const SizedBox(height: 16),
-                  _BorrowedReportCard(reportFuture: _reportFuture),
-                ],
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 820),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _PanelShortcutGrid(
+                      repository: widget.repository,
+                      maintenanceFuture: widget.maintenanceFuture,
+                      onMaintenanceUpdated: () => setState(_refresh),
+                    ),
+                    const SizedBox(height: 16),
+                    _AslabVerificationCard(
+                      usersFuture: _usersFuture,
+                      repository: widget.repository,
+                      onUpdated: () => setState(_refresh),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PanelShortcutGrid extends StatelessWidget {
+  const _PanelShortcutGrid({
+    required this.repository,
+    required this.maintenanceFuture,
+    required this.onMaintenanceUpdated,
+  });
+
+  final DashboardRepository repository;
+  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+  final VoidCallback onMaintenanceUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
+    final actions = [
+      (
+        Icons.inventory_2_outlined,
+        'CRUD Sarpras',
+        'Kelola inventaris alat dan ruangan',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KalabInventoryCrudPage(repository: repository),
           ),
+        ),
+      ),
+      (
+        Icons.manage_accounts_outlined,
+        'Kontrol User',
+        'Verifikasi dan pantau akun pengguna',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KalabUserManagementPage(repository: repository),
+          ),
+        ),
+      ),
+      (
+        Icons.meeting_room_outlined,
+        'Jadwal Ruangan',
+        'Cek penggunaan dan ketersediaan ruang',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RoomSchedulePage(repository: repository),
+          ),
+        ),
+      ),
+      (
+        Icons.analytics_outlined,
+        'Laporan Peminjaman',
+        'Ringkasan transaksi dan aktivitas lab',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KalabDailyReportPage(repository: repository),
+          ),
+        ),
+      ),
+      (
+        Icons.build_circle_outlined,
+        'Laporan Maintenance',
+        'Cek laporan kerusakan dan tindak lanjut',
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _MaintenanceReportPage(
+              repository: repository,
+              maintenanceFuture: maintenanceFuture,
+              onUpdated: onMaintenanceUpdated,
+            ),
+          ),
+        ),
+      ),
+    ];
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: campus.gradient,
+                  ),
+                  child: const Icon(
+                    Icons.grid_view_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Menu Kalab',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: campus.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Akses cepat ke fitur inti pengelolaan laboratorium.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...actions.map((action) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Material(
+                  color: campus.primary.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    onTap: action.$4,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              gradient: campus.gradient,
+                            ),
+                            child: Icon(
+                              action.$1,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  action.$2,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: campus.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  action.$3,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: campus.secondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );
@@ -788,17 +1001,14 @@ class _AslabVerificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<UserAccountSummary>>(
-      future: usersFuture,
-      builder: (context, snapshot) {
-        final users = snapshot.data ?? const <UserAccountSummary>[];
-        if (!snapshot.hasData || users.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FutureBuilder<List<UserAccountSummary>>(
+          future: usersFuture,
+          builder: (context, snapshot) {
+            final users = snapshot.data ?? const <UserAccountSummary>[];
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
@@ -808,118 +1018,231 @@ class _AslabVerificationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                ...users.map(
-                  (user) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      user.role == 'aslab'
-                          ? Icons.verified_user_outlined
-                          : Icons.person_outline,
+                if (!snapshot.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (users.isEmpty)
+                  const Text('Belum ada akun pengguna.')
+                else
+                  ...users.map(
+                    (user) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        user.role == 'aslab'
+                            ? Icons.verified_user_outlined
+                            : Icons.person_outline,
+                      ),
+                      title: Text(user.name),
+                      subtitle: Text('${user.identity} | ${user.email}'),
+                      trailing: user.role == 'aslab'
+                          ? const Chip(label: Text('Aslab'))
+                          : user.role == 'kalab'
+                          ? const Chip(label: Text('Kalab'))
+                          : FilledButton(
+                              onPressed: () async {
+                                await repository.verifyAslabAccount(user.id);
+                                onUpdated();
+                              },
+                              child: const Text('Jadikan Aslab'),
+                            ),
                     ),
-                    title: Text(user.name),
-                    subtitle: Text('${user.identity} | ${user.email}'),
-                    trailing: user.role == 'aslab'
-                        ? const Chip(label: Text('Aslab'))
-                        : user.role == 'kalab'
-                        ? const Chip(label: Text('Kalab'))
-                        : FilledButton(
-                            onPressed: () async {
-                              await repository.verifyAslabAccount(user.id);
-                              onUpdated();
-                            },
-                            child: const Text('Jadikan Aslab'),
-                          ),
                   ),
-                ),
               ],
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }
 
-class _BorrowedReportCard extends StatelessWidget {
-  const _BorrowedReportCard({required this.reportFuture});
+class _MaintenanceReportPage extends StatelessWidget {
+  const _MaintenanceReportPage({
+    required this.repository,
+    required this.maintenanceFuture,
+    required this.onUpdated,
+  });
 
-  final Future<List<BorrowedInventoryReport>> reportFuture;
+  final DashboardRepository repository;
+  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+  final VoidCallback onUpdated;
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Laporan Maintenance')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: _MaintenanceReportCard(
+            repository: repository,
+            maintenanceFuture: maintenanceFuture,
+            onUpdated: onUpdated,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MaintenanceReportCard extends StatelessWidget {
+  const _MaintenanceReportCard({
+    required this.repository,
+    required this.maintenanceFuture,
+    required this.onUpdated,
+  });
+
+  final DashboardRepository repository;
+  final Future<List<MaintenanceReportEntry>> maintenanceFuture;
+  final VoidCallback onUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final campus = AppTheme.campusColorsOf(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<BorrowedInventoryReport>>(
-          future: reportFuture,
+        padding: const EdgeInsets.all(14),
+        child: FutureBuilder<List<MaintenanceReportEntry>>(
+          future: maintenanceFuture,
           builder: (context, snapshot) {
-            final rows = snapshot.data ?? const <BorrowedInventoryReport>[];
-            final max = rows.isEmpty ? 1 : rows.first.quantity;
+            final rows = snapshot.data ?? const <MaintenanceReportEntry>[];
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Laporan Barang Dipinjam',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Ekspor ringkasan',
-                      onPressed: rows.isEmpty
-                          ? null
-                          : () {
-                              final text = rows
-                                  .map((row) => '${row.name},${row.quantity}')
-                                  .join('\n');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('CSV siap: $text')),
-                              );
-                            },
-                      icon: const Icon(Icons.ios_share_rounded),
-                    ),
-                  ],
+                Text(
+                  'Laporan Maintenance Mahasiswa',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 if (!snapshot.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (rows.isEmpty)
-                  const Text('Tidak ada barang yang sedang dipinjam.')
+                  const Text('Belum ada laporan kerusakan dari mahasiswa.')
                 else
                   ...rows.map(
                     (row) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  row.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Material(
+                        color: campus.primary.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(14),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => _showDetail(context, row),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child:
+                                      row.photoUrl == null ||
+                                          row.photoUrl!.trim().isEmpty
+                                      ? Container(
+                                          width: 52,
+                                          height: 52,
+                                          color: campus.primary.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          child: Icon(
+                                            Icons.image_not_supported,
+                                            color: campus.primary,
+                                          ),
+                                        )
+                                      : CachedNetworkImage(
+                                          imageUrl: row.photoUrl!,
+                                          width: 52,
+                                          height: 52,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, _) =>
+                                              Container(
+                                                width: 52,
+                                                height: 52,
+                                                color: AppTheme.vibrantPurple
+                                                    .withValues(alpha: 0.12),
+                                              ),
+                                          errorWidget: (context, _, _) =>
+                                              const Icon(
+                                                Icons.image_not_supported,
+                                              ),
+                                        ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        row.inventoryName ?? row.inventoryId,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        row.description,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              Text(
-                                '${row.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _maintenanceStatusColor(
+                                      row.statusLabel,
+                                      campus,
+                                    ).withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _maintenanceStatusColor(
+                                        row.statusLabel,
+                                        campus,
+                                      ).withValues(alpha: 0.28),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    row.statusLabel,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: _maintenanceStatusColor(
+                                            row.statusLabel,
+                                            campus,
+                                          ),
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: campus.secondary,
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 6),
-                          LinearProgressIndicator(
-                            value: row.quantity / max,
-                            minHeight: 10,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -930,6 +1253,197 @@ class _BorrowedReportCard extends StatelessWidget {
       ),
     );
   }
+
+  void _showDetail(BuildContext context, MaintenanceReportEntry row) {
+    final campus = AppTheme.campusColorsOf(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        sheetContext,
+                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                if (row.photoUrl != null && row.photoUrl!.trim().isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: row.photoUrl!,
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                      placeholder: (context, _) => Container(
+                        height: 180,
+                        color: AppTheme.vibrantPurple.withValues(alpha: 0.12),
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, _, _) =>
+                          const Icon(Icons.image_not_supported),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                Text(
+                  row.inventoryName ?? row.inventoryId,
+                  style: Theme.of(sheetContext).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _maintenanceStatusColor(
+                      row.statusLabel,
+                      campus,
+                    ).withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _maintenanceStatusColor(
+                        row.statusLabel,
+                        campus,
+                      ).withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Text(
+                    row.statusLabel,
+                    style: Theme.of(sheetContext).textTheme.labelMedium
+                        ?.copyWith(
+                          color: _maintenanceStatusColor(
+                            row.statusLabel,
+                            campus,
+                          ),
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Deskripsi Kerusakan',
+                  style: Theme.of(sheetContext).textTheme.labelLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text(row.description),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          Navigator.of(sheetContext).pop();
+                          try {
+                            await repository.rejectMaintenanceReport(row.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Laporan maintenance ditolak.',
+                                  ),
+                                ),
+                              );
+                            }
+                            onUpdated();
+                          } catch (error) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  error.toString().replaceFirst(
+                                    'Exception: ',
+                                    '',
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                        label: const Text('Tolak'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          Navigator.of(sheetContext).pop();
+                          try {
+                            await repository.acceptMaintenanceReport(row.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Laporan maintenance diproses.',
+                                  ),
+                                ),
+                              );
+                            }
+                            onUpdated();
+                          } catch (error) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  error.toString().replaceFirst(
+                                    'Exception: ',
+                                    '',
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.build_circle_outlined),
+                        label: const Text('Proses'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+Color _maintenanceStatusColor(String status, CampusThemeExtension campus) {
+  return switch (status.toLowerCase()) {
+    'pending' => const Color(0xFFF59E0B),
+    'diproses' => const Color(0xFF3B82F6),
+    'selesai' => const Color(0xFF10B981),
+    'ditolak' => const Color(0xFFEF4444),
+    _ => campus.primary,
+  };
 }
 
 class _KalabApprovalCard extends StatelessWidget {
