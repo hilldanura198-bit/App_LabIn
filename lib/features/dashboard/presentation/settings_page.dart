@@ -244,23 +244,20 @@ class _SettingsPageState extends State<SettingsPage> {
                                 Divider(
                                   color: AppTheme.muted.withValues(alpha: 0.18),
                                 ),
-
                                 const SizedBox(height: 12),
-
                                 Text(
-                                  'Role • ${_roleLabel(_role)}',
+                                  'wm by LabIn',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: AppTheme.muted.withValues(
-                                          alpha: 0.75,
+                                          alpha: 0.72,
                                         ),
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.3,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.4,
                                       ),
                                 ),
-
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 8),
                               ],
                             ),
                           ),
@@ -393,17 +390,24 @@ class _SettingsPageState extends State<SettingsPage> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.18),
                       ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.muted.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _roleLabel(_role),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
