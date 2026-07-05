@@ -177,13 +177,33 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
       return;
     }
     try {
-      await widget.repository.deleteLaboratory(room.id);
+      final hardDeleted = await widget.repository.deleteLaboratory(room.id);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ruangan berhasil dihapus.')),
-      );
+      if (hardDeleted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ruangan berhasil dihapus.')),
+        );
+      } else {
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('Ruangan tidak bisa dihapus'),
+              content: const Text(
+                'Ruangan ini masih terhubung dengan data peminjaman, jadi kami ubah statusnya menjadi tutup agar tetap aman.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Mengerti'),
+                ),
+              ],
+            );
+          },
+        );
+      }
     } catch (error) {
       if (!context.mounted) {
         return;
@@ -227,15 +247,29 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            hardDeleted
-                ? 'Sarana berhasil dihapus.'
-                : 'Sarana dipindahkan menjadi non-aktif karena masih punya riwayat peminjaman.',
-          ),
-        ),
-      );
+      if (hardDeleted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sarana berhasil dihapus.')),
+        );
+      } else {
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('Sarana tidak bisa dihapus'),
+              content: const Text(
+                'Sarana ini masih memiliki relasi riwayat peminjaman, jadi statusnya sudah diubah menjadi non-aktif.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Mengerti'),
+                ),
+              ],
+            );
+          },
+        );
+      }
     } catch (error) {
       if (!context.mounted) {
         return;
@@ -731,7 +765,9 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
       _available.text = inventory.stokTersedia.toString();
       _manualUrl.text = inventory.manualUrl ?? '';
       _labId = inventory.labId;
-      _type = inventory.type;
+      _type =
+          _safeDropdownValue(inventory.type, const ['alat', 'ruangan']) ??
+          'alat';
     }
   }
 
@@ -912,6 +948,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
       setState(() => _saving = true);
       final totalStock = int.tryParse(_total.text) ?? 0;
       final availableStock = int.tryParse(_available.text) ?? 0;
+      final imageBytes = _image == null ? null : await _image!.readAsBytes();
       if (widget.inventory == null) {
         await widget.repository.createInventory(
           labId: _labId!,
@@ -920,7 +957,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
           availableStock: availableStock,
           type: _type,
           manualUrl: _manualUrl.text,
-          image: _image,
+          imageBytes: imageBytes,
         );
       } else {
         await widget.repository.updateInventory(
@@ -931,7 +968,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
           availableStock: availableStock,
           type: _type,
           manualUrl: _manualUrl.text,
-          image: _image,
+          imageBytes: imageBytes,
         );
       }
       if (!mounted) {
@@ -1127,12 +1164,13 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
   Future<void> _save() async {
     try {
       setState(() => _saving = true);
+      final imageBytes = _image == null ? null : await _image!.readAsBytes();
       if (widget.room == null) {
         await widget.repository.createLaboratory(
           name: _name.text,
           location: _location,
           status: _status,
-          image: _image,
+          imageBytes: imageBytes,
         );
       } else {
         await widget.repository.updateLaboratory(
@@ -1140,7 +1178,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
           name: _name.text,
           location: _location,
           status: _status,
-          image: _image,
+          imageBytes: imageBytes,
         );
       }
       if (!mounted) {

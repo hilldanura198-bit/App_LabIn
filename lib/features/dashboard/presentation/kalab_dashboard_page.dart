@@ -793,13 +793,14 @@ class _InventoryCreateCardState extends State<_InventoryCreateCard> {
   Future<void> _save() async {
     try {
       setState(() => _saving = true);
+      final imageBytes = _image == null ? null : await _image!.readAsBytes();
       await widget.repository.createInventory(
         labId: _labId!,
         name: _name.text,
         totalStock: int.tryParse(_total.text) ?? 0,
         availableStock: int.tryParse(_available.text) ?? 0,
         type: _type,
-        image: _image,
+        imageBytes: imageBytes,
       );
       _name.clear();
       if (!mounted) return;
@@ -1193,9 +1194,9 @@ class _MaintenanceReportCard extends StatelessWidget {
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
                                             ),
                                       ),
                                     ],
@@ -1310,8 +1311,9 @@ class _MaintenanceReportCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   row.inventoryName ?? row.inventoryId,
-                  style: Theme.of(sheetContext).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w900),
+                  style: Theme.of(
+                    sheetContext,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -1348,8 +1350,9 @@ class _MaintenanceReportCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Deskripsi Kerusakan',
-                  style: Theme.of(sheetContext).textTheme.labelLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(
+                    sheetContext,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(row.description),
@@ -1365,9 +1368,7 @@ class _MaintenanceReportCard extends StatelessWidget {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text(
-                                    'Laporan maintenance ditolak.',
-                                  ),
+                                  content: Text('Laporan maintenance ditolak.'),
                                 ),
                               );
                             }

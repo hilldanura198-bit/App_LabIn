@@ -38,7 +38,10 @@ class LabInventory {
 
   factory LabInventory.fromMap(Map<String, dynamic> map) {
     final name = map['nama_alat'] as String? ?? 'Alat Lab';
-    final remoteImage = map['image_url'] as String?;
+    final remoteImage =
+        map['image_url'] as String? ??
+        map['foto_url'] as String? ??
+        map['foto'] as String?;
     return LabInventory(
       id: map['id'] as String,
       labId: map['lab_id'] as String,
@@ -47,7 +50,7 @@ class LabInventory {
       stokTersedia:
           map['stok_tersedia'] as int? ?? map['available_stock'] as int? ?? 0,
       kondisi: map['kondisi'] as String? ?? 'bagus',
-      type: map['type'] as String? ?? map['jenis'] as String? ?? '',
+      type: map['category_type'] as String? ?? '',
       manualUrl: map['manual_url'] as String?,
       imageUrl: remoteImage == null || remoteImage.trim().isEmpty
           ? getLocalAssetPath(name)
@@ -355,7 +358,9 @@ class LabRoom {
   factory LabRoom.fromMap(Map<String, dynamic> map) {
     final name = map['nama_lab'] as String? ?? 'Ruang Lab';
     final remoteImage =
-        map['image_url'] as String? ?? map['foto_url'] as String?;
+        map['image_url'] as String? ??
+        map['foto_url'] as String? ??
+        map['foto'] as String?;
     return LabRoom(
       id: map['id'] as String,
       name: name,
