@@ -505,6 +505,25 @@ class DashboardRepository {
         );
   }
 
+  Future<List<LabBooking>> fetchRoomScheduleForDay(DateTime day) async {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    final rows = await _supabase
+        .from('bookings')
+        .select(_bookingWithProfileColumns)
+        .lt('tanggal_pinjam', end.toUtc().toIso8601String())
+        .gt('tanggal_kembali', start.toUtc().toIso8601String())
+        .inFilter('status', const [
+          'pending',
+          'approved_aslab',
+          'approved_kalab',
+          'active',
+          'late',
+        ])
+        .order('tanggal_pinjam');
+    return rows.map((row) => LabBooking.fromMap(row)).toList();
+  }
+
   Future<ProfileSettings> fetchProfileSettings() async {
     final userId = currentUserId;
     if (userId == null) {
@@ -575,7 +594,11 @@ class DashboardRepository {
     final safeExtension = extension.isEmpty ? 'jpg' : extension;
     final path =
         '$userId/sarpras-${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
-    final bytes = await image.readAsBytes();
+    final bytes = Uint8List.fromList(await image.readAsBytes());
+    if (bytes.isEmpty) {
+      throw Exception('File gambar sarpras tidak valid.');
+    }
+    final contentType = _sarprasImageContentType(image.mimeType, safeExtension);
     final bucketNames = ['sarpras_assets', 'images'];
     Object? lastError;
     for (final bucketName in bucketNames) {
@@ -585,10 +608,7 @@ class DashboardRepository {
             .uploadBinary(
               path,
               bytes,
-              fileOptions: FileOptions(
-                upsert: true,
-                contentType: image.mimeType ?? 'image/$safeExtension',
-              ),
+              fileOptions: FileOptions(upsert: true, contentType: contentType),
             );
         return _supabase.storage.from(bucketName).getPublicUrl(path);
       } on Object catch (error) {
@@ -602,6 +622,20 @@ class DashboardRepository {
     throw Exception(
       'Bucket sarpras tidak ditemukan: ${lastError ?? 'unknown error'}',
     );
+  }
+
+  String _sarprasImageContentType(String? mimeType, String extension) {
+    final normalizedMime = mimeType?.trim();
+    if (normalizedMime != null && normalizedMime.isNotEmpty) {
+      return normalizedMime;
+    }
+    return switch (extension.toLowerCase()) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'gif' => 'image/gif',
+      _ => 'image/jpeg',
+    };
   }
 
   Future<void> updatePassword(String password) async {
@@ -1110,22 +1144,46 @@ class DashboardRepository {
     );
   }
 
-  Future<void> deleteInventory(String inventoryId) async {
+  Future<bool> deleteInventory(String inventoryId) async {
     if (inventoryId.trim().isEmpty) {
       throw Exception('ID inventaris tidak valid.');
     }
-    await _supabase.from('inventories').delete().eq('id', inventoryId);
-    await _appendConsensusLog(
-      entityTable: 'inventories',
-      entityId: inventoryId,
-      command: 'delete_inventory',
-      payload: const {'deleted': true},
-    );
+    try {
+      await _supabase.from('inventories').delete().eq('id', inventoryId);
+      await _appendConsensusLog(
+        entityTable: 'inventories',
+        entityId: inventoryId,
+        command: 'delete_inventory',
+        payload: const {'deleted': true},
+      );
+      return true;
+    } on PostgrestException catch (error) {
+      if (error.code != '23503') {
+        rethrow;
+      }
+      await _supabase
+          .from('inventories')
+          .update({'kondisi': 'non-aktif', 'stok_tersedia': 0})
+          .eq('id', inventoryId);
+      await _appendConsensusLog(
+        entityTable: 'inventories',
+        entityId: inventoryId,
+        command: 'soft_delete_inventory',
+        payload: const {
+          'deleted': false,
+          'soft_deleted': true,
+          'kondisi': 'non-aktif',
+          'stok_tersedia': 0,
+        },
+      );
+      return false;
+    }
   }
 
   Future<void> createLaboratory({
     required String name,
     required String location,
+    String status = 'aktif',
     XFile? image,
   }) async {
     if (name.trim().isEmpty || location.trim().isEmpty) {
@@ -1135,7 +1193,7 @@ class DashboardRepository {
     await _supabase.from('laboratories').insert({
       'nama_lab': name.trim(),
       'lokasi': location.trim(),
-      'status_operasional': 'aktif',
+      'status_operasional': status.trim().isEmpty ? 'aktif' : status.trim(),
       'foto_url': imageUrl,
     });
     await _appendConsensusLog(
@@ -1150,6 +1208,7 @@ class DashboardRepository {
     required String laboratoryId,
     required String name,
     required String location,
+    required String status,
     XFile? image,
   }) async {
     if (laboratoryId.trim().isEmpty) {
@@ -1161,6 +1220,7 @@ class DashboardRepository {
     final payload = <String, dynamic>{
       'nama_lab': name.trim(),
       'lokasi': location.trim(),
+      'status_operasional': status.trim().isEmpty ? 'aktif' : status.trim(),
     };
     if (image != null) {
       payload['foto_url'] = await uploadSarprasImage(image);

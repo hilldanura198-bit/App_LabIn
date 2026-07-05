@@ -20,12 +20,16 @@ class KalabInventoryCrudPage extends StatefulWidget {
 class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  late final Stream<List<LabRoom>> _roomsStream;
+  late final Stream<List<LabInventory>> _inventoriesStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this)
       ..addListener(_handleTabChanged);
+    _roomsStream = widget.repository.watchLaboratories();
+    _inventoriesStream = widget.repository.watchInventories();
   }
 
   @override
@@ -77,14 +81,15 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
           controller: _tabController,
           children: [
             _InventoryTab(
-              repository: widget.repository,
+              roomsStream: _roomsStream,
+              inventoriesStream: _inventoriesStream,
               onEditInventory: (inventory) =>
                   _openInventoryForm(context, inventory: inventory),
               onDeleteInventory: (inventory) =>
                   _confirmDeleteInventory(context, inventory),
             ),
             _RoomTab(
-              repository: widget.repository,
+              roomsStream: _roomsStream,
               onEditRoom: (room) => _openRoomForm(context, room: room),
               onDeleteRoom: (room) => _confirmDeleteRoom(context, room),
             ),
@@ -218,13 +223,19 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
       return;
     }
     try {
-      await widget.repository.deleteInventory(inventory.id);
+      final hardDeleted = await widget.repository.deleteInventory(inventory.id);
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sarana berhasil dihapus.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            hardDeleted
+                ? 'Sarana berhasil dihapus.'
+                : 'Sarana dipindahkan menjadi non-aktif karena masih punya riwayat peminjaman.',
+          ),
+        ),
+      );
     } catch (error) {
       if (!context.mounted) {
         return;
@@ -240,19 +251,21 @@ class _KalabInventoryCrudPageState extends State<KalabInventoryCrudPage>
 
 class _InventoryTab extends StatelessWidget {
   const _InventoryTab({
-    required this.repository,
+    required this.roomsStream,
+    required this.inventoriesStream,
     required this.onEditInventory,
     required this.onDeleteInventory,
   });
 
-  final DashboardRepository repository;
+  final Stream<List<LabRoom>> roomsStream;
+  final Stream<List<LabInventory>> inventoriesStream;
   final ValueChanged<LabInventory> onEditInventory;
   final ValueChanged<LabInventory> onDeleteInventory;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<LabRoom>>(
-      stream: repository.watchLaboratories(),
+      stream: roomsStream,
       builder: (context, roomSnapshot) {
         if (roomSnapshot.hasError) {
           return Center(child: Text(roomSnapshot.error.toString()));
@@ -263,7 +276,7 @@ class _InventoryTab extends StatelessWidget {
         final rooms = roomSnapshot.data ?? const <LabRoom>[];
         final roomById = {for (final room in rooms) room.id: room.name};
         return StreamBuilder<List<LabInventory>>(
-          stream: repository.watchInventories(),
+          stream: inventoriesStream,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(child: Text(snapshot.error.toString()));
@@ -446,19 +459,19 @@ class _InventoryCard extends StatelessWidget {
 
 class _RoomTab extends StatelessWidget {
   const _RoomTab({
-    required this.repository,
+    required this.roomsStream,
     required this.onEditRoom,
     required this.onDeleteRoom,
   });
 
-  final DashboardRepository repository;
+  final Stream<List<LabRoom>> roomsStream;
   final ValueChanged<LabRoom> onEditRoom;
   final ValueChanged<LabRoom> onDeleteRoom;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<LabRoom>>(
-      stream: repository.watchLaboratories(),
+      stream: roomsStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text(snapshot.error.toString()));
@@ -687,13 +700,13 @@ class _RoomPreview extends StatelessWidget {
     );
     if (imageUrl == null || imageUrl!.trim().isEmpty) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         child: placeholder,
       );
     }
     final url = imageUrl!.trim();
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         width: 96,
         height: 96,
@@ -993,6 +1006,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
   final _picker = ImagePicker();
   XFile? _image;
   bool _saving = false;
+  late String _status;
 
   String get _initialLocation =>
       widget.room?.location ?? _locationOptions.first;
@@ -1015,6 +1029,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
   void initState() {
     super.initState();
     _name.text = widget.room?.name ?? '';
+    _status = widget.room?.status ?? 'aktif';
   }
 
   @override
@@ -1062,6 +1077,22 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
                     .toList(),
                 onChanged: (value) => setState(() {
                   _location = value ?? _initialLocation;
+                }),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _status,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: const [
+                  DropdownMenuItem(value: 'aktif', child: Text('Aktif')),
+                  DropdownMenuItem(value: 'tutup', child: Text('Tutup')),
+                  DropdownMenuItem(
+                    value: 'non-aktif',
+                    child: Text('Non-aktif'),
+                  ),
+                ],
+                onChanged: (value) => setState(() {
+                  _status = value ?? 'aktif';
                 }),
               ),
               const SizedBox(height: 12),
@@ -1115,6 +1146,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
         await widget.repository.createLaboratory(
           name: _name.text,
           location: _location,
+          status: _status,
           image: _image,
         );
       } else {
@@ -1122,6 +1154,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
           laboratoryId: widget.room!.id,
           name: _name.text,
           location: _location,
+          status: _status,
           image: _image,
         );
       }
