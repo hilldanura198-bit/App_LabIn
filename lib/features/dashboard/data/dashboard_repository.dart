@@ -39,18 +39,28 @@ class DashboardRepository {
         .map((rows) => rows.map(LabInventory.fromMap).toList());
   }
 
-  Future<String> uploadSarprasImage(Uint8List fileBytes) async {
+  Future<String> uploadSarprasImage(
+    Uint8List fileBytes,
+    String fileName,
+  ) async {
     if (fileBytes.isEmpty) {
       throw Exception('File gambar sarpras tidak valid.');
     }
+    if (fileName.trim().isEmpty) {
+      throw Exception('Nama file gambar sarpras tidak valid.');
+    }
     final path = 'sarpras-${DateTime.now().millisecondsSinceEpoch}.png';
-    final bucket = _supabase.storage.from('sarpras_assets');
-    await bucket.uploadBytes(
-      path,
-      fileBytes,
-      fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
-    );
-    return bucket.getPublicUrl(path);
+    await _supabase.storage
+        .from('sarpras_assets')
+        .uploadBytes(
+          path,
+          fileBytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/png',
+            upsert: true,
+          ),
+        );
+    return _supabase.storage.from('sarpras_assets').getPublicUrl(path);
   }
 
   Stream<List<LabInventory>> watchInventoriesByCampus(
@@ -1030,6 +1040,7 @@ class DashboardRepository {
     required String type,
     String? manualUrl,
     Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     if (name.trim().isEmpty) {
       throw Exception('Nama inventaris wajib diisi.');
@@ -1039,7 +1050,7 @@ class DashboardRepository {
     }
     final imageUrl = imageBytes == null
         ? null
-        : await uploadSarprasImage(imageBytes);
+        : await uploadSarprasImage(imageBytes, imageFileName ?? name);
     await _supabase.from('inventories').insert({
       'lab_id': labId,
       'nama_alat': name.trim(),
@@ -1072,6 +1083,7 @@ class DashboardRepository {
     required String type,
     String? manualUrl,
     Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     if (inventoryId.trim().isEmpty) {
       throw Exception('ID inventaris tidak valid.');
@@ -1092,7 +1104,10 @@ class DashboardRepository {
       'manual_url': _optionalTrimmed(manualUrl),
     };
     if (imageBytes != null) {
-      final uploadedImageUrl = await uploadSarprasImage(imageBytes);
+      final uploadedImageUrl = await uploadSarprasImage(
+        imageBytes,
+        imageFileName ?? name,
+      );
       payload['foto_url'] = uploadedImageUrl;
       payload['foto'] = uploadedImageUrl;
     }
@@ -1151,13 +1166,14 @@ class DashboardRepository {
     required String location,
     String status = 'aktif',
     Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     if (name.trim().isEmpty || location.trim().isEmpty) {
       throw Exception('Nama dan lokasi ruangan wajib diisi.');
     }
     final imageUrl = imageBytes == null
         ? null
-        : await uploadSarprasImage(imageBytes);
+        : await uploadSarprasImage(imageBytes, imageFileName ?? name);
     await _supabase.from('laboratories').insert({
       'nama_lab': name.trim(),
       'lokasi': location.trim(),
@@ -1179,6 +1195,7 @@ class DashboardRepository {
     required String location,
     required String status,
     Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     if (laboratoryId.trim().isEmpty) {
       throw Exception('ID ruangan tidak valid.');
@@ -1192,7 +1209,10 @@ class DashboardRepository {
       'status_operasional': status.trim().isEmpty ? 'aktif' : status.trim(),
     };
     if (imageBytes != null) {
-      final uploadedImageUrl = await uploadSarprasImage(imageBytes);
+      final uploadedImageUrl = await uploadSarprasImage(
+        imageBytes,
+        imageFileName ?? name,
+      );
       payload['foto_url'] = uploadedImageUrl;
       payload['foto'] = uploadedImageUrl;
     }

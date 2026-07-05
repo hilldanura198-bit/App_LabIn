@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -753,6 +755,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
   String? _labId;
   String _type = 'alat';
   XFile? _image;
+  Uint8List? _imageBytes;
   bool _saving = false;
 
   @override
@@ -939,7 +942,11 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
       maxWidth: 1280,
     );
     if (image != null && mounted) {
-      setState(() => _image = image);
+      final fileBytes = await image.readAsBytes();
+      setState(() {
+        _image = image;
+        _imageBytes = fileBytes;
+      });
     }
   }
 
@@ -948,7 +955,6 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
       setState(() => _saving = true);
       final totalStock = int.tryParse(_total.text) ?? 0;
       final availableStock = int.tryParse(_available.text) ?? 0;
-      final imageBytes = _image == null ? null : await _image!.readAsBytes();
       if (widget.inventory == null) {
         await widget.repository.createInventory(
           labId: _labId!,
@@ -957,7 +963,8 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
           availableStock: availableStock,
           type: _type,
           manualUrl: _manualUrl.text,
-          imageBytes: imageBytes,
+          imageBytes: _imageBytes,
+          imageFileName: _image?.name,
         );
       } else {
         await widget.repository.updateInventory(
@@ -968,7 +975,8 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
           availableStock: availableStock,
           type: _type,
           manualUrl: _manualUrl.text,
-          imageBytes: imageBytes,
+          imageBytes: _imageBytes,
+          imageFileName: _image?.name,
         );
       }
       if (!mounted) {
@@ -1019,6 +1027,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
   final _name = TextEditingController();
   final _picker = ImagePicker();
   XFile? _image;
+  Uint8List? _imageBytes;
   bool _saving = false;
   late String _status;
 
@@ -1157,20 +1166,24 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
       maxWidth: 1280,
     );
     if (image != null && mounted) {
-      setState(() => _image = image);
+      final fileBytes = await image.readAsBytes();
+      setState(() {
+        _image = image;
+        _imageBytes = fileBytes;
+      });
     }
   }
 
   Future<void> _save() async {
     try {
       setState(() => _saving = true);
-      final imageBytes = _image == null ? null : await _image!.readAsBytes();
       if (widget.room == null) {
         await widget.repository.createLaboratory(
           name: _name.text,
           location: _location,
           status: _status,
-          imageBytes: imageBytes,
+          imageBytes: _imageBytes,
+          imageFileName: _image?.name,
         );
       } else {
         await widget.repository.updateLaboratory(
@@ -1178,7 +1191,8 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
           name: _name.text,
           location: _location,
           status: _status,
-          imageBytes: imageBytes,
+          imageBytes: _imageBytes,
+          imageFileName: _image?.name,
         );
       }
       if (!mounted) {
