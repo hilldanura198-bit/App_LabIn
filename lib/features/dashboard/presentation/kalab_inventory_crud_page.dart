@@ -539,77 +539,87 @@ class _RoomCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final campus = AppTheme.campusColorsOf(context);
+    final imageWidget = _InventoryPreview(imageUrl: room.imageUrl);
     return Card(
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              scheme.primary.withValues(alpha: 0.05),
-              scheme.secondary.withValues(alpha: 0.02),
+              campus.primary.withValues(alpha: 0.05),
+              campus.secondary.withValues(alpha: 0.02),
             ],
           ),
           borderRadius: BorderRadius.circular(18),
         ),
         padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _RoomPreview(imageUrl: room.imageUrl),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    room.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    room.location,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                imageWidget,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Chip(
-                        label: Text(
-                          room.status,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        backgroundColor: scheme.primary.withValues(alpha: 0.08),
+                      Text(
+                        room.name,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
                       ),
-                      _InfoChip(
-                        icon: Icons.photo_outlined,
-                        label:
-                            room.imageUrl == null ||
-                                room.imageUrl!.trim().isEmpty
-                            ? 'Tanpa gambar'
-                            : 'Ada gambar',
+                      const SizedBox(height: 4),
+                      Text(
+                        room.location,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          Chip(
+                            label: Text(
+                              room.status,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            backgroundColor: scheme.primary.withValues(
+                              alpha: 0.08,
+                            ),
+                          ),
+                          _InfoChip(
+                            icon: Icons.photo_outlined,
+                            label:
+                                room.imageUrl == null ||
+                                    room.imageUrl!.trim().isEmpty
+                                ? 'Tanpa gambar'
+                                : 'Ada gambar',
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              children: [
-                IconButton(
-                  tooltip: 'Edit',
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
                 ),
-                IconButton(
-                  tooltip: 'Hapus',
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline),
+                const SizedBox(width: 8),
+                Column(
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit',
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined),
+                    ),
+                    IconButton(
+                      tooltip: 'Hapus',
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -633,20 +643,20 @@ class _InventoryPreview extends StatelessWidget {
       height: 104,
       decoration: BoxDecoration(
         color: scheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
       ),
       alignment: Alignment.center,
       child: const Icon(Icons.inventory_2_outlined),
     );
     if (imageUrl == null || imageUrl!.trim().isEmpty) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         child: placeholder,
       );
     }
     final url = imageUrl!.trim();
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         width: 104,
         height: 104,
@@ -684,47 +694,10 @@ class _InventoryPreview extends StatelessWidget {
   }
 }
 
-class _RoomPreview extends StatelessWidget {
-  const _RoomPreview({required this.imageUrl});
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final placeholder = Container(
-      width: 96,
-      height: 96,
-      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-      alignment: Alignment.center,
-      child: const Icon(Icons.meeting_room_outlined),
-    );
-    if (imageUrl == null || imageUrl!.trim().isEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: placeholder,
-      );
-    }
-    final url = imageUrl!.trim();
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: 96,
-        height: 96,
-        child: url.startsWith('http')
-            ? CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                errorWidget: (context, error, stackTrace) => placeholder,
-                placeholder: (context, url) => placeholder,
-              )
-            : Image.asset(
-                url,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => placeholder,
-              ),
-      ),
-    );
-  }
+String? _safeDropdownValue(String? current, List<String> options) {
+  if (options.isEmpty) return null;
+  if (current != null && options.contains(current)) return current;
+  return options.first;
 }
 
 class _InventoryFormSheet extends StatefulWidget {
@@ -798,9 +771,13 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
                 );
               }
               final rooms = snapshot.data ?? const <LabRoom>[];
-              _labId ??=
-                  widget.inventory?.labId ??
-                  (rooms.isEmpty ? null : rooms.first.id);
+              final roomIds = rooms.map((room) => room.id).toList();
+              _labId ??= _safeDropdownValue(widget.inventory?.labId, roomIds);
+              final safeLabId = _safeDropdownValue(_labId, roomIds);
+              final safeType =
+                  _safeDropdownValue(_type, const ['alat', 'ruangan']) ??
+                  'alat';
+              _type = safeType;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -819,7 +796,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    initialValue: _labId,
+                    initialValue: safeLabId,
                     decoration: const InputDecoration(labelText: 'Ruangan'),
                     items: rooms
                         .map(
@@ -869,7 +846,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    initialValue: _type,
+                    initialValue: safeType,
                     isExpanded: true,
                     decoration: const InputDecoration(labelText: 'Kategori'),
                     items: const [
@@ -1041,6 +1018,14 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final locationOptions = _locationOptions;
+    final safeLocation =
+        _safeDropdownValue(_location, locationOptions) ?? _initialLocation;
+    final safeStatus =
+        _safeDropdownValue(_status, const ['aktif', 'tutup', 'non-aktif']) ??
+        'aktif';
+    _location = safeLocation;
+    _status = safeStatus;
     return SafeArea(
       child: Container(
         decoration: BoxDecoration(
@@ -1065,9 +1050,9 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: _location,
+                initialValue: safeLocation,
                 decoration: const InputDecoration(labelText: 'Lokasi'),
-                items: _locationOptions
+                items: locationOptions
                     .map(
                       (location) => DropdownMenuItem(
                         value: location,
@@ -1081,7 +1066,7 @@ class _RoomFormSheetState extends State<_RoomFormSheet> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: _status,
+                initialValue: safeStatus,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: const [
                   DropdownMenuItem(value: 'aktif', child: Text('Aktif')),
