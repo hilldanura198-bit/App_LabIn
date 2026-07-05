@@ -2,12 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/brand.dart';
-import '../../../core/lab_catalog.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/data/auth_repository.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -131,6 +129,7 @@ class _KalabDashboardViewState extends State<_KalabDashboardView> {
       return KalabControlPanel(
         repository: repository,
         maintenanceFuture: _maintenanceFuture,
+        onMaintenanceUpdated: _refreshQueue,
       );
     }
     if (_selectedIndex == 2) {
@@ -371,64 +370,35 @@ class _KalabHero extends StatelessWidget {
   }
 }
 
-class KalabControlPanel extends StatefulWidget {
+class KalabControlPanel extends StatelessWidget {
   const KalabControlPanel({
     super.key,
     required this.repository,
     required this.maintenanceFuture,
+    required this.onMaintenanceUpdated,
   });
 
   final DashboardRepository repository;
   final Future<List<MaintenanceReportEntry>> maintenanceFuture;
-
-  @override
-  State<KalabControlPanel> createState() => _KalabControlPanelState();
-}
-
-class _KalabControlPanelState extends State<KalabControlPanel> {
-  late Future<List<UserAccountSummary>> _usersFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _refresh();
-  }
-
-  void _refresh() {
-    _usersFuture = widget.repository.fetchUserAccounts();
-  }
+  final VoidCallback onMaintenanceUpdated;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async => setState(_refresh),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 820),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _PanelShortcutGrid(
-                      repository: widget.repository,
-                      maintenanceFuture: widget.maintenanceFuture,
-                      onMaintenanceUpdated: () => setState(_refresh),
-                    ),
-                    const SizedBox(height: 16),
-                    _AslabVerificationCard(
-                      usersFuture: _usersFuture,
-                      repository: widget.repository,
-                      onUpdated: () => setState(_refresh),
-                    ),
-                  ],
-                ),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: _PanelShortcutGrid(
+                repository: repository,
+                maintenanceFuture: maintenanceFuture,
+                onMaintenanceUpdated: onMaintenanceUpdated,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -453,55 +423,70 @@ class _PanelShortcutGrid extends StatelessWidget {
         Icons.inventory_2_outlined,
         'CRUD Sarpras',
         'Kelola inventaris alat dan ruangan',
-        () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => KalabInventoryCrudPage(repository: repository),
-          ),
-        ),
+        () {
+          if (!context.mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => KalabInventoryCrudPage(repository: repository),
+            ),
+          );
+        },
       ),
       (
         Icons.manage_accounts_outlined,
         'Kontrol User',
         'Verifikasi dan pantau akun pengguna',
-        () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => KalabUserManagementPage(repository: repository),
-          ),
-        ),
+        () {
+          if (!context.mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => KalabUserManagementPage(repository: repository),
+            ),
+          );
+        },
       ),
       (
         Icons.meeting_room_outlined,
         'Jadwal Ruangan',
         'Cek penggunaan dan ketersediaan ruang',
-        () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => RoomSchedulePage(repository: repository),
-          ),
-        ),
+        () {
+          if (!context.mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => RoomSchedulePage(repository: repository),
+            ),
+          );
+        },
       ),
       (
         Icons.analytics_outlined,
         'Laporan Peminjaman',
         'Ringkasan transaksi dan aktivitas lab',
-        () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => KalabDailyReportPage(repository: repository),
-          ),
-        ),
+        () {
+          if (!context.mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => KalabDailyReportPage(repository: repository),
+            ),
+          );
+        },
       ),
       (
         Icons.build_circle_outlined,
         'Laporan Maintenance',
         'Cek laporan kerusakan dan tindak lanjut',
-        () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => _MaintenanceReportPage(
-              repository: repository,
-              maintenanceFuture: maintenanceFuture,
-              onUpdated: onMaintenanceUpdated,
+        () {
+          if (!context.mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => _MaintenanceReportPage(
+                repository: repository,
+                maintenanceFuture: maintenanceFuture,
+                onUpdated: onMaintenanceUpdated,
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     ];
 
@@ -619,437 +604,6 @@ class _PanelShortcutGrid extends StatelessWidget {
               );
             }),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InventoryCreateCard extends StatefulWidget {
-  const _InventoryCreateCard({
-    required this.roomsFuture,
-    required this.repository,
-    required this.onSaved,
-  });
-
-  final Future<List<LabRoom>> roomsFuture;
-  final DashboardRepository repository;
-  final VoidCallback onSaved;
-
-  @override
-  State<_InventoryCreateCard> createState() => _InventoryCreateCardState();
-}
-
-class _InventoryCreateCardState extends State<_InventoryCreateCard> {
-  final _name = TextEditingController();
-  final _total = TextEditingController(text: '1');
-  final _available = TextEditingController(text: '1');
-  final _picker = ImagePicker();
-  String? _labId;
-  String _type = 'alat';
-  XFile? _image;
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _total.dispose();
-    _available.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<LabRoom>>(
-          future: widget.roomsFuture,
-          builder: (context, snapshot) {
-            final rooms = snapshot.data ?? const <LabRoom>[];
-            _labId ??= rooms.isEmpty ? null : rooms.first.id;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Tambah Inventaris',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _name,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama barang/instrumen',
-                    prefixIcon: Icon(Icons.inventory_2_outlined),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _labId,
-                  decoration: const InputDecoration(labelText: 'Ruangan'),
-                  items: rooms
-                      .map(
-                        (room) => DropdownMenuItem(
-                          value: room.id,
-                          child: Text(room.name),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() => _labId = value),
-                ),
-                const SizedBox(height: 10),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final fieldWidth = constraints.maxWidth >= 760
-                        ? (constraints.maxWidth - 20) / 3
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: TextField(
-                            controller: _total,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Total',
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: fieldWidth,
-                          child: TextField(
-                            controller: _available,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Tersedia',
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: fieldWidth,
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _type,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Jenis',
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'alat',
-                                child: Text('Alat'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'ruangan',
-                                child: Text('Ruangan Laboratorium'),
-                              ),
-                            ],
-                            onChanged: (value) =>
-                                setState(() => _type = value ?? 'alat'),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                _InventoryImagePickerButton(
-                  imageName: _image?.name,
-                  onPick: _pickImage,
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _saving || _labId == null ? null : _save,
-                  icon: _saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.add_rounded),
-                  label: const Text('Simpan Inventaris'),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickImage() async {
-    final image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 78,
-      maxWidth: 1280,
-    );
-    if (image != null) {
-      setState(() => _image = image);
-    }
-  }
-
-  Future<void> _save() async {
-    try {
-      setState(() => _saving = true);
-      final imageBytes = _image == null ? null : await _image!.readAsBytes();
-      await widget.repository.createInventory(
-        labId: _labId!,
-        name: _name.text,
-        totalStock: int.tryParse(_total.text) ?? 0,
-        availableStock: int.tryParse(_available.text) ?? 0,
-        type: _type,
-        imageBytes: imageBytes,
-      );
-      _name.clear();
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _image = null;
-      });
-      widget.onSaved();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inventaris berhasil ditambahkan.')),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
-    }
-  }
-}
-
-class _InventoryImagePickerButton extends StatelessWidget {
-  const _InventoryImagePickerButton({
-    required this.imageName,
-    required this.onPick,
-  });
-
-  final String? imageName;
-  final VoidCallback onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onPick,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 64),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: scheme.primary.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: scheme.primary.withValues(alpha: 0.24)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.add_photo_alternate_outlined,
-                color: scheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                imageName == null
-                    ? 'Tambah Gambar Barang'
-                    : 'Gambar dipilih: $imageName',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RoomCreateCard extends StatefulWidget {
-  const _RoomCreateCard({required this.repository, required this.onSaved});
-
-  final DashboardRepository repository;
-  final VoidCallback onSaved;
-
-  @override
-  State<_RoomCreateCard> createState() => _RoomCreateCardState();
-}
-
-class _RoomCreateCardState extends State<_RoomCreateCard> {
-  final _name = TextEditingController();
-  late String _location;
-  bool _saving = false;
-
-  static final _locationOptions = <String>{
-    for (final lab in AppLabCatalog.labs) lab.location,
-    'Gedung Rektorat Lt. 1',
-    'Gedung Rektorat Lt. 2',
-    'Area Luar Ruangan',
-  }.toList();
-
-  @override
-  void initState() {
-    super.initState();
-    _location = _locationOptions.first;
-  }
-
-  @override
-  void dispose() {
-    _name.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Tambah Ruangan Laboratorium',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Nama ruangan'),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              initialValue: _location,
-              decoration: const InputDecoration(labelText: 'Lokasi'),
-              items: _locationOptions
-                  .map(
-                    (location) => DropdownMenuItem(
-                      value: location,
-                      child: Text(location),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() {
-                _location = value ?? _locationOptions.first;
-              }),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.meeting_room_outlined),
-              label: const Text('Simpan Ruangan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _save() async {
-    try {
-      setState(() => _saving = true);
-      await widget.repository.createLaboratory(
-        name: _name.text,
-        location: _location,
-      );
-      _name.clear();
-      _location = _locationOptions.first;
-      if (!mounted) return;
-      setState(() => _saving = false);
-      widget.onSaved();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ruangan berhasil ditambahkan.')),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
-    }
-  }
-}
-
-class _AslabVerificationCard extends StatelessWidget {
-  const _AslabVerificationCard({
-    required this.usersFuture,
-    required this.repository,
-    required this.onUpdated,
-  });
-
-  final Future<List<UserAccountSummary>> usersFuture;
-  final DashboardRepository repository;
-  final VoidCallback onUpdated;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<UserAccountSummary>>(
-          future: usersFuture,
-          builder: (context, snapshot) {
-            final users = snapshot.data ?? const <UserAccountSummary>[];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Verifikasi Akun Aslab',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (!snapshot.hasData)
-                  const Center(child: CircularProgressIndicator())
-                else if (users.isEmpty)
-                  const Text('Belum ada akun pengguna.')
-                else
-                  ...users.map(
-                    (user) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        user.role == 'aslab'
-                            ? Icons.verified_user_outlined
-                            : Icons.person_outline,
-                      ),
-                      title: Text(user.name),
-                      subtitle: Text('${user.identity} | ${user.email}'),
-                      trailing: user.role == 'aslab'
-                          ? const Chip(label: Text('Aslab'))
-                          : user.role == 'kalab'
-                          ? const Chip(label: Text('Kalab'))
-                          : FilledButton(
-                              onPressed: () async {
-                                await repository.verifyAslabAccount(user.id);
-                                onUpdated();
-                              },
-                              child: const Text('Jadikan Aslab'),
-                            ),
-                    ),
-                  ),
-              ],
-            );
-          },
         ),
       ),
     );
