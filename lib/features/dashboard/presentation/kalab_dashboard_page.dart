@@ -539,64 +539,76 @@ class _PanelShortcutGrid extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ...actions.map((action) {
+              final radius = BorderRadius.circular(14);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Material(
-                  color: campus.primary.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    onTap: action.$4,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              gradient: campus.gradient,
+                  color: Colors.transparent,
+                  borderRadius: radius,
+                  clipBehavior: Clip.antiAlias,
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      color: campus.primary.withValues(alpha: 0.06),
+                      borderRadius: radius,
+                    ),
+                    child: InkWell(
+                      onTap: action.$4,
+                      borderRadius: radius,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: campus.gradient,
+                              ),
+                              child: Icon(
+                                action.$1,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
-                            child: Icon(
-                              action.$1,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  action.$2,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: campus.primary,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    action.$2,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: campus.primary,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  action.$3,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
-                                      ),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    action.$3,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            color: campus.secondary,
-                          ),
-                        ],
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: campus.secondary,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
