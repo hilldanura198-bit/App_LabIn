@@ -56,7 +56,7 @@ class _TermsPageState extends State<TermsPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF007AFF), Color(0xFF5A67FF), Color(0xFFAF52DE)],
+            colors: [Color(0xFF0A5CFF), Color(0xFF5B67F2), Color(0xFFB24CFF)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -208,12 +208,50 @@ class _TermsPageState extends State<TermsPage> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _reachedBottom ? _accept : null,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(54),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    decoration: BoxDecoration(
+                      gradient: _reachedBottom
+                          ? AppTheme.cyberGradient
+                          : LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.22),
+                                Colors.white.withValues(alpha: 0.14),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    child: const Text('Saya Setuju'),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _reachedBottom ? _accept : null,
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          alignment: Alignment.center,
+                          constraints: const BoxConstraints(minHeight: 54),
+                          child: Text(
+                            'Saya Setuju',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: _reachedBottom
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.78),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

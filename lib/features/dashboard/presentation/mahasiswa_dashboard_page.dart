@@ -307,13 +307,17 @@ class _MahasiswaDashboardViewState extends State<_MahasiswaDashboardView> {
   }
 
   void _openSettings(BuildContext context) {
+    final state = context.read<DashboardBloc>().state;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RepositoryProvider.value(
           value: context.read<AuthRepository>(),
           child: BlocProvider.value(
             value: context.read<AuthBloc>(),
-            child: SettingsPage(repository: _repository(context)),
+            child: SettingsPage(
+              repository: _repository(context),
+              selectedCampus: state.selectedCampus,
+            ),
           ),
         ),
       ),
