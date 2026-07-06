@@ -212,16 +212,7 @@ class _TermsPageState extends State<TermsPage> {
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOut,
                     decoration: BoxDecoration(
-                      gradient: _reachedBottom
-                          ? AppTheme.cyberGradient
-                          : LinearGradient(
-                              colors: [
-                                Colors.white.withValues(alpha: 0.22),
-                                Colors.white.withValues(alpha: 0.14),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
@@ -243,9 +234,7 @@ class _TermsPageState extends State<TermsPage> {
                             'Saya Setuju',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                  color: _reachedBottom
-                                      ? Colors.white
-                                      : Colors.white.withValues(alpha: 0.78),
+                                  color: Colors.black87,
                                   fontWeight: FontWeight.w900,
                                 ),
                           ),
