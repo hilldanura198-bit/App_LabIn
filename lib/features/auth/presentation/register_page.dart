@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/brand.dart';
 import '../../../core/theme/app_theme.dart';
@@ -45,6 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthRegisterSuccess && mounted) {
+          _markTermsPending(state.userId);
           Navigator.of(context).pop(state.message);
         }
         if (state is AuthFailure) {
@@ -309,6 +311,12 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _markTermsPending(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('terms_pending_user_id', userId);
+    await prefs.setBool('terms_pending_$userId', true);
   }
 
   Future<void> _pickKtmImage() async {

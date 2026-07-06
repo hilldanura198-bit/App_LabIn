@@ -85,9 +85,10 @@ class AuthFailure extends AuthState {
 }
 
 class AuthRegisterSuccess extends AuthState {
-  const AuthRegisterSuccess({required this.message});
+  const AuthRegisterSuccess({required this.message, required this.userId});
 
   final String message;
+  final String userId;
 }
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -169,7 +170,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
     try {
       _suppressAuthSync = true;
-      await _repository.registerMahasiswa(
+      final userId = await _repository.registerMahasiswa(
         nama: event.nama,
         nim: event.nim,
         email: event.email,
@@ -178,8 +179,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         programStudi: event.programStudi,
       );
       emit(
-        const AuthRegisterSuccess(
+        AuthRegisterSuccess(
           message: 'Registrasi berhasil! Silakan login menggunakan akun baru.',
+          userId: userId,
         ),
       );
     } on Object catch (error) {

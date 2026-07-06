@@ -129,13 +129,7 @@ class AuthGate extends StatelessWidget {
             UserRole.aslab => const AslabDashboardPage(),
             UserRole.kalab => const KalabDashboardPage(),
           };
-          return TermsGate(
-            userId: state.userId,
-            bypassWhenSessionActive:
-                context.read<AuthRepository>().client?.auth.currentSession !=
-                null,
-            child: dashboard,
-          );
+          return TermsGate(userId: state.userId, child: dashboard);
         }
 
         final message = state is AuthFailure ? state.message : null;
@@ -146,16 +140,10 @@ class AuthGate extends StatelessWidget {
 }
 
 class TermsGate extends StatefulWidget {
-  const TermsGate({
-    super.key,
-    required this.userId,
-    required this.child,
-    required this.bypassWhenSessionActive,
-  });
+  const TermsGate({super.key, required this.userId, required this.child});
 
   final String userId;
   final Widget child;
-  final bool bypassWhenSessionActive;
 
   @override
   State<TermsGate> createState() => _TermsGateState();
@@ -179,10 +167,11 @@ class _TermsGateState extends State<TermsGate> {
   }
 
   Future<bool> _readAcceptance() async {
-    if (widget.bypassWhenSessionActive) {
+    final prefs = await SharedPreferences.getInstance();
+    final pendingUserId = prefs.getString('terms_pending_user_id');
+    if (pendingUserId != widget.userId) {
       return true;
     }
-    final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_termsKey(widget.userId)) ?? false;
   }
 
@@ -191,6 +180,8 @@ class _TermsGateState extends State<TermsGate> {
   Future<void> _acceptTerms() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_termsKey(widget.userId), true);
+    await prefs.remove('terms_pending_user_id');
+    await prefs.remove('terms_pending_${widget.userId}');
     if (!mounted) {
       return;
     }

@@ -36,7 +36,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final _waController = TextEditingController();
   final _passwordController = TextEditingController();
   final _picker = ImagePicker();
-  bool _loading = true;
   String _role = 'mahasiswa';
   String? _avatarUrl;
   String _language = 'id';
@@ -93,7 +92,6 @@ class _SettingsPageState extends State<SettingsPage> {
             : fallbackEmail;
         _avatarUrl = profile.avatarUrl;
         _role = profile.role;
-        _loading = false;
       });
     } on Object catch (error) {
       final currentUser = widget.repository.currentUser;
@@ -115,7 +113,6 @@ class _SettingsPageState extends State<SettingsPage> {
             .trim();
         _avatarUrl = null;
         _role = 'mahasiswa';
-        _loading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -127,152 +124,127 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final background = BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          AppTheme.vibrantPurple.withValues(alpha: 0.18),
-          AppTheme.electricBlue.withValues(alpha: 0.08),
-          Theme.of(context).colorScheme.surface,
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ),
-    );
-
     return Scaffold(
       appBar: widget.showAppBar ? GlassAppBar(title: 'profile'.tr()) : null,
       body: Container(
-        decoration: background,
+        color: Colors.white,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
               final maxWidth = constraints.maxWidth >= 720
                   ? 620.0
                   : constraints.maxWidth;
-              return Stack(
-                children: [
-                  RefreshIndicator(
-                    onRefresh: _load,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(22, 10, 22, 18),
-                      children: [
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: maxWidth),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+              return RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(22, 10, 22, 18),
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildProfileHeader(context),
+                            const SizedBox(height: 10),
+                            _buildMenuCard(
+                              context,
                               children: [
-                                _buildProfileHeader(context),
-                                const SizedBox(height: 10),
-                                _buildMenuCard(
+                                _profileTile(
                                   context,
-                                  children: [
-                                    _profileTile(
-                                      context,
-                                      icon: Icons.edit_outlined,
-                                      title: _label('editProfile'),
-                                      subtitle: _label('editProfileSubtitle'),
-                                      onTap: _showEditProfileSheet,
-                                    ),
-                                    _profileTile(
-                                      context,
-                                      icon: Icons.language_rounded,
-                                      title: _label('language'),
-                                      subtitle: _language == 'id'
-                                          ? 'Bahasa Indonesia'
-                                          : 'English',
-                                      onTap: _showLanguageSheet,
-                                    ),
-                                    _profileTile(
-                                      context,
-                                      icon: Icons.lock_outline,
-                                      title: _label('changePassword'),
-                                      subtitle: _label(
-                                        'changePasswordSubtitle',
-                                      ),
-                                      onTap: _showPasswordSheet,
-                                    ),
-                                  ],
+                                  icon: Icons.edit_outlined,
+                                  title: _label('editProfile'),
+                                  subtitle: _label('editProfileSubtitle'),
+                                  onTap: _showEditProfileSheet,
                                 ),
-                                const SizedBox(height: 14),
-                                _buildMenuCard(
+                                _profileTile(
                                   context,
-                                  children: [
-                                    BlocBuilder<ThemeCubit, ThemeMode>(
-                                      builder: (context, mode) {
-                                        return _switchTile(
-                                          context,
-                                          icon: Icons.dark_mode_outlined,
-                                          title: _label('darkMode'),
-                                          subtitle: _label('darkModeSubtitle'),
-                                          value: mode == ThemeMode.dark,
-                                          onChanged: (value) {
-                                            context
-                                                .read<ThemeCubit>()
-                                                .setDarkMode(value);
-                                            _persistSettings();
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                  icon: Icons.language_rounded,
+                                  title: _label('language'),
+                                  subtitle: _language == 'id'
+                                      ? 'Bahasa Indonesia'
+                                      : 'English',
+                                  onTap: _showLanguageSheet,
                                 ),
-                                const SizedBox(height: 16),
-                                _buildMenuCard(
+                                _profileTile(
                                   context,
-                                  children: [
-                                    _profileTile(
-                                      context,
-                                      icon: Icons.logout_rounded,
-                                      title: _label('logout'),
-                                      subtitle: _label('logoutSubtitle'),
-                                      iconColor: Colors.redAccent,
-                                      onTap: _logout,
-                                    ),
-                                    _profileTile(
-                                      context,
-                                      icon: Icons.delete_outline_rounded,
-                                      title: _label('deleteAccount'),
-                                      subtitle: _label('deleteAccountSubtitle'),
-                                      iconColor: Colors.redAccent,
-                                      onTap: _showDeleteAccountDialog,
-                                    ),
-                                  ],
+                                  icon: Icons.lock_outline,
+                                  title: _label('changePassword'),
+                                  subtitle: _label('changePasswordSubtitle'),
+                                  onTap: _showPasswordSheet,
                                 ),
-                                const SizedBox(height: 80),
-                                Divider(
-                                  color: AppTheme.muted.withValues(alpha: 0.18),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Powered by LabIn 2026',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: AppTheme.muted.withValues(
-                                          alpha: 0.72,
-                                        ),
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.4,
-                                      ),
-                                ),
-                                const SizedBox(height: 20),
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 14),
+                            _buildMenuCard(
+                              context,
+                              children: [
+                                BlocBuilder<ThemeCubit, ThemeMode>(
+                                  builder: (context, mode) {
+                                    return _switchTile(
+                                      context,
+                                      icon: Icons.dark_mode_outlined,
+                                      title: _label('darkMode'),
+                                      subtitle: _label('darkModeSubtitle'),
+                                      value: mode == ThemeMode.dark,
+                                      onChanged: (value) {
+                                        context.read<ThemeCubit>().setDarkMode(
+                                          value,
+                                        );
+                                        _persistSettings();
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _buildMenuCard(
+                              context,
+                              children: [
+                                _profileTile(
+                                  context,
+                                  icon: Icons.logout_rounded,
+                                  title: _label('logout'),
+                                  subtitle: _label('logoutSubtitle'),
+                                  iconColor: Colors.redAccent,
+                                  onTap: _logout,
+                                ),
+                                _profileTile(
+                                  context,
+                                  icon: Icons.delete_outline_rounded,
+                                  title: _label('deleteAccount'),
+                                  subtitle: _label('deleteAccountSubtitle'),
+                                  iconColor: Colors.redAccent,
+                                  onTap: _showDeleteAccountDialog,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 80),
+                            Divider(
+                              color: AppTheme.muted.withValues(alpha: 0.18),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Powered by LabIn 2026',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: AppTheme.muted.withValues(
+                                      alpha: 0.72,
+                                    ),
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.4,
+                                  ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                  if (_loading)
-                    const Positioned(
-                      top: 12,
-                      left: 0,
-                      right: 0,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                ],
+                  ],
+                ),
               );
             },
           ),
@@ -355,10 +327,10 @@ class _SettingsPageState extends State<SettingsPage> {
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.camera_alt_rounded,
                         size: 15,
-                        color: AppTheme.electricBlue,
+                        color: campus.secondary,
                       ),
                     ),
                   ),
@@ -637,7 +609,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: _tileIcon(
                   Icons.translate_rounded,
-                  AppTheme.electricBlue,
+                  AppTheme.campusColorsOf(context).primary,
                 ),
                 title: const Text('Bahasa Indonesia'),
                 trailing: _language == 'id'
@@ -651,7 +623,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: _tileIcon(
                   Icons.translate_rounded,
-                  AppTheme.vibrantPurple,
+                  AppTheme.campusColorsOf(context).secondary,
                 ),
                 title: const Text('English'),
                 trailing: _language == 'en'
@@ -915,7 +887,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: _tileIcon(
                     Icons.photo_library_outlined,
-                    AppTheme.electricBlue,
+                    AppTheme.campusColorsOf(context).primary,
                   ),
                   title: Text(
                     'pick_from_gallery'.tr(),
@@ -927,7 +899,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: _tileIcon(
                     Icons.photo_camera_outlined,
-                    AppTheme.vibrantPurple,
+                    AppTheme.campusColorsOf(context).secondary,
                   ),
                   title: Text(
                     'take_from_camera'.tr(),
