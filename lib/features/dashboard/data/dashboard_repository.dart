@@ -644,7 +644,7 @@ class DashboardRepository {
       'inventory_id': inventory.id,
       'deskripsi': description.trim(),
       'foto_url': photoUrl,
-      'status_perbaikan': 'pending',
+      'status_perbaikan': 'diterima',
     });
     await _insertNotification(
       userId: userId,

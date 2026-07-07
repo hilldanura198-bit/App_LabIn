@@ -327,9 +327,6 @@ class _BookingFormPageState extends State<BookingFormPage> {
                                                     title: const Text(
                                                       'Pinjam untuk diri sendiri',
                                                     ),
-                                                    subtitle: Text(
-                                                      'Centang jika Anda meminjam untuk diri sendiri. Kosongkan pilihan jika Anda didelegasikan untuk mengisi identitas pengguna lain.',
-                                                    ),
                                                     secondary: Icon(
                                                       _borrowForSelf
                                                           ? Icons.person_outline

@@ -1623,9 +1623,7 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
     List<LabInventory> inventories, {
     bool isLoading = false,
   }) {
-    final selected = inventories.any((item) => item.id == _selected?.id)
-        ? _selected
-        : null;
+    final selected = resolveInventorySelection(inventories, _selected);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1640,7 +1638,7 @@ class _MaintenanceReportState extends State<_MaintenanceReport> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<LabInventory>(
-              initialValue: selected,
+              value: selected,
               items: inventories
                   .map(
                     (inventory) => DropdownMenuItem(

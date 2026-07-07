@@ -1,6 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+LabInventory? resolveInventorySelection(
+  List<LabInventory> inventories,
+  LabInventory? selected,
+) {
+  if (selected == null) {
+    return null;
+  }
+
+  for (final inventory in inventories) {
+    if (inventory.id == selected.id) {
+      return inventory;
+    }
+    if (inventory.namaAlat.trim().toLowerCase() ==
+            selected.namaAlat.trim().toLowerCase() &&
+        inventory.labId == selected.labId) {
+      return inventory;
+    }
+  }
+
+  return null;
+}
+
 class LabInventory {
   const LabInventory({
     required this.id,
